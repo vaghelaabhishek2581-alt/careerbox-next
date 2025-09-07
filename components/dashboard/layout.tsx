@@ -1,66 +1,90 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { logoutUser } from '@/lib/redux/slices/authSlice';
-import AnimatedLogo from '@/components/animated-logo';
-import { 
-  Bell, 
-  Settings, 
-  LogOut, 
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { logoutUser } from "@/lib/redux/slices/authSlice";
+import Logo from "@/components/logo";
+import {
+  Bell,
+  Settings,
+  LogOut,
   Menu,
   Home,
   Users,
   BarChart3,
   Building2,
   Briefcase,
-  HelpCircle
-} from 'lucide-react';
+  HelpCircle,
+} from "lucide-react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
-  role: 'user' | 'admin' | 'organization' | 'business';
+  role: "user" | "admin" | "organization" | "business";
 }
 
 const navigationConfig = {
   user: [
-    { name: 'Overview', href: '/dashboard/user', icon: Home },
-    { name: 'Skills', href: '/dashboard/user/skills', icon: BarChart3 },
-    { name: 'Goals', href: '/dashboard/user/goals', icon: Users },
-    { name: 'Network', href: '/dashboard/user/network', icon: Users },
+    { name: "Overview", href: "/dashboard/user", icon: Home },
+    { name: "Skills", href: "/dashboard/user/skills", icon: BarChart3 },
+    { name: "Goals", href: "/dashboard/user/goals", icon: Users },
+    { name: "Network", href: "/dashboard/user/network", icon: Users },
   ],
   admin: [
-    { name: 'Overview', href: '/dashboard/admin', icon: Home },
-    { name: 'Users', href: '/dashboard/admin/users', icon: Users },
-    { name: 'Organizations', href: '/dashboard/admin/organizations', icon: Building2 },
-    { name: 'Businesses', href: '/dashboard/admin/businesses', icon: Briefcase },
-    { name: 'Analytics', href: '/dashboard/admin/analytics', icon: BarChart3 },
-    { name: 'Settings', href: '/dashboard/admin/settings', icon: Settings },
+    { name: "Overview", href: "/dashboard/admin", icon: Home },
+    { name: "Users", href: "/dashboard/admin/users", icon: Users },
+    {
+      name: "Organizations",
+      href: "/dashboard/admin/organizations",
+      icon: Building2,
+    },
+    {
+      name: "Businesses",
+      href: "/dashboard/admin/businesses",
+      icon: Briefcase,
+    },
+    { name: "Analytics", href: "/dashboard/admin/analytics", icon: BarChart3 },
+    { name: "Settings", href: "/dashboard/admin/settings", icon: Settings },
   ],
   organization: [
-    { name: 'Overview', href: '/dashboard/organization', icon: Home },
-    { name: 'Members', href: '/dashboard/organization/members', icon: Users },
-    { name: 'Programs', href: '/dashboard/organization/programs', icon: BarChart3 },
-    { name: 'Analytics', href: '/dashboard/organization/analytics', icon: BarChart3 },
+    { name: "Overview", href: "/dashboard/organization", icon: Home },
+    { name: "Members", href: "/dashboard/organization/members", icon: Users },
+    {
+      name: "Programs",
+      href: "/dashboard/organization/programs",
+      icon: BarChart3,
+    },
+    {
+      name: "Analytics",
+      href: "/dashboard/organization/analytics",
+      icon: BarChart3,
+    },
   ],
   business: [
-    { name: 'Overview', href: '/dashboard/business', icon: Home },
-    { name: 'Recruitment', href: '/dashboard/business/recruitment', icon: Users },
-    { name: 'Employees', href: '/dashboard/business/employees', icon: Users },
-    { name: 'Analytics', href: '/dashboard/business/analytics', icon: BarChart3 },
+    { name: "Overview", href: "/dashboard/business", icon: Home },
+    {
+      name: "Recruitment",
+      href: "/dashboard/business/recruitment",
+      icon: Users,
+    },
+    { name: "Employees", href: "/dashboard/business/employees", icon: Users },
+    {
+      name: "Analytics",
+      href: "/dashboard/business/analytics",
+      icon: BarChart3,
+    },
   ],
 };
 
-export default function DashboardLayout({ 
-  children, 
-  title, 
-  subtitle, 
-  role 
+export default function DashboardLayout({
+  children,
+  title,
+  subtitle,
+  role,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
@@ -70,13 +94,13 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/auth/login');
+      router.push("/auth/login");
     }
   }, [isAuthenticated, router]);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
-    router.push('/');
+    router.push("/");
   };
 
   const navigation = navigationConfig[role] || [];
@@ -92,11 +116,13 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}
+      >
         <div className="flex items-center justify-between h-16 px-6 border-b">
-          <AnimatedLogo />
+          <Logo />
           <Button
             variant="ghost"
             size="sm"
@@ -117,9 +143,9 @@ export default function DashboardLayout({
                   key={item.name}
                   variant={isActive ? "default" : "ghost"}
                   className={`w-full justify-start ${
-                    isActive 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
-                      : 'text-gray-700 hover:bg-gray-100'
+                    isActive
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                   onClick={() => {
                     router.push(item.href);
@@ -186,12 +212,19 @@ export default function DashboardLayout({
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block">
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user.name}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize">
+                    {user.role}
+                  </p>
                 </div>
               </div>
             </div>
@@ -199,9 +232,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Main content area */}
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );

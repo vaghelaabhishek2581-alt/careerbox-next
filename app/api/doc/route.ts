@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
-import { specs } from '@/lib/swagger';
+export const dynamic = 'force-dynamic'
 
-export async function GET() {
+import { NextResponse } from 'next/server'
+import { specs } from '@/lib/swagger'
+
+export async function GET () {
   const html = `
     <!DOCTYPE html>
     <html>
@@ -59,11 +61,11 @@ export async function GET() {
         </script>
       </body>
     </html>
-  `;
+  `
 
   return new NextResponse(html, {
     headers: {
-      'Content-Type': 'text/html',
-    },
-  });
+      'Content-Type': 'text/html'
+    }
+  })
 }

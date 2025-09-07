@@ -1,25 +1,21 @@
-import { configureStore } from '@reduxjs/toolkit';
-import authSlice from './slices/authSlice';
-import dashboardSlice from './slices/dashboardSlice';
-import userSlice from './slices/userSlice';
-import organizationSlice from './slices/organizationSlice';
-import businessSlice from './slices/businessSlice';
+import { configureStore } from '@reduxjs/toolkit'
+import authReducer from './slices/authSlice'
+import userReducer from './slices/userSlice'
+import dashboardReducer from './slices/dashboardSlice'
+import organizationReducer from './slices/organizationSlice'
+import businessReducer from './slices/businessSlice'
+import profileReducer from './slices/profileSlice'
 
 export const store = configureStore({
   reducer: {
-    auth: authSlice,
-    dashboard: dashboardSlice,
-    user: userSlice,
-    organization: organizationSlice,
-    business: businessSlice,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
-      },
-    }),
-});
+    auth: authReducer,
+    user: userReducer,
+    dashboard: dashboardReducer,
+    organization: organizationReducer,
+    business: businessReducer,
+    profile: profileReducer
+  }
+})
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch

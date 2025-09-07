@@ -1,4 +1,4 @@
-import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerJsdoc from 'swagger-jsdoc'
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -9,18 +9,14 @@ const options: swaggerJsdoc.Options = {
       description: 'API documentation for Career-Box platform',
       contact: {
         name: 'Career-Box Team',
-        email: 'support@career-box.com',
-      },
+        email: 'support@career-box.com'
+      }
     },
     servers: [
       {
-        url: process.env.NODE_ENV === 'production' 
-          ? 'https://your-domain.com' 
-          : 'http://localhost:3000',
-        description: process.env.NODE_ENV === 'production' 
-          ? 'Production server' 
-          : 'Development server',
-      },
+        url: '/',
+        description: 'Current origin'
+      }
     ],
     components: {
       schemas: {
@@ -31,24 +27,24 @@ const options: swaggerJsdoc.Options = {
             email: {
               type: 'string',
               format: 'email',
-              description: 'User email address',
+              description: 'User email address'
             },
             password: {
               type: 'string',
               minLength: 6,
-              description: 'User password',
+              description: 'User password'
             },
             name: {
               type: 'string',
-              description: 'User full name',
+              description: 'User full name'
             },
             role: {
               type: 'string',
               enum: ['user', 'admin', 'business', 'institute'],
               default: 'user',
-              description: 'User role',
-            },
-          },
+              description: 'User role'
+            }
+          }
         },
         LoginRequest: {
           type: 'object',
@@ -56,21 +52,21 @@ const options: swaggerJsdoc.Options = {
           properties: {
             email: {
               type: 'string',
-              format: 'email',
+              format: 'email'
             },
             password: {
-              type: 'string',
-            },
-          },
+              type: 'string'
+            }
+          }
         },
         AuthResponse: {
           type: 'object',
           properties: {
             success: {
-              type: 'boolean',
+              type: 'boolean'
             },
             message: {
-              type: 'string',
+              type: 'string'
             },
             user: {
               type: 'object',
@@ -78,19 +74,19 @@ const options: swaggerJsdoc.Options = {
                 id: { type: 'string' },
                 email: { type: 'string' },
                 name: { type: 'string' },
-                role: { type: 'string' },
-              },
+                role: { type: 'string' }
+              }
             },
             token: {
               type: 'string',
-              description: 'JWT authentication token',
-            },
-          },
-        },
-      },
-    },
+              description: 'JWT authentication token'
+            }
+          }
+        }
+      }
+    }
   },
-  apis: ['./app/api/**/*.ts'],
-};
+  apis: ['./app/api/**/*.ts']
+}
 
-export const specs = swaggerJsdoc(options);
+export const specs = swaggerJsdoc(options)
