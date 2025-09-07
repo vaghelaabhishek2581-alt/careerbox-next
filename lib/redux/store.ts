@@ -5,6 +5,7 @@ import dashboardReducer from './slices/dashboardSlice'
 import organizationReducer from './slices/organizationSlice'
 import businessReducer from './slices/businessSlice'
 import profileReducer from './slices/profileSlice'
+import sessionReducer from './slices/sessionSlice'
 
 export const store = configureStore({
   reducer: {
@@ -13,7 +14,8 @@ export const store = configureStore({
     dashboard: dashboardReducer,
     organization: organizationReducer,
     business: businessReducer,
-    profile: profileReducer
+    profile: profileReducer,
+    session: sessionReducer
   }
 })
 

@@ -9,6 +9,7 @@ export type UserRole = 'admin' | 'business' | 'institute' | 'user'
 interface UseAuthOptions {
   requiredRole?: UserRole
   redirectTo?: string
+  skipOnboarding?: boolean
 }
 
 export function useAuth (options: UseAuthOptions = {}) {
@@ -19,7 +20,7 @@ export function useAuth (options: UseAuthOptions = {}) {
   const isAuthenticated = status === 'authenticated'
   const isLoading = status === 'loading'
   const user = session?.user
-  const userRole = user?.role as UserRole
+  const userRole = user?.roles as unknown as UserRole
 
   useEffect(() => {
     if (isLoading) return
@@ -36,8 +37,12 @@ export function useAuth (options: UseAuthOptions = {}) {
       return
     }
 
-    // If user needs onboarding, redirect
-    if (user?.needsOnboarding && pathname !== '/onboarding') {
+    // Only check onboarding if not explicitly skipped
+    if (
+      !options.skipOnboarding &&
+      user?.needsOnboarding &&
+      pathname !== '/onboarding'
+    ) {
       router.push('/onboarding')
       return
     }
@@ -46,6 +51,7 @@ export function useAuth (options: UseAuthOptions = {}) {
     isLoading,
     options.requiredRole,
     options.redirectTo,
+    options.skipOnboarding,
     pathname,
     router,
     user,

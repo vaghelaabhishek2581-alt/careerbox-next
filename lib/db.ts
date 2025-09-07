@@ -1,4 +1,4 @@
-import { MongoClient, Db } from 'mongodb'
+import { MongoClient, Db, ObjectId } from 'mongodb'
 
 const MONGODB_URI = process.env.MONGODB_URI as string
 const MONGODB_DB = (process.env.MONGODB_DB as string) || 'career-box-001'
@@ -89,7 +89,10 @@ export async function updateCounsellingRequest (id: string, updateData: any) {
   const { db } = await connectToDatabase()
   return await db
     .collection('counselling_requests')
-    .updateOne({ _id: id }, { $set: { ...updateData, updatedAt: new Date() } })
+    .updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { ...updateData, updatedAt: new Date() } }
+    )
 }
 
 // Enhanced user management functions
@@ -100,7 +103,7 @@ export async function updateUserRole (
 ) {
   const { db } = await connectToDatabase()
   return await db.collection('users').updateOne(
-    { _id: userId },
+    { _id: new ObjectId(userId) },
     {
       $set: {
         role,

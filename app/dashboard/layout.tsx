@@ -31,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { handleUserSignOut } from "@/src/services/auth/auth.service";
 
 const userNavigation = [
   { name: "Overview", href: "/dashboard/user", icon: Home },
@@ -140,11 +141,9 @@ export default function DashboardLayout({
             >
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => router.push("/dashboard/user/profile")}
-              >
+              <DropdownMenuItem onClick={() => router.push("/dashboard/user")}>
                 <Users className="mr-2 h-4 w-4" />
-                Profile
+                Dashboard
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
@@ -153,7 +152,7 @@ export default function DashboardLayout({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-600 focus:text-red-600"
-                onClick={() => router.push("/api/auth/signout")}
+                onClick={handleUserSignOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out

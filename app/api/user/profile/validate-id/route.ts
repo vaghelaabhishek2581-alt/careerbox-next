@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { z } from 'zod'
-import { generatePresignedUrl, generateS3Key } from '@/lib/s3'
 import clientPromise from '../../../db'
 
-const imageRequestSchema = z.object({
-  type: z.enum(['profile', 'cover']),
-  contentType: z
+const validateSchema = z.object({
+  publicId: z
     .string()
-    .refine(
-      type => ['image/jpeg', 'image/png', 'image/webp'].includes(type),
-      'Only JPEG, PNG and WebP images are allowed'
+    .min(3, 'Public ID must be at least 3 characters')
+    .max(30, 'Public ID must be less than 30 characters')
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      'Only letters, numbers, underscore and hyphen allowed'
     )
 })
 
 /**
  * @swagger
- * /api/user/profile/image:
+ * /api/user/profile/validate-id:
  *   post:
- *     summary: Get presigned URL for image upload
- *     description: Generates a presigned URL for uploading profile or cover image to S3
+ *     summary: Validate public profile ID
+ *     description: Check if a public profile ID is available
  *     tags:
  *       - User
  *     security:
@@ -31,14 +31,11 @@ const imageRequestSchema = z.object({
  *           schema:
  *             type: object
  *             properties:
- *               type:
- *                 type: string
- *                 enum: [profile, cover]
- *               contentType:
+ *               publicId:
  *                 type: string
  *     responses:
  *       200:
- *         description: Presigned URL generated successfully
+ *         description: Validation result
  *       400:
  *         description: Invalid input
  *       401:
@@ -52,26 +49,21 @@ export async function POST (request: NextRequest) {
     }
 
     const data = await request.json()
-    const { type, contentType } = imageRequestSchema.parse(data)
+    const { publicId } = validateSchema.parse(data)
 
-    const key = generateS3Key(session.user.id, type)
-    const { uploadUrl, fileUrl } = await generatePresignedUrl(key, contentType)
-
-    // Update user profile with new image URL
     const client = await clientPromise
     const db = client.db()
 
-    await db.collection('users').updateOne(
-      { _id: new ObjectId(session.user.id) },
-      {
-        $set: {
-          [`${type}Image`]: fileUrl,
-          updatedAt: new Date()
-        }
-      }
-    )
+    // Check if publicId exists for any other user
+    const existingUser = await db.collection('users').findOne({
+      _id: { $ne: session.user.id },
+      'personalDetails.publicProfileId': publicId
+    })
 
-    return NextResponse.json({ uploadUrl, fileUrl })
+    return NextResponse.json({
+      available: !existingUser,
+      suggestions: existingUser ? generateSuggestions(publicId) : []
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -80,10 +72,18 @@ export async function POST (request: NextRequest) {
       )
     }
 
-    console.error('Error handling image upload:', error)
+    console.error('Error validating public ID:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     )
   }
+}
+
+function generateSuggestions (baseId: string): string[] {
+  const suggestions: string[] = []
+  for (let i = 1; i <= 5; i++) {
+    suggestions.push(`${baseId}${i}`)
+  }
+  return suggestions
 }

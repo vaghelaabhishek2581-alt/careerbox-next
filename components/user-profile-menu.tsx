@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -32,10 +32,31 @@ export default function UserProfileMenu() {
     return null;
   }
 
-  const initials = session.user?.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("");
+  const handleSignOut = async () => {
+    try {
+      // Clear any client-side storage
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+
+      // Use NextAuth's signOut
+      await signOut({
+        redirect: true,
+        callbackUrl: "/auth/signup?mode=signin",
+      });
+    } catch (error) {
+      console.error("Sign out error:", error);
+      // Fallback redirect
+      router.push("/auth/signup?mode=signin");
+    }
+  };
+
+  const initials =
+    session.user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("") || "U";
 
   return (
     <DropdownMenu>
@@ -77,7 +98,7 @@ export default function UserProfileMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-red-600 focus:text-red-600"
-          onClick={() => router.push("/api/auth/signout")}
+          onClick={handleSignOut}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Sign out

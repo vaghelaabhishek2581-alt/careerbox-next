@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 
 import NextAuth, { AuthOptions } from 'next-auth'
-import { getToken } from 'next-auth/jwt'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { getUserByEmail, connectToDatabase } from '@/lib/db'
@@ -78,7 +77,6 @@ export const authOptions: AuthOptions = {
     async jwt ({ token, user, account }) {
       if (account && user) {
         const u = user as any
-        // Ensure JWT subject is our DB user id (needed for onboarding API)
         token.sub = (u.id as string) ?? token.sub
         ;(token as any).roles = u.roles
         ;(token as any).activeRole = u.activeRole ?? null
@@ -88,7 +86,7 @@ export const authOptions: AuthOptions = {
         return token
       }
 
-      // Refresh flags from DB if needed (e.g., right after onboarding completes)
+      // Refresh flags from DB if needed
       try {
         const shouldRefresh =
           (token as any).needsOnboarding === true ||
@@ -99,14 +97,12 @@ export const authOptions: AuthOptions = {
           const { db } = await connectToDatabase()
           let dbUser: any | null = null
 
-          // Prefer looking up by token.sub as ObjectId when possible
           if (token.sub && /^[a-f\d]{24}$/i.test(token.sub)) {
             dbUser = await db
               .collection('users')
               .findOne({ _id: new ObjectId(token.sub) })
           }
 
-          // Fallback to email lookup
           if (!dbUser && token.email) {
             dbUser = await getUserByEmail(token.email.toLowerCase())
           }
@@ -142,75 +138,72 @@ export const authOptions: AuthOptions = {
       if (account?.provider === 'google') {
         try {
           console.log('Google sign-in')
-          // Compute base URL with safe fallback
           const baseUrl =
             process.env.NEXTAUTH_URL ||
             (process.env.VERCEL_URL
               ? `https://${process.env.VERCEL_URL}`
               : 'http://localhost:3000')
 
-          // Use your existing register API for Google users
-          const response = await fetch(`${baseUrl}/api/auth/register`, {
+          // Try to log in first
+          const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
               email: user.email,
-              name: user.name,
-              role: 'user', // Default role for Google users
-              provider: 'google',
-              image: user.image
+              provider: 'google'
             })
           })
-          console.log('response', response)
-          const data = await response.json()
 
-          if (response.ok && data.success) {
+          const loginData = await loginResponse.json()
+
+          // If login successful, use the existing user data
+          if (loginResponse.ok && loginData.success) {
             const u = user as any
-            u.id = data.user.id
-            u.roles = data.user.roles || []
-            u.activeRole = data.user.activeRole || null
-            u.needsOnboarding = data.user.needsOnboarding || false
-            u.needsRoleSelection = data.user.needsRoleSelection || false
+            u.id = loginData.user.id
+            u.roles = loginData.user.roles || []
+            u.activeRole = loginData.user.activeRole || null
+            u.needsOnboarding = loginData.user.needsOnboarding || false
+            u.needsRoleSelection = loginData.user.needsRoleSelection || false
             return true
-          } else if (
-            response.status === 400 &&
-            data.message?.includes('already exists')
-          ) {
-            // User already exists, try to log them in to get their data
-            try {
-              const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
+          }
+
+          // If user not found, try to register
+          if (loginResponse.status === 401) {
+            const registerResponse = await fetch(
+              `${baseUrl}/api/auth/register`,
+              {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                   email: user.email,
-                  provider: 'google'
+                  name: user.name,
+                  role: 'user',
+                  provider: 'google',
+                  image: user.image
                 })
-              })
-
-              const loginData = await loginResponse.json()
-
-              if (loginResponse.ok && loginData.success) {
-                const u = user as any
-                u.id = loginData.user.id
-                u.roles = loginData.user.roles || []
-                u.activeRole = loginData.user.activeRole || null
-                u.needsOnboarding = loginData.user.needsOnboarding || false
-                u.needsRoleSelection =
-                  loginData.user.needsRoleSelection || false
-                return true
               }
-            } catch (loginError) {
-              console.error('Login error during Google sign-in:', loginError)
-              return false
+            )
+
+            const registerData = await registerResponse.json()
+
+            if (registerResponse.ok && registerData.success) {
+              const u = user as any
+              u.id = registerData.user.id
+              u.roles = registerData.user.roles || []
+              u.activeRole = registerData.user.activeRole || null
+              u.needsOnboarding = registerData.user.needsOnboarding || false
+              u.needsRoleSelection =
+                registerData.user.needsRoleSelection || false
+              return true
             }
-          } else {
-            console.error('Google sign-up error:', data)
-            return false
           }
+
+          console.error('Google authentication failed')
+          return false
         } catch (error) {
           console.error('Google sign-in error:', error)
           return false
@@ -218,19 +211,22 @@ export const authOptions: AuthOptions = {
       }
       return true
     },
+    // SIMPLIFIED REDIRECT - Let NextAuth handle most cases
     async redirect ({ url, baseUrl }) {
-      // Let middleware handle auth-specific redirects
+      // If redirecting to a relative path, prepend baseUrl
       if (url.startsWith('/')) return `${baseUrl}${url}`
 
-      // Default NextAuth redirect logic
-      if (url.startsWith('/')) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
+      // If URL has same origin as baseUrl, allow it
+      if (new URL(url).origin === baseUrl) return url
+
+      // Default fallback
       return baseUrl
     }
   },
   pages: {
     signIn: '/auth/signup',
-    error: '/auth/error' // Add custom error page
+    // Remove signOut page reference - let NextAuth handle it
+    error: '/auth/error'
   },
   debug: process.env.NODE_ENV === 'development'
 }
