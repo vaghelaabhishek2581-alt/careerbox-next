@@ -1,9 +1,9 @@
 /**
  * @swagger
- * /api/auth/register:
+ * /api/auth/native/register:
  *   post:
- *     summary: Register a new user
- *     description: Creates a new user account via credentials or Google OAuth
+ *     summary: Native app registration
+ *     description: Register a new user and return JWT token for native applications
  *     tags:
  *       - Authentication
  *     requestBody:
@@ -22,21 +22,37 @@
  *                 description: User's email address
  *               password:
  *                 type: string
- *                 description: User's password (required for credentials signup)
- *               role:
- *                 type: string
- *                 enum: [user, business, organization, admin]
- *                 description: User's role
+ *                 minLength: 6
+ *                 description: User's password (min 6 characters)
  *               provider:
  *                 type: string
- *                 enum: [google, credentials]
+ *                 enum: [credentials, google]
  *                 description: Authentication provider
- *               image:
- *                 type: string
- *                 description: User's profile image URL (for Google OAuth)
+ *                 default: credentials
  *     responses:
- *       200:
- *         description: User registered successfully
+ *       201:
+ *         description: Registration successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 token:
+ *                   type: string
+ *                   description: JWT access token
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     needsOnboarding:
+ *                       type: boolean
  *       400:
  *         description: Bad request or user already exists
  *       500:
@@ -46,7 +62,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { connectToDatabase } from '@/lib/db'
-import { toPublicUser } from '@/src/models/user.model'
+import { generateJWT } from '@/lib/auth'
+import { toPublicUser } from '@/lib/types/user'
 
 export async function POST (request: NextRequest) {
   try {
@@ -54,9 +71,7 @@ export async function POST (request: NextRequest) {
       name,
       email,
       password,
-      role = 'user',
-      provider = 'credentials',
-      image
+      provider = 'credentials'
     } = await request.json()
 
     // Validate required fields
@@ -97,7 +112,7 @@ export async function POST (request: NextRequest) {
     const userData: any = {
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      role,
+      role: 'user',
       roles: [], // Empty initially, will be set during onboarding
       provider,
       needsOnboarding: true, // All new users need onboarding
@@ -112,25 +127,27 @@ export async function POST (request: NextRequest) {
       userData.password = await bcrypt.hash(password, 12)
     }
 
-    // Add image for Google users
-    if (provider === 'google' && image) {
-      userData.avatar = image
-    }
-
     // Create user
     const result = await db.collection('users').insertOne(userData)
     userData._id = result.insertedId
 
-    // Return public user data
+    // Generate JWT token
+    const token = generateJWT(userData)
+
+    // Return public user data with token
     const publicUser = toPublicUser(userData)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Account created successfully',
-      user: publicUser
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        token,
+        user: publicUser,
+        message: 'Account created successfully'
+      },
+      { status: 201 }
+    )
   } catch (error) {
-    console.error('Registration error:', error)
+    console.error('Native registration error:', error)
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

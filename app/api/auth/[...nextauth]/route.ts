@@ -31,7 +31,6 @@ export const authOptions: AuthOptions = {
         }
 
         try {
-          // Use your existing login API
           const response = await fetch(
             `${process.env.NEXTAUTH_URL}/api/auth/login`,
             {
@@ -52,7 +51,6 @@ export const authOptions: AuthOptions = {
             return null
           }
 
-          // Return user data from your login API
           return {
             id: data.user.id,
             email: data.user.email,
@@ -137,14 +135,14 @@ export const authOptions: AuthOptions = {
     async signIn ({ user, account, profile }) {
       if (account?.provider === 'google') {
         try {
-          console.log('Google sign-in')
+          console.log('Google sign-in attempt for:', user.email)
           const baseUrl =
             process.env.NEXTAUTH_URL ||
             (process.env.VERCEL_URL
               ? `https://${process.env.VERCEL_URL}`
               : 'http://localhost:3000')
 
-          // Try to log in first
+          // First, try to find existing user
           const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
             method: 'POST',
             headers: {
@@ -158,8 +156,9 @@ export const authOptions: AuthOptions = {
 
           const loginData = await loginResponse.json()
 
-          // If login successful, use the existing user data
+          // If user exists, use their data
           if (loginResponse.ok && loginData.success) {
+            console.log('Existing user found:', user.email)
             const u = user as any
             u.id = loginData.user.id
             u.roles = loginData.user.roles || []
@@ -169,8 +168,9 @@ export const authOptions: AuthOptions = {
             return true
           }
 
-          // If user not found, try to register
+          // If user not found (401), create new user
           if (loginResponse.status === 401) {
+            console.log('Creating new user for:', user.email)
             const registerResponse = await fetch(
               `${baseUrl}/api/auth/register`,
               {
@@ -181,7 +181,7 @@ export const authOptions: AuthOptions = {
                 body: JSON.stringify({
                   email: user.email,
                   name: user.name,
-                  role: 'user',
+                  role: 'user', // Default role for new users
                   provider: 'google',
                   image: user.image
                 })
@@ -191,6 +191,7 @@ export const authOptions: AuthOptions = {
             const registerData = await registerResponse.json()
 
             if (registerResponse.ok && registerData.success) {
+              console.log('New user created successfully:', user.email)
               const u = user as any
               u.id = registerData.user.id
               u.roles = registerData.user.roles || []
@@ -199,10 +200,13 @@ export const authOptions: AuthOptions = {
               u.needsRoleSelection =
                 registerData.user.needsRoleSelection || false
               return true
+            } else {
+              console.error('User registration failed:', registerData.message)
+              return false
             }
           }
 
-          console.error('Google authentication failed')
+          console.error('Google authentication failed - unexpected response')
           return false
         } catch (error) {
           console.error('Google sign-in error:', error)
@@ -211,8 +215,12 @@ export const authOptions: AuthOptions = {
       }
       return true
     },
-    // SIMPLIFIED REDIRECT - Let NextAuth handle most cases
     async redirect ({ url, baseUrl }) {
+      // Handle onboarding redirection
+      if (url.includes('/auth/onboarding') || url.includes('/onboarding')) {
+        return `${baseUrl}/auth/onboarding`
+      }
+
       // If redirecting to a relative path, prepend baseUrl
       if (url.startsWith('/')) return `${baseUrl}${url}`
 
@@ -225,7 +233,6 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: '/auth/signup',
-    // Remove signOut page reference - let NextAuth handle it
     error: '/auth/error'
   },
   debug: process.env.NODE_ENV === 'development'

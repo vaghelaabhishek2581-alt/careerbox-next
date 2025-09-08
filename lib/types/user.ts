@@ -1,19 +1,38 @@
-// lib/types/profile.ts
+// lib/types/user.ts
 import { z } from 'zod'
 
-// Language schema
-const LanguageSchema = z.object({
-  name: z.string().min(1, 'Language name is required'),
-  level: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Native'], {
-    errorMap: () => ({ message: 'Invalid language level' })
-  })
-})
+// Base enums and types
+export type UserRole = 'user' | 'business' | 'organization' | 'admin'
+export type UserType = 'student' | 'professional'
 
-// Language Proficiency Schema (for compatibility with user.ts)
-export const LanguageProficiencySchema = z.object({
-  name: z.string().min(1, 'Language name is required'),
-  level: z.enum(['BASIC', 'INTERMEDIATE', 'ADVANCED', 'FLUENT', 'NATIVE'])
-})
+// Language level enums - keeping both for compatibility
+export type LanguageLevel =
+  | 'BASIC'
+  | 'INTERMEDIATE'
+  | 'ADVANCED'
+  | 'FLUENT'
+  | 'NATIVE'
+export type LanguageLevelDisplay =
+  | 'Beginner'
+  | 'Intermediate'
+  | 'Advanced'
+  | 'Native'
+
+// Employment types
+export const EMPLOYMENT_TYPES = [
+  { value: 'FULL_TIME', label: 'Full Time' },
+  { value: 'PART_TIME', label: 'Part Time' },
+  { value: 'CONTRACT', label: 'Contract' },
+  { value: 'INTERNSHIP', label: 'Internship' },
+  { value: 'FREELANCE', label: 'Freelance' }
+] as const
+
+export const GENDER_OPTIONS = [
+  { value: 'MALE', label: 'Male' },
+  { value: 'FEMALE', label: 'Female' },
+  { value: 'OTHER', label: 'Other' },
+  { value: 'PREFER_NOT_TO_SAY', label: 'Prefer not to say' }
+] as const
 
 // Personal Details Schema
 export const PersonalDetailsSchema = z.object({
@@ -30,8 +49,7 @@ export const PersonalDetailsSchema = z.object({
     .enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'])
     .default('PREFER_NOT_TO_SAY'),
   publicProfileId: z.string().optional(),
-  phone: z.string().optional(),
-  professionalHeadline: z.string().optional() // Added missing field
+  phone: z.string().optional()
 })
 
 // Work Experience Schema
@@ -62,8 +80,14 @@ export const EducationSchema = z.object({
   grade: z.string().optional()
 })
 
-// Social links schema
-const SocialLinksSchema = z
+// Language Proficiency Schema
+export const LanguageProficiencySchema = z.object({
+  name: z.string().min(1, 'Language name is required'),
+  level: z.enum(['BASIC', 'INTERMEDIATE', 'ADVANCED', 'FLUENT', 'NATIVE'])
+})
+
+// Social Links Schema
+export const SocialLinksSchema = z
   .object({
     linkedin: z.string().url().optional().or(z.literal('')),
     twitter: z.string().url().optional().or(z.literal('')),
@@ -75,7 +99,7 @@ const SocialLinksSchema = z
   })
   .optional()
 
-// Main profile schema
+// Main User Profile Schema
 export const UserProfileSchema = z.object({
   id: z.string().optional(),
   name: z
@@ -98,11 +122,11 @@ export const UserProfileSchema = z.object({
   website: z.string().url('Invalid website URL').optional().or(z.literal('')),
   skills: z
     .array(z.string().min(1).max(50))
-    .max(50, 'Maximum 50 skills allowed') // Increased from 20 to match user.ts
+    .max(50, 'Maximum 50 skills allowed')
     .optional()
     .default([]),
   languages: z
-    .array(LanguageProficiencySchema) // Use consistent schema
+    .array(LanguageProficiencySchema)
     .max(10, 'Maximum 10 languages allowed')
     .optional()
     .default([]),
@@ -127,12 +151,6 @@ export const UserProfileSchema = z.object({
   avatar: z.string().url().optional(), // For backward compatibility
 
   // System fields
-  role: z
-    .enum(['user', 'business', 'organization', 'admin'])
-    .optional()
-    .default('user'),
-  organizationId: z.string().optional(),
-  permissions: z.array(z.string()).optional().default([]),
   needsOnboarding: z.boolean().optional().default(false),
   needsRoleSelection: z.boolean().optional().default(false),
   provider: z.string().optional().default('credentials'),
@@ -143,12 +161,11 @@ export const UserProfileSchema = z.object({
 // Update schema for PATCH operations
 export const UserProfileUpdateSchema = UserProfileSchema.partial()
 
-// Onboarding schema for initial user setup
+// Onboarding Schema
 export const OnboardingSchema = z.object({
   roles: z.array(z.string()).min(1, 'At least one role is required'),
   activeRole: z.string().min(1, 'Active role is required'),
   userType: z.enum(['student', 'professional']).optional(),
-  personalDetails: PersonalDetailsSchema.partial().optional(),
   bio: z.string().max(500, 'Bio is too long').optional(),
   skills: z.array(z.string()).max(50, 'Maximum 50 skills allowed').optional(),
   interests: z
@@ -168,46 +185,117 @@ export type UserProfile = z.infer<typeof UserProfileSchema>
 export type UserProfileUpdate = z.infer<typeof UserProfileUpdateSchema>
 export type OnboardingData = z.infer<typeof OnboardingSchema>
 
-// Base type definitions
-export type UserRole = 'user' | 'business' | 'organization' | 'admin'
-export type UserType = 'student' | 'professional'
-export type LanguageLevel =
-  | 'BASIC'
-  | 'INTERMEDIATE'
-  | 'ADVANCED'
-  | 'FLUENT'
-  | 'NATIVE'
-export type LanguageLevelDisplay =
-  | 'Beginner'
-  | 'Intermediate'
-  | 'Advanced'
-  | 'Native'
+// Database document interface
+export interface UserDocument {
+  _id: any
+  name: string
+  email: string
+  password?: string | null
+  role: UserRole
+  roles?: string[]
+  activeRole?: string | null
+  userType?: UserType
+  organizationId?: any
+  avatar?: string | null
+  bio?: string
+  location?: string
+  company?: string
+  website?: string
+  skills?: string[]
+  languages?: LanguageProficiency[]
+  interests?: string[]
+  socialLinks?: Record<string, string>
+  permissions?: string[]
+  needsOnboarding?: boolean
+  needsRoleSelection?: boolean
+  provider?: string
+  profileImage?: string
+  coverImage?: string
 
-// Employment type options
-export const EMPLOYMENT_TYPES = [
-  { value: 'FULL_TIME', label: 'Full Time' },
-  { value: 'PART_TIME', label: 'Part Time' },
-  { value: 'CONTRACT', label: 'Contract' },
-  { value: 'INTERNSHIP', label: 'Internship' },
-  { value: 'FREELANCE', label: 'Freelance' }
-] as const
+  // Extended profile data
+  personalDetails?: PersonalDetails
+  workExperiences?: WorkExperience[]
+  education?: Education[]
 
-// Gender options
-export const GENDER_OPTIONS = [
-  { value: 'MALE', label: 'Male' },
-  { value: 'FEMALE', label: 'Female' },
-  { value: 'OTHER', label: 'Other' },
-  { value: 'PREFER_NOT_TO_SAY', label: 'Prefer not to say' }
-] as const
+  // Timestamps
+  createdAt?: Date
+  updatedAt?: Date
+  onboardingCompletedAt?: Date
+}
 
-// Language proficiency levels
-export const LANGUAGE_LEVELS = [
-  { value: 'BASIC', label: 'Basic' },
-  { value: 'INTERMEDIATE', label: 'Intermediate' },
-  { value: 'ADVANCED', label: 'Advanced' },
-  { value: 'FLUENT', label: 'Fluent' },
-  { value: 'NATIVE', label: 'Native' }
-] as const
+// Public user interface (for API responses)
+export interface PublicUser {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  roles: string[]
+  activeRole: string | null
+  userType?: UserType
+  avatar?: string | null
+  bio?: string
+  location?: string
+  company?: string
+  website?: string
+  skills: string[]
+  languages: LanguageProficiency[]
+  interests: string[]
+  socialLinks: Record<string, string>
+
+  // Extended profile fields
+  personalDetails?: PersonalDetails
+  workExperiences?: WorkExperience[]
+  education?: Education[]
+
+  // Images
+  profileImage?: string
+  coverImage?: string
+
+  // System fields
+  organizationId?: string
+  permissions: string[]
+  needsOnboarding: boolean
+  needsRoleSelection: boolean
+  provider: string
+
+  // Timestamps
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+// Utility function to convert database document to public user
+export function toPublicUser (user: UserDocument): PublicUser {
+  return {
+    id: user._id?.toString?.() ?? user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    roles: user.roles || [user.role],
+    activeRole: user.activeRole || user.role || null,
+    userType: user.userType,
+    avatar: user.avatar,
+    bio: user.bio || '',
+    location: user.location || '',
+    company: user.company || '',
+    website: user.website || '',
+    skills: user.skills || [],
+    languages: user.languages || [],
+    interests: user.interests || [],
+    socialLinks: user.socialLinks || {},
+    personalDetails: user.personalDetails,
+    workExperiences: user.workExperiences || [],
+    education: user.education || [],
+    profileImage: user.profileImage,
+    coverImage: user.coverImage,
+    organizationId: user.organizationId?.toString?.(),
+    permissions: user.permissions || [],
+    needsOnboarding: user.needsOnboarding ?? false,
+    needsRoleSelection: user.needsRoleSelection ?? false,
+    provider: user.provider || 'credentials',
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
+  }
+}
 
 // Available user roles
 export const USER_ROLES = [
@@ -364,114 +452,42 @@ export interface NotificationPreferences {
   }
 }
 
-// Database document interface
-export interface UserDocument {
-  _id: any
-  name: string
-  email: string
-  password?: string | null
-  role: UserRole
-  roles?: string[]
-  activeRole?: string | null
-  userType?: UserType
-  organizationId?: any
-  avatar?: string | null
-  bio?: string
-  location?: string
-  company?: string
-  website?: string
-  skills?: string[]
-  languages?: LanguageProficiency[]
-  interests?: string[]
-  socialLinks?: Record<string, string>
-  permissions?: string[]
-  needsOnboarding?: boolean
-  needsRoleSelection?: boolean
-  provider?: string
-  profileImage?: string
-  coverImage?: string
+// NextAuth type extensions
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string
+      email: string
+      name: string
+      roles: string[]
+      activeRole: string | null
+      userType?: UserType
+      needsOnboarding: boolean
+      needsRoleSelection: boolean
+      provider: string
+    }
+  }
 
-  // Extended profile data
-  personalDetails?: PersonalDetails
-  workExperiences?: WorkExperience[]
-  education?: Education[]
-
-  // Timestamps
-  createdAt?: Date
-  updatedAt?: Date
-  onboardingCompletedAt?: Date
+  interface User {
+    id: string
+    email: string
+    name: string
+    roles?: string[]
+    activeRole?: string | null
+    userType?: UserType
+    needsOnboarding?: boolean
+    needsRoleSelection?: boolean
+    provider?: string
+  }
 }
 
-// Public user interface (for API responses) - matches user.ts
-export interface PublicUser {
-  id: string
-  name: string
-  email: string
-  role: UserRole
-  roles: string[]
-  activeRole: string | null
-  userType?: UserType
-  avatar?: string | null
-  bio?: string
-  location?: string
-  company?: string
-  website?: string
-  skills: string[]
-  languages: LanguageProficiency[]
-  interests: string[]
-  socialLinks: Record<string, string>
-
-  // Extended profile fields
-  personalDetails?: PersonalDetails
-  workExperiences?: WorkExperience[]
-  education?: Education[]
-
-  // Images
-  profileImage?: string
-  coverImage?: string
-
-  // System fields
-  organizationId?: string
-  permissions: string[]
-  needsOnboarding: boolean
-  needsRoleSelection: boolean
-  provider: string
-
-  // Timestamps
-  createdAt?: Date
-  updatedAt?: Date
-}
-
-// Utility function to convert database document to public user
-export function toPublicUser (user: UserDocument): PublicUser {
-  return {
-    id: user._id?.toString?.() ?? user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    roles: user.roles || [user.role],
-    activeRole: user.activeRole || user.role || null,
-    userType: user.userType,
-    avatar: user.avatar,
-    bio: user.bio || '',
-    location: user.location || '',
-    company: user.company || '',
-    website: user.website || '',
-    skills: user.skills || [],
-    languages: user.languages || [],
-    interests: user.interests || [],
-    socialLinks: user.socialLinks || {},
-    personalDetails: user.personalDetails,
-    workExperiences: user.workExperiences || [],
-    education: user.education || [],
-    profileImage: user.profileImage,
-    coverImage: user.coverImage,
-    organizationId: user.organizationId?.toString?.(),
-    permissions: user.permissions || [],
-    needsOnboarding: user.needsOnboarding ?? false,
-    needsRoleSelection: user.needsRoleSelection ?? false,
-    provider: user.provider || 'credentials',
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt
+declare module 'next-auth/jwt' {
+  interface JWT {
+    roles?: string[]
+    activeRole?: string | null
+    userType?: UserType
+    needsOnboarding?: boolean
+    needsRoleSelection?: boolean
+    provider?: string
   }
 }

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '../../../auth/[...nextauth]/route'
 import { z } from 'zod'
 import { generatePresignedUrl, generateS3Key } from '@/lib/s3'
 import clientPromise from '../../../db'
+import { ObjectId } from 'mongodb'
 
 const imageRequestSchema = z.object({
   type: z.enum(['profile', 'cover']),
@@ -46,7 +48,7 @@ const imageRequestSchema = z.object({
  */
 export async function POST (request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

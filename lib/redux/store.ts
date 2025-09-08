@@ -6,6 +6,8 @@ import organizationReducer from './slices/organizationSlice'
 import businessReducer from './slices/businessSlice'
 import profileReducer from './slices/profileSlice'
 import sessionReducer from './slices/sessionSlice'
+import workExperienceReducer from './slices/workExperienceSlice'
+import educationReducer from './slices/educationSlice'
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +17,8 @@ export const store = configureStore({
     organization: organizationReducer,
     business: businessReducer,
     profile: profileReducer,
+    workExperience: workExperienceReducer,
+    education: educationReducer,
     session: sessionReducer
   }
 })
