@@ -2,64 +2,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 
-// Types based on the user types file
-export interface PersonalDetails {
-  firstName: string
-  lastName: string
-  dateOfBirth?: string
-  gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say'
-  professionalHeadline: string
-  publicProfileId: string
-  aboutMe: string
-  interests?: string[]
-  professionalBadges?: string[]
-}
-
-export interface Skill {
-  id: string
-  name: string
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert'
-}
-
-export interface Language {
-  id: string
-  name: string
-  level: 'Basic' | 'Intermediate' | 'Advanced' | 'Fluent' | 'Native'
-}
-
-export interface UserProfile {
-  id?: string
-  name: string
-  email?: string
-  profileImage?: string
-  coverImage?: string
-  location?: string
-  website?: string
-  verified?: boolean
-  followers?: number
-  following?: number
-  personalDetails: PersonalDetails
-  skills: Skill[]
-  languages: Language[]
-  stats: {
-    completedCourses: number
-    skillsAssessed: number
-    careerGoals: number
-    networkSize: number
-  }
-  progress: {
-    overall: number
-    skills: number
-    goals: number
-  }
-}
-
-interface ProfileState {
-  profile: UserProfile | null
-  isLoading: boolean
-  error: string | null
-  isDirty: boolean
-}
+import {
+  UserProfile,
+  ProfileState,
+  PersonalDetails,
+  Skill,
+  Language,
+  WorkExperience,
+  Education
+} from '@/lib/types/profile.unified'
 
 const initialState: ProfileState = {
   profile: null,

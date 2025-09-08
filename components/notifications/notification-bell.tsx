@@ -1,115 +1,129 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSocket } from "@/hooks/use-socket";
-import { Bell, BellRing } from "lucide-react";
-
-interface Notification {
-  _id: string;
-  type: string;
-  description: string;
-  timestamp: string;
-  read: boolean;
-}
+import React from 'react';
+import { Bell } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useNotifications } from '@/hooks/use-notifications';
+import { formatDistanceToNow } from 'date-fns';
 
 export function NotificationBell() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const socket = useSocket();
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications();
 
-  useEffect(() => {
-    // Fetch initial notifications
-    fetch("/api/activities?read=false")
-      .then((res) => res.json())
-      .then((data) => {
-        setNotifications(data.activities || []);
-      })
-      .catch(console.error);
-
-    // Listen for new notifications
-    socket?.on("notification:new", (notification: Notification) => {
-      setNotifications((prev) => [notification, ...prev]);
-    });
-
-    return () => {
-      socket?.off("notification:new");
-    };
-  }, [socket]);
-
-  const handleMarkAsRead = async () => {
-    try {
-      await fetch("/api/activities", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ activityIds: [] }), // Empty array marks all as read
-      });
-
-      setNotifications((prev) =>
-        prev.map((notif) => ({ ...notif, read: true }))
-      );
-    } catch (error) {
-      console.error("Error marking notifications as read:", error);
-    }
+  const handleMarkAsRead = async (notificationId: string) => {
+    await markAsRead(notificationId);
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+  };
+
+  const handleDelete = async (notificationId: string) => {
+    await deleteNotification(notificationId);
+  };
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900"
-      >
-        {unreadCount > 0 ? (
-          <>
-            <BellRing className="h-6 w-6" />
-            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label="Open notifications"
+        >
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
               {unreadCount}
             </span>
-          </>
-        ) : (
-          <Bell className="h-6 w-6" />
-        )}
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg py-2 z-50">
-          <div className="flex items-center justify-between px-4 py-2 border-b">
-            <h3 className="text-lg font-semibold">Notifications</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAsRead}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                Mark all as read
-              </button>
-            )}
-          </div>
-          <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">No notifications</p>
-            ) : (
-              notifications.map((notification) => (
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="flex items-center justify-between border-b p-3">
+          <h4 className="font-medium">Notifications</h4>
+          {notifications.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              className="text-xs"
+            >
+              Mark all as read
+            </Button>
+          )}
+        </div>
+        <ScrollArea className="h-[300px]">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-4">
+              <span className="text-sm text-muted-foreground">Loading...</span>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="flex items-center justify-center p-4">
+              <span className="text-sm text-muted-foreground">
+                No notifications
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {notifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`px-4 py-3 hover:bg-gray-50 ${
-                    !notification.read ? "bg-blue-50" : ""
+                  className={`flex items-start gap-3 p-3 hover:bg-muted/50 ${
+                    !notification.read ? 'bg-muted/30' : ''
                   }`}
                 >
-                  <p className="text-sm text-gray-900">
-                    {notification.description}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(notification.timestamp).toLocaleString()}
-                  </p>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {notification.title}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {notification.message}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(notification.createdAt), {
+                        addSuffix: true,
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {!notification.read && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => handleMarkAsRead(notification._id)}
+                      >
+                        Mark as read
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => handleDelete(notification._id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
   );
 }

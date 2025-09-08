@@ -29,7 +29,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useProfileStore, Language } from "../../store/profileStore";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { addLanguage, updateLanguage, deleteLanguage } from "@/lib/redux/slices/profileSlice";
+import type { Language } from "@/lib/types/profile.unified";
 
 const languageSchema = z.object({
   name: z.string().min(1, "Language name is required"),
@@ -47,8 +49,8 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
   open,
   onClose,
 }) => {
-  const { profile, addLanguage, updateLanguage, deleteLanguage } =
-    useProfileStore();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.profile.profile);
   const [editingLanguage, setEditingLanguage] = React.useState<Language | null>(
     null
   );
@@ -63,10 +65,10 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
 
   const onSubmit = (data: LanguageFormData) => {
     if (editingLanguage) {
-      updateLanguage(editingLanguage.id, data);
+      dispatch(updateLanguage({ id: editingLanguage.id, languageData: data }));
       setEditingLanguage(null);
     } else {
-      addLanguage(data);
+      dispatch(addLanguage(data));
     }
     form.reset();
   };
@@ -78,7 +80,7 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
   };
 
   const handleDeleteLanguage = (languageId: string) => {
-    deleteLanguage(languageId);
+    dispatch(deleteLanguage(languageId));
     if (editingLanguage?.id === languageId) {
       setEditingLanguage(null);
       form.reset();
@@ -232,13 +234,13 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
           {/* Languages List */}
           <div className="space-y-3">
             <h3 className="font-medium">Added Languages</h3>
-            {profile.languages.length === 0 ? (
+            {profile?.languages?.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No languages added yet.
               </p>
             ) : (
               <div className="space-y-2">
-                {profile.languages.map((language) => (
+                {profile?.languages?.map((language) => (
                   <div
                     key={language.id}
                     className={`flex items-center justify-between p-3 rounded-lg border ${

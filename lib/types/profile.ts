@@ -34,19 +34,25 @@ export const PersonalDetailsSchema = z.object({
   professionalHeadline: z.string().optional() // Added missing field
 })
 
-// Work Experience Schema
-export const WorkExperienceSchema = z.object({
+// Position Schema
+export const PositionSchema = z.object({
   id: z.string().optional(),
-  company: z.string().min(1, 'Company name is required'),
-  position: z.string().min(1, 'Position is required'),
+  title: z.string().min(1, 'Position title is required'),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
   current: z.boolean().default(false),
   description: z.string().optional(),
-  location: z.string().optional(),
   employmentType: z
     .enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE'])
     .optional()
+})
+
+// Work Experience Schema
+export const WorkExperienceSchema = z.object({
+  id: z.string().optional(),
+  company: z.string().min(1, 'Company name is required'),
+  location: z.string().optional(),
+  positions: z.array(PositionSchema).min(1, 'At least one position is required')
 })
 
 // Education Schema

@@ -55,21 +55,41 @@ export function ImageUpload({
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to get upload URL");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to get upload URL");
+      }
 
       const { uploadUrl, fileUrl } = await response.json();
 
       // Upload to S3
-      await fetch(uploadUrl, {
+      const uploadResponse = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
         headers: { "Content-Type": file.type },
       });
 
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload image to storage");
+      }
+
+      // Update profile with new image URL
+      const updateResponse = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          [type === "profile" ? "profileImage" : "coverImage"]: fileUrl,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update profile with new image");
+      }
+
       onUpload(fileUrl);
     } catch (err) {
       console.error("Upload error:", err);
-      setError("Failed to upload image");
+      setError(err instanceof Error ? err.message : "Failed to upload image");
       setPreview(null);
     } finally {
       setIsUploading(false);
@@ -94,9 +114,26 @@ export function ImageUpload({
             variant="destructive"
             size="icon"
             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => {
-              setPreview(null);
-              onUpload("");
+            onClick={async () => {
+              try {
+                const response = await fetch("/api/user/profile", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    [type === "profile" ? "profileImage" : "coverImage"]: null,
+                  }),
+                });
+
+                if (!response.ok) {
+                  throw new Error("Failed to remove image");
+                }
+
+                setPreview(null);
+                onUpload("");
+              } catch (err) {
+                console.error("Error removing image:", err);
+                setError("Failed to remove image");
+              }
             }}
           >
             <X className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io'
 import { Server as HTTPServer } from 'http'
 import { getServerSession } from 'next-auth'
+import { connectToDatabase } from '@/lib/db/mongodb'
 
 export function initSocketServer (server: HTTPServer) {
   const io = new SocketIOServer(server, {
@@ -39,6 +40,27 @@ export function initSocketServer (server: HTTPServer) {
     if (socket.data.session.user.roles?.includes('admin')) {
       socket.join('admin')
     }
+
+    socket.on('validate-profile-id', async (profileId: string, callback) => {
+      try {
+        // Check if profile ID is already taken
+        const db = await connectToDatabase()
+        const existingUser = await db.collection('users').findOne({
+          'personalDetails.publicProfileId': profileId,
+          _id: { $ne: userId } // Exclude current user
+        })
+
+        callback({
+          isValid: !existingUser,
+          message: existingUser ? 'This profile ID is already taken' : 'Profile ID is available'
+        })
+      } catch (error) {
+        callback({
+          isValid: false,
+          message: 'Error validating profile ID'
+        })
+      }
+    })
 
     socket.on('disconnect', () => {
       // Handle cleanup if needed

@@ -2,29 +2,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 
-export interface WorkPosition {
-  id: string
-  title: string
-  startDate: Date
-  endDate?: Date | null
-  isCurrent: boolean
-  description?: string
-  skills?: string[]
-}
-
-export interface WorkExperience {
-  id: string
-  company: string
-  location: string
-  type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Freelance'
-  positions: WorkPosition[]
-}
-
-interface WorkExperienceState {
-  workExperiences: WorkExperience[]
-  isLoading: boolean
-  error: string | null
-}
+import {
+  WorkExperience,
+  WorkPosition,
+  WorkExperienceState
+} from '@/lib/types/profile.unified'
 
 const initialState: WorkExperienceState = {
   workExperiences: [],

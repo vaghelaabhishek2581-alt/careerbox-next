@@ -37,8 +37,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { Education } from "@/lib/redux/slices/educationSlice";
-import { useAppSelector } from "@/lib/redux/hooks";
+import { addEducation, updateEducation } from "@/lib/redux/slices/educationSlice";
+import type { Education } from "@/lib/types/profile.unified";
+import { useAppDispatch } from "@/lib/redux/hooks";
 
 const educationSchema = z
   .object({
@@ -83,10 +84,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({
   onClose,
   education,
 }) => {
-  const { addEducation, updateEducation } = useAppSelector(
-    (state: { education: { addEducation: any; updateEducation: any } }) =>
-      state.education
-  );
+  const dispatch = useAppDispatch();
   const isEditing = !!education;
 
   const form = useForm<EducationFormData>({
@@ -111,19 +109,24 @@ export const EducationForm: React.FC<EducationFormProps> = ({
     }
   }, [isCurrent, form]);
 
-  const onSubmit = (data: EducationFormData) => {
+  const onSubmit = async (data: EducationFormData) => {
     const educationData = {
       ...data,
       endDate: data.isCurrent ? null : data.endDate,
     };
 
-    if (isEditing && education) {
-      updateEducation(education.id, educationData);
-    } else {
-      addEducation(educationData);
+    try {
+      if (isEditing && education) {
+        await dispatch(updateEducation({ id: education.id, educationData })).unwrap();
+      } else {
+        await dispatch(addEducation(educationData)).unwrap();
+      }
+      onClose();
+      form.reset();
+    } catch (error) {
+      console.error('Failed to save education:', error);
+      // TODO: Show error toast
     }
-    onClose();
-    form.reset();
   };
 
   const courseLevels = [
@@ -298,9 +301,9 @@ export const EducationForm: React.FC<EducationFormProps> = ({
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value}
+                                    selected={field.value || undefined}
                         onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
+                                    disabled={(date) => date ? date > new Date() : false}
                         initialFocus
                       />
                     </PopoverContent>

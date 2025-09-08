@@ -4,13 +4,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, X, Loader2, CheckCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useProfileIdValidation } from "@/hooks/use-profile-id-validation";
 import {
   Form,
   FormControl,
@@ -37,14 +38,20 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useProfileStore, PersonalDetails } from "../../store/profileStore";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { updatePersonalDetails } from "@/lib/redux/slices/profileSlice";
+import type { PersonalDetails } from "@/lib/types/profile.unified";
+import { SkillsForm } from "./SkillsForm";
+import { LanguagesForm } from "./LanguagesForm";
+import { EmailVerification } from "@/components/email-verification";
 
 const personalDetailsSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   middleName: z.string().optional(),
   lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
   dateOfBirth: z.date().nullable(),
-  gender: z.string().min(1, "Gender is required"),
+  gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
   professionalHeadline: z.string().min(1, "Professional headline is required"),
   publicProfileId: z.string().min(1, "Public profile ID is required"),
   aboutMe: z.string().max(500, "About me must be less than 500 characters"),
@@ -63,28 +70,58 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
   open,
   onClose,
 }) => {
-  const { profile, updatePersonalDetails } = useProfileStore();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.profile.profile);
   const [newInterest, setNewInterest] = React.useState("");
   const [newBadge, setNewBadge] = React.useState("");
+  const [skillsDialogOpen, setSkillsDialogOpen] = React.useState(false);
+  const [languagesDialogOpen, setLanguagesDialogOpen] = React.useState(false);
+  const [emailVerificationOpen, setEmailVerificationOpen] = React.useState(false);
 
   const form = useForm<PersonalDetailsFormData>({
+    context: { mode: "onChange" },
+    mode: "onChange",
     resolver: zodResolver(personalDetailsSchema),
-    defaultValues: {
-      firstName: profile.personalDetails.firstName,
-      middleName: profile.personalDetails.middleName,
-      lastName: profile.personalDetails.lastName,
-      dateOfBirth: profile.personalDetails.dateOfBirth,
-      gender: profile.personalDetails.gender,
-      professionalHeadline: profile.personalDetails.professionalHeadline,
-      publicProfileId: profile.personalDetails.publicProfileId,
-      aboutMe: profile.personalDetails.aboutMe,
-      interests: profile.personalDetails.interests,
-      professionalBadges: profile.personalDetails.professionalBadges,
+    defaultValues: profile?.personalDetails ? {
+      email: profile.email || "",
+      firstName: profile.personalDetails.firstName || "",
+      middleName: profile.personalDetails.middleName || "",
+      lastName: profile.personalDetails.lastName || "",
+      dateOfBirth: profile.personalDetails.dateOfBirth || null,
+      gender: profile.personalDetails.gender || "Prefer not to say",
+      professionalHeadline: profile.personalDetails.professionalHeadline || "",
+      publicProfileId: profile.personalDetails.publicProfileId || "",
+      aboutMe: profile.personalDetails.aboutMe || "",
+      interests: profile.personalDetails.interests || [],
+      professionalBadges: profile.personalDetails.professionalBadges || [],
+    } : {
+      email: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      dateOfBirth: null,
+      gender: "Prefer not to say",
+      professionalHeadline: "",
+      publicProfileId: "",
+      aboutMe: "",
+      interests: [],
+      professionalBadges: [],
     },
   });
 
-  const onSubmit = (data: PersonalDetailsFormData) => {
-    updatePersonalDetails(data);
+  const onSubmit = async (data: PersonalDetailsFormData): Promise<void> => {
+    const { validateProfileId } = useProfileIdValidation();
+    const validationResult = await validateProfileId(data.publicProfileId);
+    
+    if (validationResult && !validationResult.isValid) {
+      form.setError("publicProfileId", {
+        type: "manual",
+        message: validationResult.message || "Invalid profile ID"
+      });
+      return;
+    }
+
+    dispatch(updatePersonalDetails(data));
     onClose();
   };
 
@@ -129,6 +166,44 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Email */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="Enter email address"
+                          {...field}
+                        />
+                      </FormControl>
+                      {!profile?.emailVerified && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setEmailVerificationOpen(true)}
+                        >
+                          Verify
+                        </Button>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {profile?.emailVerified && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  Email verified
+                </div>
+              )}
+            </div>
+
             {/* Name Fields */}
             <div className="grid grid-cols-3 gap-4">
               <FormField
@@ -202,7 +277,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                                    selected={field.value || undefined}
                           onSelect={field.onChange}
                           disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
@@ -267,28 +342,55 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
             <FormField
               control={form.control}
               name="publicProfileId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Public Profile ID</FormLabel>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                      careerbox.in/
-                    </span>
-                    <FormControl>
-                      <Input
-                        className="rounded-l-none"
-                        placeholder="your-profile-id"
-                        {...field}
-                      />
-                    </FormControl>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Choose a unique identifier for your public profile. Use only
-                    letters, numbers, and underscores.
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const { validateProfileId, isValidating, validationResult } = useProfileIdValidation();
+                
+                React.useEffect(() => {
+                  if (field.value) {
+                    validateProfileId(field.value);
+                  }
+                }, [field.value, validateProfileId]);
+
+                return (
+                  <FormItem>
+                    <FormLabel>Public Profile ID</FormLabel>
+                    <div className="flex">
+                      <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                        careerbox.in/
+                      </span>
+                      <FormControl>
+                        <div className="relative flex-1">
+                          <Input
+                            className="rounded-l-none pr-8"
+                            placeholder="your-profile-id"
+                            {...field}
+                          />
+                          {isValidating && (
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                              <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                    </div>
+                    <div className="mt-1">
+                      {validationResult && (
+                        <p className={cn(
+                          "text-xs",
+                          validationResult.isValid ? "text-green-600" : "text-red-600"
+                        )}>
+                          {validationResult.message}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500">
+                        Choose a unique identifier for your public profile. Use only
+                        letters, numbers, and underscores.
+                      </p>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             {/* About Me */}
@@ -382,6 +484,45 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
               </p>
             </div>
 
+            {/* Skills and Languages */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h3 className="font-medium">Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {profile?.skills?.map((skill) => (
+                    <Badge key={skill.id} variant="secondary">
+                      {skill.name} - {skill.level}
+                    </Badge>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSkillsDialogOpen(true)}
+                >
+                  Manage Skills
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-medium">Languages</h3>
+                <div className="flex flex-wrap gap-2">
+                  {profile?.languages?.map((language) => (
+                    <Badge key={language.id} variant="secondary">
+                      {language.name} - {language.level}
+                    </Badge>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setLanguagesDialogOpen(true)}
+                >
+                  Manage Languages
+                </Button>
+              </div>
+            </div>
+
             {/* Form Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={onClose}>
@@ -389,6 +530,38 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
               </Button>
               <Button type="submit">Save Changes</Button>
             </div>
+
+            {/* Skills Form Dialog */}
+            <SkillsForm
+              open={skillsDialogOpen}
+              onClose={() => setSkillsDialogOpen(false)}
+            />
+
+            {/* Languages Form Dialog */}
+            <LanguagesForm
+              open={languagesDialogOpen}
+              onClose={() => setLanguagesDialogOpen(false)}
+            />
+
+            {/* Email Verification Dialog */}
+            <Dialog open={emailVerificationOpen} onOpenChange={setEmailVerificationOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Verify Email Address</DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    We'll send a verification code to your email address.
+                  </p>
+                </DialogHeader>
+                <EmailVerification
+                  email={form.getValues("email")}
+                  onVerified={() => {
+                    setEmailVerificationOpen(false);
+                    // Refresh the profile data
+                    // TODO: Add profile refresh logic
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
           </form>
         </Form>
       </DialogContent>

@@ -29,7 +29,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useProfileStore, Skill } from "../../store/profileStore";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { addSkill, updateSkill, deleteSkill } from "@/lib/redux/slices/profileSlice";
+import type { Skill } from "@/lib/types/profile.unified";
 
 const skillSchema = z.object({
   name: z.string().min(1, "Skill name is required"),
@@ -44,7 +46,8 @@ interface SkillsFormProps {
 }
 
 export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
-  const { profile, addSkill, updateSkill, deleteSkill } = useProfileStore();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.profile.profile);
   const [editingSkill, setEditingSkill] = React.useState<Skill | null>(null);
 
   const form = useForm<SkillFormData>({
@@ -57,10 +60,10 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
 
   const onSubmit = (data: SkillFormData) => {
     if (editingSkill) {
-      updateSkill(editingSkill.id, data);
+      dispatch(updateSkill({ id: editingSkill.id, skillData: data }));
       setEditingSkill(null);
     } else {
-      addSkill(data);
+      dispatch(addSkill(data));
     }
     form.reset();
   };
@@ -72,7 +75,7 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
   };
 
   const handleDeleteSkill = (skillId: string) => {
-    deleteSkill(skillId);
+    dispatch(deleteSkill(skillId));
     if (editingSkill?.id === skillId) {
       setEditingSkill(null);
       form.reset();
@@ -192,13 +195,13 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
           {/* Skills List */}
           <div className="space-y-3">
             <h3 className="font-medium">Added Skills</h3>
-            {profile.skills.length === 0 ? (
+            {profile?.skills?.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No skills added yet.
               </p>
             ) : (
               <div className="space-y-2">
-                {profile.skills.map((skill) => (
+                {profile?.skills?.map((skill) => (
                   <div
                     key={skill.id}
                     className={`flex items-center justify-between p-3 rounded-lg border ${

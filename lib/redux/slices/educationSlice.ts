@@ -2,24 +2,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 
-export interface Education {
-  id: string
-  degree: string
-  institution: string
-  startDate: Date
-  endDate?: Date | null
-  isCurrent: boolean
-  location?: string
-  grade?: string
-  description?: string
-  fieldOfStudy?: string
-}
-
-interface EducationState {
-  education: Education[]
-  isLoading: boolean
-  error: string | null
-}
+import {
+  Education,
+  EducationState
+} from '@/lib/types/profile.unified'
 
 const initialState: EducationState = {
   education: [],
