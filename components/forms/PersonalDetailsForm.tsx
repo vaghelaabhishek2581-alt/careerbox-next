@@ -39,6 +39,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { useToast } from "@/components/ui/use-toast";
 import { updatePersonalDetails } from "@/lib/redux/slices/profileSlice";
 import type { PersonalDetails } from "@/lib/types/profile.unified";
 import { SkillsForm } from "./SkillsForm";
@@ -71,6 +72,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
   onClose,
 }) => {
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const profile = useAppSelector((state) => state.profile.profile);
   const [newInterest, setNewInterest] = React.useState("");
   const [newBadge, setNewBadge] = React.useState("");
@@ -109,6 +111,17 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
     },
   });
 
+  // Cleanup form state on unmount
+  React.useEffect(() => {
+    return () => {
+      form.reset();
+      setNewInterest("");
+      setNewBadge("");
+      setSkillsDialogOpen(false);
+      setLanguagesDialogOpen(false);
+    };
+  }, []);
+
   const onSubmit = async (data: PersonalDetailsFormData): Promise<void> => {
     const { validateProfileId } = useProfileIdValidation();
     const validationResult = await validateProfileId(data.publicProfileId);
@@ -121,8 +134,21 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
       return;
     }
 
-    dispatch(updatePersonalDetails(data));
-    onClose();
+    try {
+      await dispatch(updatePersonalDetails(data)).unwrap();
+      toast({
+        title: "Profile Updated",
+        description: "Personal details have been updated successfully."
+      });
+      onClose();
+    } catch (error) {
+      console.error('Failed to update personal details:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update personal details. Please try again."
+      });
+    }
   };
 
   const addInterest = () => {
@@ -528,7 +554,19 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button 
+                type="submit"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
             </div>
 
             {/* Skills Form Dialog */}

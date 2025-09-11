@@ -3,44 +3,392 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import clientPromise from '../../db'
 import { ObjectId } from 'mongodb'
-import {
-  UserProfileUpdateSchema,
-  toPublicUser,
-  type UserDocument
-} from '@/lib/types/user'
+import { UserProfileUpdateSchema } from '@/lib/types/profile.unified'
 import { authenticateRequest } from '@/lib/auth'
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UserProfile:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         email:
+ *           type: string
+ *         role:
+ *           type: string
+ *         userType:
+ *           type: string
+ *         profileImage:
+ *           type: string
+ *           nullable: true
+ *         coverImage:
+ *           type: string
+ *           nullable: true
+ *         location:
+ *           type: string
+ *         website:
+ *           type: string
+ *         bio:
+ *           type: string
+ *         verified:
+ *           type: boolean
+ *         emailVerified:
+ *           type: boolean
+ *         followers:
+ *           type: integer
+ *         following:
+ *           type: integer
+ *         personalDetails:
+ *           type: object
+ *           properties:
+ *             firstName: { type: string }
+ *             lastName: { type: string }
+ *             middleName: { type: string }
+ *             dateOfBirth: { type: string }
+ *             gender: { type: string }
+ *             professionalHeadline: { type: string }
+ *             publicProfileId: { type: string }
+ *             aboutMe: { type: string }
+ *             phone: { type: string }
+ *             interests: { type: array, items: { type: string } }
+ *             professionalBadges: { type: array, items: { type: string } }
+ *         skills:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id: { type: string }
+ *               name: { type: string }
+ *               level: { type: string }
+ *         languages:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id: { type: string }
+ *               name: { type: string }
+ *               level: { type: string }
+ *         workExperiences:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id: { type: string }
+ *               company: { type: string }
+ *               location: { type: string }
+ *               positions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     title: { type: string }
+ *                     startDate: { type: string }
+ *                     endDate: { type: string }
+ *                     isCurrent: { type: boolean }
+ *                     description: { type: string }
+ *                     employmentType: { type: string }
+ *                     skills: { type: array, items: { type: string } }
+ *         education:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id: { type: string }
+ *               degree: { type: string }
+ *               institution: { type: string }
+ *               fieldOfStudy: { type: string }
+ *               startDate: { type: string }
+ *               endDate: { type: string }
+ *               isCurrent: { type: boolean }
+ *               location: { type: string }
+ *               grade: { type: string }
+ *               description: { type: string }
+ *         contacts:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id: { type: string }
+ *               email: { type: string }
+ *               isPrimary: { type: boolean }
+ *               isVerified: { type: boolean }
+ *         socialLinks:
+ *           type: object
+ *           additionalProperties: true
+ *         stats:
+ *           type: object
+ *           properties:
+ *             completedCourses: { type: integer }
+ *             skillsAssessed: { type: integer }
+ *             careerGoals: { type: integer }
+ *             networkSize: { type: integer }
+ *         progress:
+ *           type: object
+ *           properties:
+ *             overall: { type: integer }
+ *             skills: { type: integer }
+ *             goals: { type: integer }
+ *         roles:
+ *           type: array
+ *           items: { type: string }
+ *         activeRole:
+ *           type: string
+ *         permissions:
+ *           type: array
+ *           items: { type: string }
+ *         needsOnboarding:
+ *           type: boolean
+ *         needsRoleSelection:
+ *           type: boolean
+ *         provider:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     UserProfileUpdate:
+ *       type: object
+ *       description: Fields for updating the user profile (partial)
+ *       additionalProperties: true
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         error:
+ *           type: string
+ *         details:
+ *           type: array
+ *           items: { type: object }
+ *         debug:
+ *           type: string
+ */
 
 /**
  * @swagger
  * /api/user/profile:
  *   get:
- *     summary: Get user profile
- *     description: Retrieves the complete user profile. Supports both NextAuth sessions and JWT tokens.
+ *     summary: Get the authenticated user's profile
  *     tags:
  *       - User
  *     security:
- *       - bearerAuth: []
- *       - sessionAuth: []
+ *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Profile retrieved successfully
+ *         description: The user's profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserProfile'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *   patch:
+ *     summary: Update the authenticated user's profile
+ *     tags:
+ *       - User
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserProfileUpdate'
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/UserProfile'
+ *       400:
+ *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
-export async function GET (request: NextRequest) {
+
+export interface DatabaseUser {
+  _id: any
+  name: string
+  email: string
+  role?: string
+  userType?: string
+  profileImage?: string
+  coverImage?: string
+  location?: string
+  website?: string
+  bio?: string
+  verified?: boolean
+  emailVerified?: boolean
+  followers?: number
+  following?: number
+  personalDetails?: any
+  skills?: any[]
+  languages?: any[]
+  workExperiences?: any[]
+  education?: any[]
+  contacts?: any[]
+  socialLinks?: any
+  stats?: any
+  progress?: any
+  roles?: string[]
+  activeRole?: string
+  permissions?: string[]
+  needsOnboarding?: boolean
+  needsRoleSelection?: boolean
+  provider?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+function convertToUserProfile(user: DatabaseUser) {
+  return {
+    id: user._id?.toString() || user._id,
+    name: user.name || '',
+    email: user.email || '',
+    role: user.role || 'user',
+    userType: user.userType || 'professional',
+    profileImage: user.profileImage,
+    coverImage: user.coverImage,
+    location: user.location || '',
+    website: user.website || '',
+    bio: user.bio || '',
+    verified: user.verified || false,
+    emailVerified: user.emailVerified || false,
+    followers: user.followers || 0,
+    following: user.following || 0,
+    personalDetails: {
+      firstName: user.personalDetails?.firstName || '',
+      lastName: user.personalDetails?.lastName || '',
+      middleName: user.personalDetails?.middleName || '',
+      dateOfBirth: user.personalDetails?.dateOfBirth || '',
+      gender: user.personalDetails?.gender || 'PREFER_NOT_TO_SAY',
+      professionalHeadline: user.personalDetails?.professionalHeadline || '',
+      publicProfileId: user.personalDetails?.publicProfileId || '',
+      aboutMe: user.personalDetails?.aboutMe || '',
+      phone: user.personalDetails?.phone || '',
+      interests: user.personalDetails?.interests || [],
+      professionalBadges: user.personalDetails?.professionalBadges || []
+    },
+    skills: (user.skills || []).map((skill: any, index: number) => ({
+      id: skill.id || `skill_${index}`,
+      name: skill.name || skill,
+      level: skill.level || 'INTERMEDIATE'
+    })),
+    languages: (user.languages || []).map((lang: any, index: number) => ({
+      id: lang.id || `lang_${index}`,
+      name: lang.name || lang,
+      level: lang.level || 'INTERMEDIATE'
+    })),
+    workExperiences: (user.workExperiences || []).map((work: any, index: number) => ({
+      id: work.id || `work_${index}`,
+      company: work.company || '',
+      location: work.location || '',
+      positions: (work.positions || []).map((pos: any, posIndex: number) => ({
+        id: pos.id || `pos_${index}_${posIndex}`,
+        title: pos.title || '',
+        startDate: pos.startDate || '',
+        endDate: pos.endDate || '',
+        isCurrent: pos.isCurrent || false,
+        description: pos.description || '',
+        employmentType: pos.employmentType || 'FULL_TIME',
+        skills: pos.skills || []
+      }))
+    })),
+    education: (user.education || []).map((edu: any, index: number) => ({
+      id: edu.id || `edu_${index}`,
+      degree: edu.degree || '',
+      institution: edu.institution || '',
+      fieldOfStudy: edu.fieldOfStudy || '',
+      startDate: edu.startDate || '',
+      endDate: edu.endDate || '',
+      isCurrent: edu.isCurrent || false,
+      location: edu.location || '',
+      grade: edu.grade || '',
+      description: edu.description || ''
+    })),
+    contacts: (user.contacts || []).map((contact: any, index: number) => ({
+      id: contact.id || `contact_${index}`,
+      email: contact.email || '',
+      isPrimary: contact.isPrimary || false,
+      isVerified: contact.isVerified || false
+    })),
+    socialLinks: user.socialLinks || {},
+    stats: {
+      completedCourses: user.stats?.completedCourses || 0,
+      skillsAssessed: user.stats?.skillsAssessed || 0,
+      careerGoals: user.stats?.careerGoals || 0,
+      networkSize: user.stats?.networkSize || 0
+    },
+    progress: {
+      overall: user.progress?.overall || 0,
+      skills: user.progress?.skills || 0,
+      goals: user.progress?.goals || 0
+    },
+    roles: user.roles || [user.role || 'user'],
+    activeRole: user.activeRole || user.role || 'user',
+    permissions: user.permissions || [],
+    needsOnboarding: user.needsOnboarding || false,
+    needsRoleSelection: user.needsRoleSelection || false,
+    provider: user.provider || 'credentials',
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
+  }
+}
+
+export async function GET(request: NextRequest) {
   try {
     console.log('=== Profile API GET Debug ===')
 
-    // Log request headers for debugging
-    console.log('Request headers:', {
-      cookie: request.headers.get('cookie')?.substring(0, 100) + '...',
-      authorization: request.headers.get('authorization'),
-      'user-agent': request.headers.get('user-agent')
-    })
-
-    // Authenticate request (works for both web sessions and JWT tokens)
     const authUser = await authenticateRequest(request)
     console.log('Auth result:', authUser)
 
@@ -49,111 +397,39 @@ export async function GET (request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('✅ User authenticated:', {
-      id: authUser.id,
-      email: authUser.email
-    })
-
     const client = await clientPromise
     const db = client.db()
-    console.log('✅ Database connected')
+    
+    let user: DatabaseUser | null = null
 
-    // Add more debugging for the database query
-    console.log('Searching for user with ID:', authUser.id)
-    console.log('ID type:', typeof authUser.id)
-    console.log('Is valid ObjectId?', ObjectId.isValid(authUser.id))
-
-    // Try to find user with different approaches
-    let user: UserDocument | null = null
-
-    // Method 1: Try with ObjectId conversion
+    // Try different methods to find the user
     if (ObjectId.isValid(authUser.id)) {
-      user = (await db.collection('users').findOne(
+      user = await db.collection('users').findOne(
         { _id: new ObjectId(authUser.id) },
-        {
-          projection: {
-            password: 0 // Exclude sensitive fields
-          }
-        }
-      )) as UserDocument | null
-      console.log('Method 1 (ObjectId) result:', user ? 'Found' : 'Not found')
+        { projection: { password: 0 } }
+      ) as DatabaseUser | null
     }
 
-    // Method 2: Try with string ID if ObjectId method failed
     if (!user) {
-      user = (await db.collection('users').findOne(
+      user = await db.collection('users').findOne(
         { _id: authUser.id as any },
-        {
-          projection: {
-            password: 0
-          }
-        }
-      )) as UserDocument | null
-      console.log('Method 2 (String ID) result:', user ? 'Found' : 'Not found')
+        { projection: { password: 0 } }
+      ) as DatabaseUser | null
     }
 
-    // Method 3: Try finding by email as fallback
     if (!user && authUser.email) {
-      user = (await db.collection('users').findOne(
+      user = await db.collection('users').findOne(
         { email: authUser.email },
-        {
-          projection: {
-            password: 0
-          }
-        }
-      )) as UserDocument | null
-      console.log('Method 3 (Email) result:', user ? 'Found' : 'Not found')
-    }
-
-    // Method 4: Debug - let's see what users exist
-    if (!user) {
-      const userCount = await db.collection('users').countDocuments()
-      const sampleUsers = await db
-        .collection('users')
-        .find(
-          {},
-          {
-            projection: { _id: 1, email: 1, name: 1 },
-            limit: 3
-          }
-        )
-        .toArray()
-
-      console.log('Total users in DB:', userCount)
-      console.log(
-        'Sample users:',
-        sampleUsers.map(u => ({
-          id: u._id,
-          email: u.email,
-          name: u.name,
-          idType: typeof u._id
-        }))
-      )
+        { projection: { password: 0 } }
+      ) as DatabaseUser | null
     }
 
     if (!user) {
       console.log('❌ User not found in database')
-      return NextResponse.json(
-        {
-          error: 'User not found',
-          debug: {
-            searchedId: authUser.id,
-            idType: typeof authUser.id,
-            isValidObjectId: ObjectId.isValid(authUser.id)
-          }
-        },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    console.log('✅ User found:', {
-      id: user._id,
-      email: user.email,
-      name: user.name
-    })
-
-    // Convert to public user format
-    const profile = toPublicUser(user)
+    const profile = convertToUserProfile(user)
     console.log('✅ Profile converted successfully')
 
     return NextResponse.json(profile)
@@ -162,105 +438,19 @@ export async function GET (request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Internal server error',
-        debug:
-          process.env.NODE_ENV === 'development'
-            ? (error as Error).message
-            : undefined
+        debug: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
       },
       { status: 500 }
     )
   }
 }
 
-/**
- * @swagger
- * /api/user/profile:
- *   patch:
- *     summary: Update user profile
- *     description: Updates specific fields of the user profile. Supports both NextAuth sessions and JWT tokens.
- *     tags:
- *       - User
- *     security:
- *       - bearerAuth: []
- *       - sessionAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               bio:
- *                 type: string
- *               location:
- *                 type: string
- *               company:
- *                 type: string
- *               website:
- *                 type: string
- *               skills:
- *                 type: array
- *                 items:
- *                   type: string
- *               languages:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     name:
- *                       type: string
- *                     level:
- *                       type: string
- *                       enum: [BASIC, INTERMEDIATE, ADVANCED, FLUENT, NATIVE]
- *               interests:
- *                 type: array
- *                 items:
- *                   type: string
- *               socialLinks:
- *                 type: object
- *                 additionalProperties:
- *                   type: string
- *               personalDetails:
- *                 type: object
- *               workExperiences:
- *                 type: array
- *               education:
- *                 type: array
- *               profileImage:
- *                 type: string
- *               coverImage:
- *                 type: string
- *               userType:
- *                 type: string
- *                 enum: [student, professional]
- *               roles:
- *                 type: array
- *                 items:
- *                   type: string
- *               activeRole:
- *                 type: string
- *     responses:
- *       200:
- *         description: Profile updated successfully
- *       400:
- *         description: Invalid input
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: User not found
- */
-export async function PATCH (request: NextRequest) {
+export async function PATCH(request: NextRequest) {
   try {
     console.log('=== Profile API PATCH Debug ===')
 
-    // Authenticate request (works for both web sessions and JWT tokens)
     const authUser = await authenticateRequest(request)
-    console.log('Auth result:', authUser)
-
     if (!authUser) {
-      console.log('❌ Authentication failed')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -286,7 +476,7 @@ export async function PATCH (request: NextRequest) {
     const client = await clientPromise
     const db = client.db()
 
-    // Prepare update data - only include fields that are provided
+    // Prepare update data
     const updateData: any = {
       updatedAt: new Date()
     }
@@ -301,7 +491,7 @@ export async function PATCH (request: NextRequest) {
 
     console.log('Update fields:', Object.keys(updateData))
 
-    // Try both ID formats for the update as well
+    // Update user
     let result
     if (ObjectId.isValid(authUser.id)) {
       result = await db
@@ -314,40 +504,33 @@ export async function PATCH (request: NextRequest) {
     }
 
     if (!result.matchedCount) {
-      console.log('❌ No user matched for update')
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    console.log('✅ User updated successfully')
-
-    // Get updated user data
-    let updatedUser: UserDocument | null = null
-
+    // Get updated user
+    let updatedUser: DatabaseUser | null = null
     if (ObjectId.isValid(authUser.id)) {
-      updatedUser = (await db
+      updatedUser = await db
         .collection('users')
         .findOne(
           { _id: new ObjectId(authUser.id) },
           { projection: { password: 0 } }
-        )) as UserDocument | null
+        ) as DatabaseUser | null
     } else {
-      updatedUser = (await db
+      updatedUser = await db
         .collection('users')
         .findOne(
           { _id: authUser.id as any },
           { projection: { password: 0 } }
-        )) as UserDocument | null
+        ) as DatabaseUser | null
     }
 
     if (!updatedUser) {
-      console.log('❌ Could not fetch updated user')
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Convert to public user format
-    const profile = toPublicUser(updatedUser)
-    console.log('✅ Updated profile converted successfully')
-
+    const profile = convertToUserProfile(updatedUser)
+    
     return NextResponse.json({
       success: true,
       message: 'Profile updated successfully',
@@ -365,10 +548,7 @@ export async function PATCH (request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Internal server error',
-        debug:
-          process.env.NODE_ENV === 'development'
-            ? (error as Error).message
-            : undefined
+        debug: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
       },
       { status: 500 }
     )

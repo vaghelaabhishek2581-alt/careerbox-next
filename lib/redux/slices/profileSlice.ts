@@ -335,6 +335,209 @@ export const uploadProfileImage = createAsyncThunk(
     }
   }
 )
+// Education async thunks
+export const addEducation = createAsyncThunk(
+  'profile/addEducation',
+  async (educationData: Omit<Education, 'id'>, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { profile: ProfileState }
+      const currentEducation = state.profile.profile?.education || []
+
+      const newEducation = {
+        ...educationData,
+        id: Date.now().toString() // Generate new id
+      }
+
+      const updatedEducation = [...currentEducation, newEducation]
+
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ education: updatedEducation })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return newEducation
+    } catch (error) {
+      return rejectWithValue((error as Error).message)
+    }
+  }
+)
+
+export const updateEducation = createAsyncThunk(
+  'profile/updateEducation',
+  async (
+    { id, educationData }: { id: string; educationData: Partial<Education> },
+    { getState, rejectWithValue }
+  ) => {
+    try {
+      const state = getState() as { profile: ProfileState }
+      const currentEducation = state.profile.profile?.education || []
+
+      const updatedEducation = currentEducation.map(edu =>
+        edu.id === id ? { ...edu, ...educationData } : edu
+      )
+
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ education: updatedEducation })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return { id, educationData }
+    } catch (error) {
+      return rejectWithValue((error as Error).message)
+    }
+  }
+)
+
+export const deleteEducation = createAsyncThunk(
+  'profile/deleteEducation',
+  async (educationId: string, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { profile: ProfileState }
+      const currentEducation = state.profile.profile?.education || []
+
+      const updatedEducation = currentEducation.filter(
+        edu => edu.id !== educationId
+      )
+
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ education: updatedEducation })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return educationId
+    } catch (error) {
+      return rejectWithValue((error as Error).message)
+    }
+  }
+)
+
+// Work Experience async thunks
+export const addWorkExperience = createAsyncThunk(
+  'profile/addWorkExperience',
+  async (workData: Omit<WorkExperience, 'id'>, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { profile: ProfileState }
+      const currentWorkExperiences = state.profile.profile?.workExperiences || []
+
+      const newWorkExperience = {
+        ...workData,
+        id: Date.now().toString(), // Simple ID generation
+        positions: workData.positions.map(pos => ({
+          ...pos,
+          id: pos.id || Date.now().toString() + Math.random().toString(36).substr(2, 9)
+        }))
+      }
+
+      const updatedWorkExperiences = [...currentWorkExperiences, newWorkExperience]
+
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ workExperiences: updatedWorkExperiences })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return newWorkExperience
+    } catch (error) {
+      return rejectWithValue((error as Error).message)
+    }
+  }
+)
+
+export const updateWorkExperience = createAsyncThunk(
+  'profile/updateWorkExperience',
+  async (
+    { id, workData }: { id: string; workData: Partial<WorkExperience> },
+    { getState, rejectWithValue }
+  ) => {
+    try {
+      const state = getState() as { profile: ProfileState }
+      const currentWorkExperiences = state.profile.profile?.workExperiences || []
+
+      const updatedWorkExperiences = currentWorkExperiences.map(work =>
+        work.id === id ? { ...work, ...workData } : work
+      )
+
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ workExperiences: updatedWorkExperiences })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return { id, workData }
+    } catch (error) {
+      return rejectWithValue((error as Error).message)
+    }
+  }
+)
+
+export const deleteWorkExperience = createAsyncThunk(
+  'profile/deleteWorkExperience',
+  async (workId: string, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { profile: ProfileState }
+      const currentWorkExperiences = state.profile.profile?.workExperiences || []
+
+      const updatedWorkExperiences = currentWorkExperiences.filter(
+        work => work.id !== workId
+      )
+
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ workExperiences: updatedWorkExperiences })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return workId
+    } catch (error) {
+      return rejectWithValue((error as Error).message)
+    }
+  }
+)
 
 const profileSlice = createSlice({
   name: 'profile',
@@ -467,6 +670,68 @@ const profileSlice = createSlice({
           } else if (type === 'cover') {
             state.profile.coverImage = fileUrl
           }
+        }
+      })
+    
+// Work Experience
+      .addCase(addWorkExperience.fulfilled, (state, action) => {
+        if (state.profile) {
+          if (!state.profile.workExperiences) {
+            state.profile.workExperiences = []
+          }
+          state.profile.workExperiences.push(action.payload)
+        }
+      })
+      .addCase(updateWorkExperience.fulfilled, (state, action) => {
+        if (state.profile) {
+          const { id, workData } = action.payload
+          const workIndex = state.profile.workExperiences.findIndex(
+            work => work.id === id
+          )
+          if (workIndex !== -1) {
+            state.profile.workExperiences[workIndex] = {
+              ...state.profile.workExperiences[workIndex],
+              ...workData
+            }
+          }
+        }
+      })
+      .addCase(deleteWorkExperience.fulfilled, (state, action) => {
+        if (state.profile) {
+          state.profile.workExperiences = state.profile.workExperiences.filter(
+            work => work.id !== action.payload
+          )
+        }
+      })
+
+      // Education
+      .addCase(addEducation.fulfilled, (state, action) => {
+        if (state.profile) {
+          if (!state.profile.education) {
+            state.profile.education = []
+          }
+          state.profile.education.push(action.payload)
+        }
+      })
+      .addCase(updateEducation.fulfilled, (state, action) => {
+        if (state.profile) {
+          const { id, educationData } = action.payload
+          const eduIndex = state.profile.education.findIndex(
+            edu => edu.id === id
+          )
+          if (eduIndex !== -1) {
+            state.profile.education[eduIndex] = {
+              ...state.profile.education[eduIndex],
+              ...educationData
+            }
+          }
+        }
+      })
+      .addCase(deleteEducation.fulfilled, (state, action) => {
+        if (state.profile) {
+          state.profile.education = state.profile.education.filter(
+            edu => edu.id !== action.payload
+          )
         }
       })
   }

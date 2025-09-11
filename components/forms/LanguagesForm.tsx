@@ -3,7 +3,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,12 +30,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { useToast } from "@/components/ui/use-toast";
 import { addLanguage, updateLanguage, deleteLanguage } from "@/lib/redux/slices/profileSlice";
 import type { Language } from "@/lib/types/profile.unified";
 
 const languageSchema = z.object({
   name: z.string().min(1, "Language name is required"),
-  level: z.enum(["Basic", "Intermediate", "Advanced", "Fluent", "Native"]),
+  level: z.enum(["BASIC", "INTERMEDIATE", "ADVANCED", "FLUENT", "NATIVE"]),
 });
 
 type LanguageFormData = z.infer<typeof languageSchema>;
@@ -50,6 +51,7 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
   onClose,
 }) => {
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const profile = useAppSelector((state) => state.profile.profile);
   const [editingLanguage, setEditingLanguage] = React.useState<Language | null>(
     null
@@ -63,14 +65,39 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
     },
   });
 
-  const onSubmit = (data: LanguageFormData) => {
-    if (editingLanguage) {
-      dispatch(updateLanguage({ id: editingLanguage.id, languageData: data }));
+  // Cleanup form state on unmount
+  React.useEffect(() => {
+    return () => {
+      form.reset();
       setEditingLanguage(null);
-    } else {
-      dispatch(addLanguage(data));
+    };
+  }, []);
+
+  const onSubmit = async (data: LanguageFormData) => {
+    try {
+      if (editingLanguage) {
+        await dispatch(updateLanguage({ id: editingLanguage.id, languageData: data })).unwrap();
+        toast({
+          title: "Language Updated",
+          description: "Language proficiency has been updated successfully."
+        });
+        setEditingLanguage(null);
+      } else {
+        await dispatch(addLanguage(data)).unwrap();
+        toast({
+          title: "Language Added",
+          description: "New language proficiency has been added successfully."
+        });
+      }
+      form.reset();
+    } catch (error) {
+      console.error('Failed to save language:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save language proficiency. Please try again."
+      });
     }
-    form.reset();
   };
 
   const handleEditLanguage = (language: Language) => {
@@ -79,11 +106,24 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
     form.setValue("level", language.level);
   };
 
-  const handleDeleteLanguage = (languageId: string) => {
-    dispatch(deleteLanguage(languageId));
-    if (editingLanguage?.id === languageId) {
-      setEditingLanguage(null);
-      form.reset();
+  const handleDeleteLanguage = async (languageId: string) => {
+    try {
+      await dispatch(deleteLanguage(languageId)).unwrap();
+      toast({
+        title: "Language Deleted",
+        description: "Language proficiency has been removed successfully."
+      });
+      if (editingLanguage?.id === languageId) {
+        setEditingLanguage(null);
+        form.reset();
+      }
+    } catch (error) {
+      console.error('Failed to delete language:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete language proficiency. Please try again."
+      });
     }
   };
 
@@ -193,13 +233,13 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Basic">Basic</SelectItem>
-                              <SelectItem value="Intermediate">
+                              <SelectItem value="BASIC">Basic</SelectItem>
+                              <SelectItem value="INTERMEDIATE">
                                 Intermediate
                               </SelectItem>
-                              <SelectItem value="Advanced">Advanced</SelectItem>
-                              <SelectItem value="Fluent">Fluent</SelectItem>
-                              <SelectItem value="Native">Native</SelectItem>
+                              <SelectItem value="ADVANCED">Advanced</SelectItem>
+                              <SelectItem value="FLUENT">Fluent</SelectItem>
+                              <SelectItem value="NATIVE">Native</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -212,9 +252,19 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
                     <Button
                       type="submit"
                       className="bg-purple-600 hover:bg-purple-700"
+                      disabled={form.formState.isSubmitting}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {editingLanguage ? "Update Language" : "Add Language"}
+                      {form.formState.isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          {editingLanguage ? "Updating..." : "Adding..."}
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          {editingLanguage ? "Update Language" : "Add Language"}
+                        </>
+                      )}
                     </Button>
                     {editingLanguage && (
                       <Button

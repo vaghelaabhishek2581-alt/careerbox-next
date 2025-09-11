@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,13 +37,15 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { addEducation, updateEducation } from "@/lib/redux/slices/educationSlice";
-import type { Education } from "@/lib/types/profile.unified";
+import { useToast } from "@/components/ui/use-toast";
 import { useAppDispatch } from "@/lib/redux/hooks";
+import { addEducation, updateEducation } from "@/lib/redux/slices/profileSlice";
+import type { Education } from "@/lib/types/profile.unified";
 
 const educationSchema = z
   .object({
     degree: z.string().min(1, "Course Level/Degree is required"),
+    fieldOfStudy: z.string().min(1, "Field of study is required"),
     institution: z.string().min(1, "Institution name is required"),
     startDate: z.date({
       required_error: "Start date is required",
@@ -85,15 +87,17 @@ export const EducationForm: React.FC<EducationFormProps> = ({
   education,
 }) => {
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const isEditing = !!education;
 
   const form = useForm<EducationFormData>({
     resolver: zodResolver(educationSchema),
     defaultValues: {
       degree: education?.degree || "",
+      fieldOfStudy: education?.fieldOfStudy || "",
       institution: education?.institution || "",
-      startDate: education?.startDate || undefined,
-      endDate: education?.endDate || null,
+      startDate: education?.startDate ? new Date(education.startDate) : new Date(),
+      endDate: education?.endDate ? new Date(education.endDate) : null,
       isCurrent: education?.isCurrent || false,
       location: education?.location || "",
       grade: education?.grade || "",
@@ -103,29 +107,54 @@ export const EducationForm: React.FC<EducationFormProps> = ({
 
   const isCurrent = form.watch("isCurrent");
 
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      form.reset();
+    }
+  }, [open, form]);
+
+  // Handle current studying toggle
   React.useEffect(() => {
     if (isCurrent) {
-      form.setValue("endDate", null);
+      form.setValue("endDate", null, { shouldValidate: true });
     }
   }, [isCurrent, form]);
 
   const onSubmit = async (data: EducationFormData) => {
     const educationData = {
       ...data,
-      endDate: data.isCurrent ? null : data.endDate,
+      id: education?.id || Date.now().toString(),
+      startDate: data.startDate.toISOString(),
+      endDate: data.isCurrent
+        ? undefined
+        : data.endDate
+        ? data.endDate.toISOString()
+        : undefined,
     };
 
     try {
       if (isEditing && education) {
-        await dispatch(updateEducation({ id: education.id, educationData })).unwrap();
+        await dispatch(
+          updateEducation({ id: education.id, educationData })
+        ).unwrap();
       } else {
         await dispatch(addEducation(educationData)).unwrap();
       }
+      toast({
+        title: isEditing ? "Education Updated" : "Education Added",
+        description: isEditing
+          ? "Education details have been updated successfully."
+          : "New education details have been added successfully.",
+      });
       onClose();
-      form.reset();
     } catch (error) {
-      console.error('Failed to save education:', error);
-      // TODO: Show error toast
+      console.error("Failed to save education:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save education details. Please try again.",
+      });
     }
   };
 
@@ -142,11 +171,16 @@ export const EducationForm: React.FC<EducationFormProps> = ({
     "Online Course",
   ];
 
-  const fieldOfStudy = [
+  const fieldsOfStudy = [
     "Computer Science",
     "Information Technology",
+    "Software Engineering",
+    "Data Science",
+    "Artificial Intelligence",
+    "Cybersecurity",
     "Engineering",
     "Business Administration",
+    "Management",
     "Mathematics",
     "Physics",
     "Chemistry",
@@ -161,6 +195,9 @@ export const EducationForm: React.FC<EducationFormProps> = ({
     "Art & Design",
     "Marketing",
     "Finance",
+    "Accounting",
+    "Law",
+    "Education",
     "Other",
   ];
 
@@ -204,46 +241,39 @@ export const EducationForm: React.FC<EducationFormProps> = ({
               )}
             />
 
-            {/* Course Name / Branch / Stream */}
+            {/* Field of Study */}
+            <FormField
+              control={form.control}
+              name="fieldOfStudy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Field of Study *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Field of Study" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {fieldsOfStudy.map((field) => (
+                        <SelectItem key={field} value={field}>
+                          {field}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Institution Name */}
             <FormField
               control={form.control}
               name="institution"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Course Name / Branch / Stream *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter Course Name / Branch"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Specialization / Field of Study */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Specialization / Field of Study</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter Specialization" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* School / College / Institute */}
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>School / College / Institute</FormLabel>
+                  <FormLabel>School / College / Institute *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter Institution Name" {...field} />
                   </FormControl>
@@ -252,66 +282,120 @@ export const EducationForm: React.FC<EducationFormProps> = ({
               )}
             />
 
-            {/* Exam Board / University */}
+            {/* Location */}
             <FormField
               control={form.control}
-              name="grade"
+              name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Exam Board / University *</FormLabel>
+                  <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Enter Exam Board / University"
-                      {...field}
-                    />
+                    <Input placeholder="City, Country" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Passing Year */}
+            {/* Grade/GPA */}
             <FormField
               control={form.control}
-              name="endDate"
+              name="grade"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Passing Year</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          disabled={isCurrent}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            (!field.value || isCurrent) &&
-                              "text-muted-foreground"
-                          )}
-                        >
-                          {field.value && !isCurrent ? (
-                            format(field.value, "yyyy")
-                          ) : (
-                            <span>Enter End Year</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                                    selected={field.value || undefined}
-                        onSelect={field.onChange}
-                                    disabled={(date) => date ? date > new Date() : false}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormLabel>Grade / GPA / Percentage</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., 3.8 GPA, 85%, First Class" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Start Date and End Date */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "MMM yyyy")
+                            ) : (
+                              <span>MM/YYYY</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={(date) => date ? date > new Date() : false}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            disabled={isCurrent}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              (!field.value || isCurrent) &&
+                                "text-muted-foreground"
+                            )}
+                          >
+                            {field.value && !isCurrent ? (
+                              format(field.value, "MMM yyyy")
+                            ) : (
+                              <span>MM/YYYY</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={(date) => date ? date > new Date() : false}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Currently Studying Switch */}
             <FormField
@@ -337,13 +421,45 @@ export const EducationForm: React.FC<EducationFormProps> = ({
               )}
             />
 
+            {/* Description */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Additional details about your education (activities, achievements, relevant coursework, etc.)"
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Form Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {isEditing ? "Update Education" : "Save Education"}
+              <Button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {isEditing ? "Updating..." : "Saving..."}
+                  </>
+                ) : isEditing ? (
+                  "Update Education"
+                ) : (
+                  "Save Education"
+                )}
               </Button>
             </div>
           </form>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Edit2,
   Plus,
@@ -25,6 +25,7 @@ import {
   Target,
   BarChart2,
   MessageSquare,
+  Upload,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ import { EducationForm } from "@/components/forms/EducationForm";
 import { SkillsForm } from "@/components/forms/SkillsForm";
 import { LanguagesForm } from "@/components/forms/LanguagesForm";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { fetchProfile } from "@/lib/redux/slices/profileSlice";
+import { fetchProfile, uploadProfileImage } from "@/lib/redux/slices/profileSlice";
 import type {
   UserProfile,
   Skill,
@@ -58,8 +59,6 @@ type ModalType =
   | "education"
   | "skills"
   | "languages"
-  | "cover"
-  | "profile"
   | null;
 
 export default function ModernProfileDashboard() {
@@ -69,6 +68,10 @@ export default function ModernProfileDashboard() {
   const error = useAppSelector((state) => state.profile.error);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
+  
+  // File input refs for image uploads
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
+  const coverImageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     dispatch(fetchProfile());
@@ -82,6 +85,22 @@ export default function ModernProfileDashboard() {
   const closeModal = () => {
     setActiveModal(null);
     setEditingItem(null);
+  };
+
+  // Handle profile image upload
+  const handleProfileImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      dispatch(uploadProfileImage({ type: 'profile', file }));
+    }
+  };
+
+  // Handle cover image upload
+  const handleCoverImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      dispatch(uploadProfileImage({ type: 'cover', file }));
+    }
   };
 
   if (isLoading || !profile) {
@@ -108,6 +127,22 @@ export default function ModernProfileDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={profileImageInputRef}
+        onChange={handleProfileImageUpload}
+        accept="image/*"
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={coverImageInputRef}
+        onChange={handleCoverImageUpload}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* Cover Image Section */}
       <div className="relative">
         <div
@@ -119,7 +154,7 @@ export default function ModernProfileDashboard() {
             variant="secondary"
             size="sm"
             className="absolute top-4 right-4 bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-            onClick={() => openModal("cover")}
+            onClick={() => coverImageInputRef.current?.click()}
           >
             <Camera className="h-4 w-4 mr-2" />
             Edit Cover
@@ -140,7 +175,7 @@ export default function ModernProfileDashboard() {
               size="sm"
               variant="secondary"
               className="absolute bottom-2 right-2 h-8 w-8 rounded-full p-0 bg-white shadow-md"
-              onClick={() => openModal("profile")}
+              onClick={() => profileImageInputRef.current?.click()}
             >
               <Camera className="h-4 w-4" />
             </Button>
@@ -154,7 +189,9 @@ export default function ModernProfileDashboard() {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-gray-900">
-                {profile?.name || "Unnamed Profile"}
+                {profile?.personalDetails?.firstName && profile?.personalDetails?.lastName 
+                  ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
+                  : profile?.name || "Unnamed Profile"}
               </h1>
               {profile?.verified && (
                 <Verified className="h-6 w-6 text-blue-600" />
@@ -290,18 +327,19 @@ export default function ModernProfileDashboard() {
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  {profile?.skills.map((skill: Skill) => (
-                    <div
-                      key={skill.id}
-                      className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
-                    >
-                      <span className="text-sm font-medium">{skill.name}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {skill.level}
-                      </Badge>
-                    </div>
-                  ))}
-                  {profile?.skills.length === 0 && (
+                  {profile?.skills && profile.skills.length > 0 ? (
+                    profile.skills.map((skill: Skill) => (
+                      <div
+                        key={skill.id}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                      >
+                        <span className="text-sm font-medium">{skill.name}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {skill.level}
+                        </Badge>
+                      </div>
+                    ))
+                  ) : (
                     <p className="text-sm text-gray-500">
                       No skills added yet.
                     </p>
@@ -327,33 +365,34 @@ export default function ModernProfileDashboard() {
                   </Button>
                 </div>
                 <div className="space-y-3">
-                  {profile?.languages.map((language: Language) => (
-                    <div
-                      key={language.id}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm font-medium">
-                        {language.name}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${
-                          language.level === "Native"
-                            ? "border-green-200 text-green-700"
-                            : language.level === "Fluent"
-                            ? "border-purple-200 text-purple-700"
-                            : language.level === "Advanced"
-                            ? "border-blue-200 text-blue-700"
-                            : language.level === "Intermediate"
-                            ? "border-orange-200 text-orange-700"
-                            : "border-red-200 text-red-700"
-                        }`}
+                  {profile?.languages && profile.languages.length > 0 ? (
+                    profile.languages.map((language: Language) => (
+                      <div
+                        key={language.id}
+                        className="flex items-center justify-between"
                       >
-                        {language.level}
-                      </Badge>
-                    </div>
-                  ))}
-                  {profile?.languages.length === 0 && (
+                        <span className="text-sm font-medium">
+                          {language.name}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${
+                            language.level === "NATIVE"
+                              ? "border-green-200 text-green-700"
+                              : language.level === "FLUENT"
+                              ? "border-purple-200 text-purple-700"
+                              : language.level === "ADVANCED"
+                              ? "border-blue-200 text-blue-700"
+                              : language.level === "INTERMEDIATE"
+                              ? "border-orange-200 text-orange-700"
+                              : "border-red-200 text-red-700"
+                          }`}
+                        >
+                          {language.level.toUpperCase()}
+                        </Badge>
+                      </div>
+                    ))
+                  ) : (
                     <p className="text-sm text-gray-500">
                       No languages added yet.
                     </p>
@@ -375,7 +414,7 @@ export default function ModernProfileDashboard() {
                         Completed Courses
                       </p>
                       <h3 className="text-2xl font-bold">
-                        {profile?.stats?.completedCourses}
+                        {profile?.stats?.completedCourses || 0}
                       </h3>
                     </div>
                     <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -393,7 +432,7 @@ export default function ModernProfileDashboard() {
                         Skills Assessed
                       </p>
                       <h3 className="text-2xl font-bold">
-                        {profile?.stats?.skillsAssessed}
+                        {profile?.stats?.skillsAssessed || 0}
                       </h3>
                     </div>
                     <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -411,7 +450,7 @@ export default function ModernProfileDashboard() {
                         Career Goals
                       </p>
                       <h3 className="text-2xl font-bold">
-                        {profile?.stats?.careerGoals}
+                        {profile?.stats?.careerGoals || 0}
                       </h3>
                     </div>
                     <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
@@ -429,7 +468,7 @@ export default function ModernProfileDashboard() {
                         Network
                       </p>
                       <h3 className="text-2xl font-bold">
-                        {profile?.stats?.networkSize}
+                        {profile?.stats?.networkSize || 0}
                       </h3>
                     </div>
                     <div className="h-10 w-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -458,80 +497,81 @@ export default function ModernProfileDashboard() {
                 </div>
 
                 <div className="space-y-6">
-                  {profile?.workExperiences.map((experience: WorkExperience) => (
-                    <div key={experience.id} className="relative group">
-                      <div className="flex items-start gap-4">
-                        <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Building2 className="h-6 w-6 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h3 className="font-semibold text-gray-900">
-                                {experience.company}
-                              </h3>
-                              {experience.location && (
-                                <p className="text-sm text-gray-500 flex items-center mt-1">
-                                  <MapPin className="h-3 w-3 mr-1" />
-                                  {experience.location}
-                                </p>
-                              )}
-                              <div className="mt-4 space-y-4">
-                                {experience.positions.map((position: WorkPosition) => (
-                                  <div key={position.id} className="border-l-2 border-gray-200 pl-4">
-                                    <h4 className="font-medium text-gray-900">{position.title}</h4>
-                                    <p className="text-sm text-gray-500">
-                                      {position.employmentType} ·{" "}
-                                      {new Date(position.startDate).toLocaleDateString("en-US", {
-                                        month: "short",
-                                        year: "numeric",
-                                      })}{" "}
-                                      -{" "}
-                                      {position.isCurrent
-                                        ? "Present"
-                                        : position.endDate
-                                        ? new Date(position.endDate).toLocaleDateString("en-US", {
-                                            month: "short",
-                                            year: "numeric",
-                                          })
-                                        : ""}
-                                    </p>
-                                    {position.description && (
-                                      <p className="text-sm text-gray-700 mt-2">
-                                        {position.description}
+                  {profile?.workExperiences && profile.workExperiences.length > 0 ? (
+                    profile.workExperiences.map((experience: WorkExperience) => (
+                      <div key={experience.id} className="relative group">
+                        <div className="flex items-start gap-4">
+                          <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Building2 className="h-6 w-6 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="font-semibold text-gray-900">
+                                  {experience.company}
+                                </h3>
+                                {experience.location && (
+                                  <p className="text-sm text-gray-500 flex items-center mt-1">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    {experience.location}
+                                  </p>
+                                )}
+                                <div className="mt-4 space-y-4">
+                                  {experience.positions.map((position: WorkPosition) => (
+                                    <div key={position.id} className="border-l-2 border-gray-200 pl-4">
+                                      <h4 className="font-medium text-gray-900">{position.title}</h4>
+                                      <p className="text-sm text-gray-500">
+                                        {position.employmentType} ·{" "}
+                                        {new Date(position.startDate).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          year: "numeric",
+                                        })}{" "}
+                                        -{" "}
+                                        {position.isCurrent
+                                          ? "Present"
+                                          : position.endDate
+                                          ? new Date(position.endDate).toLocaleDateString("en-US", {
+                                              month: "short",
+                                              year: "numeric",
+                                            })
+                                          : ""}
                                       </p>
-                                    )}
-                                    {position.skills && position.skills.length > 0 && (
-                                      <div className="flex flex-wrap gap-2 mt-3">
-                                        {position.skills.map((skill: string, index: number) => (
-                                          <Badge
-                                            key={index}
-                                            variant="secondary"
-                                            className="text-xs"
-                                          >
-                                            {skill}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
+                                      {position.description && (
+                                        <p className="text-sm text-gray-700 mt-2">
+                                          {position.description}
+                                        </p>
+                                      )}
+                                      {position.skills && position.skills.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-3">
+                                          {position.skills.map((skill: string, index: number) => (
+                                            <Badge
+                                              key={index}
+                                              variant="secondary"
+                                              className="text-xs"
+                                            >
+                                              {skill}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => openModal("work", experience)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => openModal("work", experience)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  {profile?.workExperiences.length === 0 && (
+                    ))
+                  ) : (
                     <p className="text-sm text-gray-500">
                       No work experience added yet.
                     </p>
@@ -558,55 +598,56 @@ export default function ModernProfileDashboard() {
                 </div>
 
                 <div className="space-y-6">
-                  {profile?.education.map((education: Education) => (
-                    <div key={education.id} className="relative group">
-                      <div className="flex items-start gap-4">
-                        <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <GraduationCap className="h-6 w-6 text-green-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h3 className="font-semibold text-gray-900">
-                                {education.degree}
-                              </h3>
-                              <p className="text-gray-600">
-                                {education.institution}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {education.startDate
-                                  ? new Date(
-                                      education.startDate
-                                    ).toLocaleDateString("en-US", {
-                                      year: "numeric",
-                                    })
-                                  : ""}{" "}
-                                -{" "}
-                                {education.isCurrent
-                                  ? "Present"
-                                  : education.endDate
-                                  ? new Date(
-                                      education.endDate
-                                    ).toLocaleDateString("en-US", {
-                                      year: "numeric",
-                                    })
-                                  : ""}
-                              </p>
+                  {profile?.education && profile.education.length > 0 ? (
+                    profile.education.map((education: Education) => (
+                      <div key={education.id} className="relative group">
+                        <div className="flex items-start gap-4">
+                          <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <GraduationCap className="h-6 w-6 text-green-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="font-semibold text-gray-900">
+                                  {education.degree}
+                                </h3>
+                                <p className="text-gray-600">
+                                  {education.institution}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {education.startDate
+                                    ? new Date(
+                                        education.startDate
+                                      ).toLocaleDateString("en-US", {
+                                        year: "numeric",
+                                      })
+                                    : ""}{" "}
+                                  -{" "}
+                                  {education.isCurrent
+                                    ? "Present"
+                                    : education.endDate
+                                    ? new Date(
+                                        education.endDate
+                                      ).toLocaleDateString("en-US", {
+                                        year: "numeric",
+                                      })
+                                    : ""}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => openModal("education", education)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => openModal("education", education)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  {profile?.education.length === 0 && (
+                    ))
+                  ) : (
                     <p className="text-sm text-gray-500">
                       No education added yet.
                     </p>
@@ -626,11 +667,11 @@ export default function ModernProfileDashboard() {
                         Overall Progress
                       </span>
                       <span className="text-sm text-gray-500">
-                        {profile?.progress?.overall}%
+                        {profile?.progress?.overall || 0}%
                       </span>
                     </div>
                     <Progress
-                      value={profile?.progress?.overall}
+                      value={profile?.progress?.overall || 0}
                       className="h-2"
                     />
                   </div>
@@ -640,10 +681,10 @@ export default function ModernProfileDashboard() {
                         Skills Development
                       </span>
                       <span className="text-sm text-gray-500">
-                        {profile?.progress?.skills}%
+                        {profile?.progress?.skills || 0}%
                       </span>
                     </div>
-                    <Progress value={profile?.progress?.skills} className="h-2" />
+                    <Progress value={profile?.progress?.skills || 0} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-2">
@@ -651,10 +692,10 @@ export default function ModernProfileDashboard() {
                         Goal Achievement
                       </span>
                       <span className="text-sm text-gray-500">
-                        {profile?.progress?.goals}%
+                        {profile?.progress?.goals || 0}%
                       </span>
                     </div>
-                    <Progress value={profile?.progress?.goals} className="h-2" />
+                    <Progress value={profile?.progress?.goals || 0} className="h-2" />
                   </div>
                 </div>
               </CardContent>
