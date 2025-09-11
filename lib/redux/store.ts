@@ -6,7 +6,13 @@ import organizationReducer from './slices/organizationSlice'
 import businessReducer from './slices/businessSlice'
 import profileReducer from './slices/profileSlice'
 import sessionReducer from './slices/sessionSlice'
-
+import leadReducer from './slices/leadSlice'
+import jobReducer from './slices/jobSlice'
+import courseReducer from './slices/courseSlice'
+import examReducer from './slices/examSlice'
+import subscriptionReducer from './slices/subscriptionSlice'
+import instituteReducer from './slices/instituteSlice'
+import applicationReducer from './slices/applicationSlice'
 
 export const store = configureStore({
   reducer: {
@@ -16,7 +22,14 @@ export const store = configureStore({
     organization: organizationReducer,
     business: businessReducer,
     profile: profileReducer,
-    session: sessionReducer
+    session: sessionReducer,
+    leads: leadReducer,
+    jobs: jobReducer,
+    courses: courseReducer,
+    exams: examReducer,
+    subscription: subscriptionReducer,
+    institute: instituteReducer,
+    applications: applicationReducer
   }
 })
 
