@@ -21,7 +21,9 @@ export default withAuth(
         needsOnboarding: token?.needsOnboarding,
         needsRoleSelection: token?.needsRoleSelection,
         activeRole: token?.activeRole,
-        email: token?.email
+        role: token?.role,
+        email: token?.email,
+        tokenKeys: Object.keys(token || {})
       })
     }
 
@@ -47,13 +49,23 @@ export default withAuth(
 
     // Force /dashboard to role-based dashboard for authenticated users
     if (isMainDashboard && isAuth) {
+      console.log('Main dashboard access - checking onboarding status:', {
+        needsOnboarding: token?.needsOnboarding,
+        needsRoleSelection: token?.needsRoleSelection,
+        role: token?.role,
+        activeRole: token?.activeRole
+      })
+      
       // If user needs onboarding, redirect to onboarding first
       if (token?.needsOnboarding || token?.needsRoleSelection) {
+        console.log('Redirecting to onboarding')
         return NextResponse.redirect(new URL('/onboarding', req.url))
       }
       
       // Redirect to appropriate dashboard based on role
       const userRole = token?.role || 'user'
+      console.log('Redirecting to role-based dashboard:', userRole)
+      
       if (userRole === 'admin') {
         return NextResponse.redirect(new URL('/dashboard/admin', req.url))
       } else if (userRole === 'business' && token?.subscriptionActive) {

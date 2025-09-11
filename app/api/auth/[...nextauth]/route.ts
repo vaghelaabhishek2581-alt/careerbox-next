@@ -75,12 +75,22 @@ export const authOptions: AuthOptions = {
     async jwt ({ token, user, account }) {
       if (account && user) {
         const u = user as any
+        console.log('JWT callback - user data:', {
+          id: u.id,
+          roles: u.roles,
+          activeRole: u.activeRole,
+          needsOnboarding: u.needsOnboarding,
+          needsRoleSelection: u.needsRoleSelection,
+          provider: account.provider
+        })
+        
         token.sub = (u.id as string) ?? token.sub
-        ;(token as any).roles = u.roles
+        ;(token as any).roles = u.roles || []
         ;(token as any).activeRole = u.activeRole ?? null
-        ;(token as any).needsRoleSelection = u.needsRoleSelection
-        ;(token as any).needsOnboarding = u.needsOnboarding
+        ;(token as any).needsRoleSelection = u.needsRoleSelection ?? false
+        ;(token as any).needsOnboarding = u.needsOnboarding ?? false
         ;(token as any).provider = account.provider
+        ;(token as any).role = u.role || 'user'
         return token
       }
 
@@ -123,12 +133,22 @@ export const authOptions: AuthOptions = {
     },
     async session ({ session, token }) {
       if (session?.user) {
+        console.log('Session callback - token data:', {
+          sub: token.sub,
+          roles: token.roles,
+          activeRole: token.activeRole,
+          needsOnboarding: token.needsOnboarding,
+          needsRoleSelection: token.needsRoleSelection,
+          provider: token.provider
+        })
+        
         session.user.id = token.sub!
         session.user.roles = token.roles as string[]
         session.user.activeRole = token.activeRole as string
         session.user.needsRoleSelection = token.needsRoleSelection as boolean
         session.user.needsOnboarding = token.needsOnboarding as boolean
         session.user.provider = token.provider as string
+        session.user.role = token.role as string || 'user'
       }
       return session
     },
@@ -136,78 +156,70 @@ export const authOptions: AuthOptions = {
       if (account?.provider === 'google') {
         try {
           console.log('Google sign-in attempt for:', user.email)
-          const baseUrl =
-            process.env.NEXTAUTH_URL ||
-            (process.env.VERCEL_URL
-              ? `https://${process.env.VERCEL_URL}`
-              : 'http://localhost:3000')
-
-          // First, try to find existing user
-          const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: user.email,
-              provider: 'google'
-            })
+          
+          // Import the user creation utility
+          const { createUserWithProfile } = await import('@/lib/utils/user-creation')
+          const { connectToDatabase } = await import('@/lib/db/mongodb')
+          
+          const { db } = await connectToDatabase()
+          
+          // Check if user already exists
+          const existingUser = await db.collection('users').findOne({
+            email: user.email?.toLowerCase()
           })
-
-          const loginData = await loginResponse.json()
-
-          // If user exists, use their data
-          if (loginResponse.ok && loginData.success) {
+          
+          if (existingUser) {
             console.log('Existing user found:', user.email)
+            console.log('User onboarding status:', {
+              needsOnboarding: existingUser.needsOnboarding,
+              needsRoleSelection: existingUser.needsRoleSelection,
+              activeRole: existingUser.activeRole
+            })
+            
+            // Update user data in NextAuth session
             const u = user as any
-            u.id = loginData.user.id
-            u.roles = loginData.user.roles || []
-            u.activeRole = loginData.user.activeRole || null
-            u.needsOnboarding = loginData.user.needsOnboarding || false
-            u.needsRoleSelection = loginData.user.needsRoleSelection || false
+            u.id = existingUser._id.toString()
+            u.roles = existingUser.roles || []
+            u.activeRole = existingUser.activeRole || null
+            u.needsOnboarding = existingUser.needsOnboarding || false
+            u.needsRoleSelection = existingUser.needsRoleSelection || false
+            u.provider = existingUser.provider || 'google'
+            u.role = existingUser.role || 'user'
+            
             return true
           }
-
-          // If user not found (401), create new user
-          if (loginResponse.status === 401) {
-            console.log('Creating new user for:', user.email)
-            const registerResponse = await fetch(
-              `${baseUrl}/api/auth/register`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  email: user.email,
-                  name: user.name,
-                  role: 'user', // Default role for new users
-                  provider: 'google',
-                  image: user.image
-                })
-              }
-            )
-
-            const registerData = await registerResponse.json()
-
-            if (registerResponse.ok && registerData.success) {
-              console.log('New user created successfully:', user.email)
-              const u = user as any
-              u.id = registerData.user.id
-              u.roles = registerData.user.roles || []
-              u.activeRole = registerData.user.activeRole || null
-              u.needsOnboarding = registerData.user.needsOnboarding || false
-              u.needsRoleSelection =
-                registerData.user.needsRoleSelection || false
-              return true
-            } else {
-              console.error('User registration failed:', registerData.message)
-              return false
-            }
+          
+          // Create new user
+          console.log('Creating new user for:', user.email)
+          const result = await createUserWithProfile({
+            name: user.name || '',
+            email: user.email || '',
+            provider: 'google',
+            image: user.image
+          })
+          
+          if (result.success && result.user) {
+            console.log('New user created successfully:', user.email)
+            console.log('New user onboarding status:', {
+              needsOnboarding: result.user.needsOnboarding,
+              needsRoleSelection: result.user.needsRoleSelection,
+              activeRole: result.user.activeRole
+            })
+            
+            const u = user as any
+            u.id = result.user._id.toString()
+            u.roles = result.user.roles || []
+            u.activeRole = result.user.activeRole || null
+            u.needsOnboarding = result.user.needsOnboarding || false
+            u.needsRoleSelection = result.user.needsRoleSelection || false
+            u.provider = result.user.provider || 'google'
+            u.role = result.user.role || 'user'
+            
+            return true
+          } else {
+            console.error('User creation failed:', result.error)
+            return false
           }
-
-          console.error('Google authentication failed - unexpected response')
-          return false
         } catch (error) {
           console.error('Google sign-in error:', error)
           return false
@@ -216,9 +228,11 @@ export const authOptions: AuthOptions = {
       return true
     },
     async redirect ({ url, baseUrl }) {
+      console.log('NextAuth redirect called with:', { url, baseUrl })
+      
       // Handle onboarding redirection
       if (url.includes('/auth/onboarding') || url.includes('/onboarding')) {
-        return `${baseUrl}/auth/onboarding`
+        return `${baseUrl}/onboarding`
       }
 
       // If redirecting to a relative path, prepend baseUrl
@@ -227,8 +241,8 @@ export const authOptions: AuthOptions = {
       // If URL has same origin as baseUrl, allow it
       if (new URL(url).origin === baseUrl) return url
 
-      // Default fallback
-      return baseUrl
+      // Default fallback to dashboard
+      return `${baseUrl}/dashboard`
     }
   },
   pages: {

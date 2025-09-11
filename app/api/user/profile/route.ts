@@ -264,6 +264,7 @@ export interface DatabaseUser {
   userType?: string
   profileImage?: string
   coverImage?: string
+  avatar?: string
   location?: string
   website?: string
   bio?: string
@@ -272,6 +273,20 @@ export interface DatabaseUser {
   followers?: number
   following?: number
   personalDetails?: any
+  profile?: {
+    personalDetails?: any
+    skills?: any[]
+    languages?: any[]
+    workExperience?: any[]
+    education?: any[]
+    certifications?: any[]
+    achievements?: any[]
+    socialLinks?: any
+    preferences?: {
+      notifications?: any
+      privacy?: any
+    }
+  }
   skills?: any[]
   languages?: any[]
   workExperiences?: any[]
@@ -291,45 +306,51 @@ export interface DatabaseUser {
 }
 
 function convertToUserProfile(user: DatabaseUser) {
+  // Handle both old and new user structures
+  const personalDetails = user.personalDetails || user.profile?.personalDetails || {
+    firstName: user.name?.split(' ')[0] || '',
+    lastName: user.name?.split(' ').slice(1).join(' ') || '',
+    middleName: '',
+    dateOfBirth: '',
+    gender: 'PREFER_NOT_TO_SAY',
+    professionalHeadline: user.activeRole === 'student' ? 'Student' :
+                         user.activeRole === 'professional' ? 'Professional' :
+                         user.activeRole === 'institute_admin' ? 'Institute Administrator' :
+                         user.activeRole === 'business_owner' ? 'Business Owner' : 'User',
+    publicProfileId: user.profile?.personalDetails?.publicProfileId || '',
+    aboutMe: user.profile?.personalDetails?.aboutMe || `Welcome to my profile! I'm ${user.name} and I'm excited to be part of the CareerBox community.`,
+    phone: '',
+    interests: [],
+    professionalBadges: []
+  }
+
   return {
     id: user._id?.toString() || user._id,
     name: user.name || '',
     email: user.email || '',
     role: user.role || 'user',
     userType: user.userType || 'professional',
-    profileImage: user.profileImage,
+    profileImage: user.avatar || user.profileImage,
     coverImage: user.coverImage,
     location: user.location || '',
     website: user.website || '',
-    bio: user.bio || '',
+    bio: user.bio || personalDetails.aboutMe,
     verified: user.verified || false,
     emailVerified: user.emailVerified || false,
     followers: user.followers || 0,
     following: user.following || 0,
-    personalDetails: {
-      firstName: user.personalDetails?.firstName || '',
-      lastName: user.personalDetails?.lastName || '',
-      middleName: user.personalDetails?.middleName || '',
-      dateOfBirth: user.personalDetails?.dateOfBirth || '',
-      gender: user.personalDetails?.gender || 'PREFER_NOT_TO_SAY',
-      professionalHeadline: user.personalDetails?.professionalHeadline || '',
-      publicProfileId: user.personalDetails?.publicProfileId || '',
-      aboutMe: user.personalDetails?.aboutMe || '',
-      phone: user.personalDetails?.phone || '',
-      interests: user.personalDetails?.interests || [],
-      professionalBadges: user.personalDetails?.professionalBadges || []
-    },
-    skills: (user.skills || []).map((skill: any, index: number) => ({
+    personalDetails,
+    skills: (user.profile?.skills || user.skills || []).map((skill: any, index: number) => ({
       id: skill.id || `skill_${index}`,
       name: skill.name || skill,
       level: skill.level || 'INTERMEDIATE'
     })),
-    languages: (user.languages || []).map((lang: any, index: number) => ({
+    languages: (user.profile?.languages || user.languages || []).map((lang: any, index: number) => ({
       id: lang.id || `lang_${index}`,
       name: lang.name || lang,
       level: lang.level || 'INTERMEDIATE'
     })),
-    workExperiences: (user.workExperiences || []).map((work: any, index: number) => ({
+    workExperiences: (user.profile?.workExperience || user.workExperiences || []).map((work: any, index: number) => ({
       id: work.id || `work_${index}`,
       company: work.company || '',
       location: work.location || '',
@@ -344,7 +365,7 @@ function convertToUserProfile(user: DatabaseUser) {
         skills: pos.skills || []
       }))
     })),
-    education: (user.education || []).map((edu: any, index: number) => ({
+    education: (user.profile?.education || user.education || []).map((edu: any, index: number) => ({
       id: edu.id || `edu_${index}`,
       degree: edu.degree || '',
       institution: edu.institution || '',

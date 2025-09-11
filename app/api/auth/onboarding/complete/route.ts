@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyEmailToken } from '@/lib/email/verification'
+import { completeUserOnboarding, OnboardingRole } from '@/lib/utils/user-creation'
 
 export async function POST(request: NextRequest) {
   try {
-    const { token } = await request.json()
+    const { userId, role } = await request.json()
 
-    if (!token) {
+    // Validate input
+    if (!userId) {
       return NextResponse.json(
-        { success: false, message: 'Verification token is required' },
+        { success: false, message: 'UserId is required' },
         { status: 400 }
       )
     }
 
-    const result = await verifyEmailToken(token)
+    // Complete onboarding
+    const result = await completeUserOnboarding(userId, role)
 
     if (!result.success) {
       return NextResponse.json(
@@ -23,11 +25,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Email verified successfully',
-      email: result.email
+      message: 'Onboarding completed successfully'
     })
   } catch (error) {
-    console.error('Email verification error:', error)
+    console.error('Onboarding completion error:', error)
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

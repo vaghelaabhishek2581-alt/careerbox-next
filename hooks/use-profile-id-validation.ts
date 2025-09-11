@@ -1,37 +1,101 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { useSocket } from './use-socket'
-import { useDebounce } from './use-debounce'
+import { useDebouncedCallback } from './use-debounced-callback'
 
 interface ValidationResult {
   isValid: boolean
   message: string
+  suggestions: string[]
 }
 
 export function useProfileIdValidation() {
-  const socket = useSocket()
+  const { socket, isConnected } = useSocket()
   const [isValidating, setIsValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isMountedRef = useRef(true)
 
-  const validateProfileId = useCallback(async (profileId: string) => {
-    if (!socket || !profileId) {
-      setValidationResult(null)
-      return
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
+
+  const validateProfileId = useCallback(async (profileId: string): Promise<ValidationResult> => {
+    if (!socket || !isConnected || !profileId) {
+      const result = {
+        isValid: false,
+        message: 'Connection not available',
+        suggestions: []
+      }
+      if (isMountedRef.current) {
+        setValidationResult(result)
+      }
+      return result
+    }
+
+    // Check if socket has emit function
+    if (typeof socket.emit !== 'function') {
+      const result = {
+        isValid: false,
+        message: 'Socket not properly initialized',
+        suggestions: []
+      }
+      if (isMountedRef.current) {
+        setValidationResult(result)
+      }
+      return result
     }
 
     setIsValidating(true)
     
     return new Promise<ValidationResult>((resolve) => {
-      socket.emit('validate-profile-id', profileId, (result: ValidationResult) => {
-        setValidationResult(result)
-        setIsValidating(false)
-        resolve(result)
-      })
-    })
-  }, [socket])
+      try {
+        // Use the correct event name that matches the server
+        socket.emit('validateProfileId', profileId, (result: ValidationResult) => {
+          if (isMountedRef.current) {
+            setValidationResult(result)
+            setIsValidating(false)
+          }
+          resolve(result)
+        })
 
-  const debouncedValidate = useDebounce(validateProfileId, 500)
+        // Timeout after 5 seconds
+        timeoutRef.current = setTimeout(() => {
+          if (isValidating && isMountedRef.current) {
+            const timeoutResult = {
+              isValid: false,
+              message: 'Validation timeout',
+              suggestions: []
+            }
+            setValidationResult(timeoutResult)
+            setIsValidating(false)
+            resolve(timeoutResult)
+          }
+        }, 5000)
+      } catch (error) {
+        console.error('Socket emit error:', error)
+        const errorResult = {
+          isValid: false,
+          message: 'Socket communication error',
+          suggestions: []
+        }
+        if (isMountedRef.current) {
+          setValidationResult(errorResult)
+          setIsValidating(false)
+        }
+        resolve(errorResult)
+      }
+    })
+  }, [socket, isConnected, isValidating])
+
+  const debouncedValidate = useDebouncedCallback(validateProfileId, 500)
 
   return {
     validateProfileId: debouncedValidate,

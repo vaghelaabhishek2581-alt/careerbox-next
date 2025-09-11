@@ -21,10 +21,12 @@ export function useSocket(): UseSocketReturn {
     // Initialize socket connection
     const socket = io(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000', {
       path: '/api/socket',
-      auth: {
-        token: session.accessToken // Assuming you have accessToken in session
-      },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000
     })
 
     socketRef.current = socket
@@ -86,50 +88,6 @@ export function useSocket(): UseSocketReturn {
   }
 }
 
-// Hook for profile ID validation
-export function useProfileIdValidation() {
-  const { socket, isConnected } = useSocket()
-  const [isValidating, setIsValidating] = useState(false)
-
-  const validateProfileId = (profileId: string): Promise<{
-    isValid: boolean
-    message: string
-    suggestions: string[]
-  }> => {
-    return new Promise((resolve) => {
-      if (!socket || !isConnected) {
-        resolve({
-          isValid: false,
-          message: 'Connection not available',
-          suggestions: []
-        })
-        return
-      }
-
-      setIsValidating(true)
-      
-      socket.emit('validateProfileId', profileId, (result) => {
-        setIsValidating(false)
-        resolve(result)
-      })
-
-      // Timeout after 5 seconds
-      setTimeout(() => {
-        setIsValidating(false)
-        resolve({
-          isValid: false,
-          message: 'Validation timeout',
-          suggestions: []
-        })
-      }, 5000)
-    })
-  }
-
-  return {
-    validateProfileId,
-    isValidating
-  }
-}
 
 // Hook for search suggestions
 export function useSearchSuggestions() {

@@ -34,7 +34,8 @@ import {
 import { handleUserSignOut } from "@/src/services/auth/auth.service";
 
 const userNavigation = [
-  { name: "Overview", href: "/dashboard/user", icon: Home },
+  { name: "Overview", href: "/dashboard", icon: Home },
+  { name: "Profile", href: "/dashboard/user", icon: Users },
   { name: "Skills", href: "/dashboard/user/skills", icon: BookOpen },
   { name: "Goals", href: "/dashboard/user/goals", icon: Target },
   { name: "Network", href: "/dashboard/user/network", icon: Users },

@@ -3,7 +3,7 @@
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
- *     description: Creates a new user account via credentials or Google OAuth
+ *     description: Creates a new user account with auto-hydrated profile
  *     tags:
  *       - Authentication
  *     requestBody:
@@ -25,8 +25,8 @@
  *                 description: User's password (required for credentials signup)
  *               role:
  *                 type: string
- *                 enum: [user, business, organization, admin]
- *                 description: User's role
+ *                 enum: [student, professional, institute_admin, business_owner]
+ *                 description: User's onboarding role
  *               provider:
  *                 type: string
  *                 enum: [google, credentials]
@@ -44,17 +44,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
-import { connectToDatabase } from '@/lib/db'
-import { toPublicUser } from '@/src/models/user.model'
+import { createUserWithProfile, sendEmailVerification, OnboardingRole } from '@/lib/utils/user-creation'
+import { generateJWT } from '@/lib/auth'
 
-export async function POST (request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const {
       name,
       email,
       password,
-      role = 'user',
+      role,
       provider = 'credentials',
       image
     } = await request.json()
@@ -78,56 +77,48 @@ export async function POST (request: NextRequest) {
       )
     }
 
-    // Connect to database
-    const { db } = await connectToDatabase()
-
-    // Check if user already exists
-    const existingUser = await db.collection('users').findOne({
-      email: email.toLowerCase()
+    // Create user with auto-hydrated profile
+    const result = await createUserWithProfile({
+      name,
+      email,
+      password,
+      provider,
+      image,
+      role: role as OnboardingRole
     })
 
-    if (existingUser) {
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, message: 'User already exists with this email' },
+        { success: false, message: result.error },
         { status: 400 }
       )
     }
 
-    // Prepare user data
-    const userData: any = {
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      role,
-      roles: [], // Empty initially, will be set during onboarding
-      provider,
-      needsOnboarding: true, // All new users need onboarding
-      needsRoleSelection: true, // New users need to select their roles
-      activeRole: null, // Will be set during onboarding
-      createdAt: new Date(),
-      updatedAt: new Date()
+    // Send email verification for credentials signup
+    if (provider === 'credentials') {
+      await sendEmailVerification(email, name)
     }
 
-    // Add password for credentials users
-    if (provider === 'credentials' && password) {
-      userData.password = await bcrypt.hash(password, 12)
-    }
+    // Generate JWT token
+    const token = generateJWT({
+      userId: result.user._id,
+      email: result.user.email,
+      role: result.user.role,
+      activeRole: result.user.activeRole
+    })
 
-    // Add image for Google users
-    if (provider === 'google' && image) {
-      userData.avatar = image
-    }
-
-    // Create user
-    const result = await db.collection('users').insertOne(userData)
-    userData._id = result.insertedId
-
-    // Return public user data
-    const publicUser = toPublicUser(userData)
+    // Return user data without sensitive information
+    const { password: _, ...userWithoutPassword } = result.user
 
     return NextResponse.json({
       success: true,
-      message: 'Account created successfully',
-      user: publicUser
+      message: provider === 'credentials' 
+        ? 'Account created successfully! Please check your email for verification.'
+        : 'Account created successfully!',
+      user: userWithoutPassword,
+      token,
+      needsOnboarding: result.user.needsOnboarding,
+      needsRoleSelection: result.user.needsRoleSelection
     })
   } catch (error) {
     console.error('Registration error:', error)
