@@ -16,9 +16,12 @@ import {
   AlertCircle, 
   CheckCircle,
   Clock,
-  DollarSign
+  DollarSign,
+  Server
 } from 'lucide-react'
 import Link from 'next/link'
+import SystemHealthDashboard from '../admin/SystemHealthDashboard'
+import EmailTemplateManager from '../admin/EmailTemplateManager'
 
 export default function AdminDashboard() {
   const dispatch = useDispatch<AppDispatch>()
@@ -119,6 +122,8 @@ export default function AdminDashboard() {
           <TabsTrigger value="businesses">Businesses</TabsTrigger>
           <TabsTrigger value="institutes">Institutes</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="system">System Health</TabsTrigger>
+          <TabsTrigger value="emails">Email Templates</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -358,6 +363,14 @@ export default function AdminDashboard() {
               <p className="mt-1 text-sm text-gray-500">View and manage all platform users, roles, and permissions.</p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-4">
+          <SystemHealthDashboard />
+        </TabsContent>
+
+        <TabsContent value="emails" className="space-y-4">
+          <EmailTemplateManager />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

@@ -1,5 +1,5 @@
-import SubscriptionUpgrade from '@/components/dashboard/user/SubscriptionUpgrade'
+import EnhancedSubscriptionUpgrade from '@/components/dashboard/user/EnhancedSubscriptionUpgrade'
 
 export default function UpgradePage() {
-  return <SubscriptionUpgrade />
+  return <EnhancedSubscriptionUpgrade />
 }
