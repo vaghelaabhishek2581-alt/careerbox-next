@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react'
+import apiClient from '@/lib/api/client'
 
 export default function VerifyEmailPage() {
   const router = useRouter()
@@ -27,17 +28,9 @@ export default function VerifyEmailPage() {
 
   const verifyEmail = async (verificationToken: string) => {
     try {
-      const response = await fetch('/api/auth/verify-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ token: verificationToken })
-      })
+      const response = await apiClient.post('/api/auth/verify-email', { token: verificationToken })
 
-      const data = await response.json()
-
-      if (response.ok && data.success) {
+      if (response.success) {
         setStatus('success')
         setMessage('Your email has been verified successfully!')
         
@@ -47,7 +40,7 @@ export default function VerifyEmailPage() {
         }, 3000)
       } else {
         setStatus('error')
-        setMessage(data.message || 'Failed to verify email')
+        setMessage(response.error || 'Failed to verify email')
       }
     } catch (error) {
       console.error('Verification error:', error)
@@ -59,19 +52,12 @@ export default function VerifyEmailPage() {
   const resendVerification = async () => {
     setIsResending(true)
     try {
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await apiClient.post('/api/auth/resend-verification')
 
-      const data = await response.json()
-
-      if (response.ok && data.success) {
+      if (response.success) {
         setMessage('Verification email sent! Please check your inbox.')
       } else {
-        setMessage(data.message || 'Failed to resend verification email')
+        setMessage(response.error || 'Failed to resend verification email')
       }
     } catch (error) {
       console.error('Resend error:', error)

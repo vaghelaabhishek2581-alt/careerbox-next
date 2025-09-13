@@ -13,6 +13,7 @@ import { Button } from "./button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
+import apiClient from "@/lib/api/client";
 
 interface Company {
   _id: string;
@@ -47,14 +48,16 @@ export function CompanySearch({
     const fetchCompanies = async () => {
       setLoading(true);
       try {
-        const response = await fetch(
+        const response = await apiClient.get(
           `/api/companies/search?q=${encodeURIComponent(
             debouncedSearch
           )}&limit=5`
         );
-        if (!response.ok) throw new Error("Failed to fetch companies");
-        const data = await response.json();
-        setCompanies(data.companies);
+        if (response.success) {
+          setCompanies((response.data as any).companies);
+        } else {
+          throw new Error(response.error || "Failed to fetch companies");
+        }
       } catch (error) {
         console.error("Error fetching companies:", error);
       } finally {

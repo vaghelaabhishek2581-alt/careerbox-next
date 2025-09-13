@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import apiClient from '@/lib/api/client';
 
 interface DashboardStats {
   totalUsers: number;
@@ -40,34 +41,22 @@ const initialState: DashboardState = {
 export const fetchDashboardStats = createAsyncThunk(
   'dashboard/fetchStats',
   async ({ role, dateRange }: { role: string; dateRange: string }) => {
-    const response = await fetch(`/api/dashboard/${role}/stats?range=${dateRange}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch dashboard stats');
+    const response = await apiClient.get(`/api/dashboard/${role}/stats?range=${dateRange}`);
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch dashboard stats');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 
 export const fetchRecentActivities = createAsyncThunk(
   'dashboard/fetchActivities',
   async (role: string) => {
-    const response = await fetch(`/api/dashboard/${role}/activities`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch activities');
+    const response = await apiClient.get(`/api/dashboard/${role}/activities`);
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch activities');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 

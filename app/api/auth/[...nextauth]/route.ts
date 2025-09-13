@@ -5,6 +5,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { getUserByEmail, connectToDatabase } from '@/lib/db'
 import { ObjectId } from 'mongodb'
+import apiClient from '@/lib/api/client'
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -31,34 +32,23 @@ export const authOptions: AuthOptions = {
         }
 
         try {
-          const response = await fetch(
-            `${process.env.NEXTAUTH_URL}/api/auth/login`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                email: credentials.email,
-                password: credentials.password
-              })
-            }
-          )
+          const response = await apiClient.post('/api/auth/login', {
+            email: credentials.email,
+            password: credentials.password
+          })
 
-          const data = await response.json()
-
-          if (!response.ok || !data.success) {
+          if (!response.success) {
             return null
           }
 
           return {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.name,
-            roles: data.user.roles || [],
-            activeRole: data.user.activeRole || null,
-            needsRoleSelection: data.user.needsRoleSelection || false,
-            needsOnboarding: data.user.needsOnboarding || false
+            id: (response.data as any).user.id,
+            email: (response.data as any).user.email,
+            name: (response.data as any).user.name,
+            roles: (response.data as any).user.roles || [],
+            activeRole: (response.data as any).user.activeRole || null,
+            needsRoleSelection: (response.data as any).user.needsRoleSelection || false,
+            needsOnboarding: (response.data as any).user.needsOnboarding || false
           }
         } catch (error) {
           console.error('Auth error:', error)
@@ -148,7 +138,7 @@ export const authOptions: AuthOptions = {
         session.user.needsRoleSelection = token.needsRoleSelection as boolean
         session.user.needsOnboarding = token.needsOnboarding as boolean
         session.user.provider = token.provider as string
-        session.user.role = token.role as string || 'user'
+        // session.user.role is not part of the session type, using activeRole instead 
       }
       return session
     },
@@ -195,7 +185,7 @@ export const authOptions: AuthOptions = {
             name: user.name || '',
             email: user.email || '',
             provider: 'google',
-            image: user.image
+            image: user.image || undefined
           })
           
           if (result.success && result.user) {

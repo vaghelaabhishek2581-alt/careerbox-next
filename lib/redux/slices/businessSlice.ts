@@ -1,6 +1,60 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { Business, BusinessProfile, CreateBusinessRequest, UpdateBusinessRequest, BusinessSearchFilters, BusinessSearchResponse } from '@/lib/types/business.types'
-import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
+import { API } from '@/lib/api/services'
+
+// Types
+export interface Business {
+  _id: string
+  name: string
+  email: string
+  phone?: string
+  website?: string
+  description?: string
+  industry?: string
+  size?: string
+  location?: string
+  logo?: string
+  coverImage?: string
+  isVerified: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BusinessProfile {
+  _id: string
+  businessId: string
+  companyName: string
+  industry: string
+  size: string
+  description: string
+  website?: string
+  logo?: string
+  coverImage?: string
+  headquarters: {
+    address: string
+    city: string
+    state: string
+    country: string
+    zipCode: string
+  }
+  contactInfo: {
+    email: string
+    phone: string
+    website?: string
+  }
+  socialLinks: {
+    linkedin?: string
+    twitter?: string
+    facebook?: string
+  }
+  services: string[]
+  isVerified: boolean
+  stats: {
+    jobPostings: number
+    employees: number
+    reviews: number
+    rating: number
+  }
+}
 
 interface BusinessState {
   businesses: Business[]
@@ -14,7 +68,7 @@ interface BusinessState {
     total: number
     hasMore: boolean
   }
-  searchFilters: BusinessSearchFilters
+  searchFilters: any
 }
 
 const initialState: BusinessState = {
@@ -32,126 +86,130 @@ const initialState: BusinessState = {
   searchFilters: {},
 }
 
-// Async thunks
+// Async thunks using API client
 export const fetchBusinesses = createAsyncThunk(
   'business/fetchBusinesses',
-  async (params: { page?: number; limit?: number; status?: string } = {}) => {
-    const queryParams = new URLSearchParams()
-    if (params.page) queryParams.append('page', params.page.toString())
-    if (params.limit) queryParams.append('limit', params.limit.toString())
-    if (params.status) queryParams.append('status', params.status)
-
-    const response = await fetch(`/api/businesses?${queryParams}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch businesses')
-    }
-    return response.json()
-  }
-)
-
-export const searchBusinesses = createAsyncThunk(
-  'business/searchBusinesses',
-  async (filters: BusinessSearchFilters & { page?: number; limit?: number }) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          value.forEach(v => queryParams.append(key, v.toString()))
-        } else {
-          queryParams.append(key, value.toString())
+  async (params: { page?: number; limit?: number; industry?: string; verified?: boolean } = {}, { rejectWithValue }) => {
+    try {
+      const response = await API.businesses.getBusinesses(
+        params.page || 1,
+        params.limit || 10,
+        {
+          industry: params.industry,
+          verified: params.verified
         }
+      )
+
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to fetch businesses')
       }
-    })
 
-    const response = await fetch(`/api/businesses/search?${queryParams}`)
-    if (!response.ok) {
-      throw new Error('Failed to search businesses')
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch businesses')
     }
-    return response.json()
-  }
-)
-
-export const createBusiness = createAsyncThunk(
-  'business/createBusiness',
-  async (businessData: CreateBusinessRequest) => {
-    const response = await fetch('/api/businesses', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(businessData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to create business')
-    }
-    return response.json()
-  }
-)
-
-export const updateBusiness = createAsyncThunk(
-  'business/updateBusiness',
-  async ({ businessId, businessData }: { businessId: string; businessData: UpdateBusinessRequest }) => {
-    const response = await fetch(`/api/businesses/${businessId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(businessData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to update business')
-    }
-    return response.json()
   }
 )
 
 export const fetchBusinessById = createAsyncThunk(
   'business/fetchBusinessById',
-  async (businessId: string) => {
-    const response = await fetch(`/api/businesses/${businessId}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch business')
+  async (businessId: string, { rejectWithValue }) => {
+    try {
+      const response = await API.businesses.getBusiness(businessId)
+
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to fetch business')
+      }
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch business')
     }
-    return response.json()
+  }
+)
+
+export const createBusiness = createAsyncThunk(
+  'business/createBusiness',
+  async (businessData: any, { rejectWithValue }) => {
+    try {
+      const response = await API.businesses.createBusiness(businessData)
+
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to create business')
+      }
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to create business')
+    }
+  }
+)
+
+export const updateBusiness = createAsyncThunk(
+  'business/updateBusiness',
+  async ({ businessId, businessData }: { businessId: string; businessData: any }, { rejectWithValue }) => {
+    try {
+      const response = await API.businesses.updateBusiness(businessId, businessData)
+
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to update business')
+      }
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to update business')
+    }
+  }
+)
+
+export const deleteBusiness = createAsyncThunk(
+  'business/deleteBusiness',
+  async (businessId: string, { rejectWithValue }) => {
+    try {
+      const response = await API.businesses.deleteBusiness(businessId)
+
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to delete business')
+      }
+
+      return businessId
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete business')
+    }
   }
 )
 
 export const fetchBusinessProfile = createAsyncThunk(
   'business/fetchBusinessProfile',
-  async (businessId: string) => {
-    const response = await fetch(`/api/businesses/${businessId}/profile`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch business profile')
+  async (businessId: string, { rejectWithValue }) => {
+    try {
+      const response = await API.businesses.getBusinessProfile(businessId)
+
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to fetch business profile')
+      }
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch business profile')
     }
-    return response.json()
   }
 )
 
-export const fetchMyBusiness = createAsyncThunk(
-  'business/fetchMyBusiness',
-  async () => {
-    const response = await fetch('/api/businesses/my-business')
-    if (!response.ok) {
-      throw new Error('Failed to fetch my business')
-    }
-    return response.json()
-  }
-)
+export const updateBusinessProfile = createAsyncThunk(
+  'business/updateBusinessProfile',
+  async ({ businessId, profileData }: { businessId: string; profileData: any }, { rejectWithValue }) => {
+    try {
+      const response = await API.businesses.updateBusinessProfile(businessId, profileData)
 
-export const verifyBusiness = createAsyncThunk(
-  'business/verifyBusiness',
-  async ({ businessId, isVerified }: { businessId: string; isVerified: boolean }) => {
-    const response = await fetch(`/api/businesses/${businessId}/verify`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ isVerified }),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to verify business')
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to update business profile')
+      }
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to update business profile')
     }
-    return response.json()
   }
 )
 
@@ -165,169 +223,126 @@ const businessSlice = createSlice({
     setCurrentBusiness: (state, action: PayloadAction<Business | null>) => {
       state.currentBusiness = action.payload
     },
-    setSearchFilters: (state, action: PayloadAction<BusinessSearchFilters>) => {
+    setSearchFilters: (state, action: PayloadAction<any>) => {
       state.searchFilters = action.payload
     },
-    updateBusinessInList: (state, action: PayloadAction<Business>) => {
-      const index = state.businesses.findIndex(business => business.id === action.payload.id)
+    clearBusinesses: (state) => {
+      state.businesses = []
+      state.currentBusiness = null
+      state.businessProfile = null
+      state.error = null
+    }
+  },
+  extraReducers: (builder) => {
+    // Fetch businesses
+    builder.addCase(fetchBusinesses.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    builder.addCase(fetchBusinesses.fulfilled, (state, action) => {
+      state.loading = false
+      state.businesses = action.payload.businesses || action.payload
+      state.pagination = action.payload.pagination || state.pagination
+    })
+    builder.addCase(fetchBusinesses.rejected, (state, action) => {
+      state.loading = false
+      state.error = action.payload as string
+    })
+
+    // Fetch business by ID
+    builder.addCase(fetchBusinessById.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    builder.addCase(fetchBusinessById.fulfilled, (state, action) => {
+      state.loading = false
+      state.currentBusiness = action.payload
+    })
+    builder.addCase(fetchBusinessById.rejected, (state, action) => {
+      state.loading = false
+      state.error = action.payload as string
+    })
+
+    // Create business
+    builder.addCase(createBusiness.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    builder.addCase(createBusiness.fulfilled, (state, action) => {
+      state.loading = false
+      state.businesses.unshift(action.payload)
+    })
+    builder.addCase(createBusiness.rejected, (state, action) => {
+      state.loading = false
+      state.error = action.payload as string
+    })
+
+    // Update business
+    builder.addCase(updateBusiness.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    builder.addCase(updateBusiness.fulfilled, (state, action) => {
+      state.loading = false
+      const index = state.businesses.findIndex(business => business._id === action.payload._id)
       if (index !== -1) {
         state.businesses[index] = action.payload
       }
-    },
-  },
-  extraReducers: (builder) => {
-    builder
-      // Fetch businesses
-      .addCase(fetchBusinesses.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(fetchBusinesses.fulfilled, (state, action) => {
-        state.loading = false
-        const response = action.payload as PaginatedResponse<Business>
-        state.businesses = response.data
-        state.pagination = {
-          page: response.page,
-          limit: response.limit,
-          total: response.total,
-          hasMore: response.hasMore,
-        }
-      })
-      .addCase(fetchBusinesses.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Failed to fetch businesses'
-      })
-      // Search businesses
-      .addCase(searchBusinesses.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(searchBusinesses.fulfilled, (state, action) => {
-        state.loading = false
-        const response = action.payload as BusinessSearchResponse
-        state.businesses = response.businesses
-        state.pagination = {
-          page: response.page,
-          limit: response.limit,
-          total: response.total,
-          hasMore: response.hasMore,
-        }
-      })
-      .addCase(searchBusinesses.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Failed to search businesses'
-      })
-      // Create business
-      .addCase(createBusiness.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(createBusiness.fulfilled, (state, action) => {
-        state.loading = false
-        const response = action.payload as ApiResponse<Business>
-        if (response.data) {
-          state.businesses.unshift(response.data)
-          state.currentBusiness = response.data
-        }
-      })
-      .addCase(createBusiness.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Failed to create business'
-      })
-      // Update business
-      .addCase(updateBusiness.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(updateBusiness.fulfilled, (state, action) => {
-        state.loading = false
-        const response = action.payload as ApiResponse<Business>
-        if (response.data) {
-          const index = state.businesses.findIndex(business => business.id === response.data!.id)
-          if (index !== -1) {
-            state.businesses[index] = response.data!
-          }
-          if (state.currentBusiness?.id === response.data!.id) {
-            state.currentBusiness = response.data!
-          }
-        }
-      })
-      .addCase(updateBusiness.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Failed to update business'
-      })
-      // Fetch business by ID
-      .addCase(fetchBusinessById.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(fetchBusinessById.fulfilled, (state, action) => {
-        state.loading = false
-        const response = action.payload as ApiResponse<Business>
-        if (response.data) {
-          state.currentBusiness = response.data
-        }
-      })
-      .addCase(fetchBusinessById.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Failed to fetch business'
-      })
-      // Fetch business profile
-      .addCase(fetchBusinessProfile.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(fetchBusinessProfile.fulfilled, (state, action) => {
-        state.loading = false
-        const response = action.payload as ApiResponse<BusinessProfile>
-        if (response.data) {
-          state.businessProfile = response.data
-        }
-      })
-      .addCase(fetchBusinessProfile.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Failed to fetch business profile'
-      })
-      // Fetch my business
-      .addCase(fetchMyBusiness.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(fetchMyBusiness.fulfilled, (state, action) => {
-        state.loading = false
-        const response = action.payload as ApiResponse<Business>
-        if (response.data) {
-          state.currentBusiness = response.data
-        }
-      })
-      .addCase(fetchMyBusiness.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Failed to fetch my business'
-      })
-      // Verify business
-      .addCase(verifyBusiness.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(verifyBusiness.fulfilled, (state, action) => {
-        state.loading = false
-        const response = action.payload as ApiResponse<Business>
-        if (response.data) {
-          const index = state.businesses.findIndex(business => business.id === response.data!.id)
-          if (index !== -1) {
-            state.businesses[index] = response.data!
-          }
-          if (state.currentBusiness?.id === response.data!.id) {
-            state.currentBusiness = response.data!
-          }
-        }
-      })
-      .addCase(verifyBusiness.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Failed to verify business'
-      })
-  },
+      if (state.currentBusiness?._id === action.payload._id) {
+        state.currentBusiness = action.payload
+      }
+    })
+    builder.addCase(updateBusiness.rejected, (state, action) => {
+      state.loading = false
+      state.error = action.payload as string
+    })
+
+    // Delete business
+    builder.addCase(deleteBusiness.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    builder.addCase(deleteBusiness.fulfilled, (state, action) => {
+      state.loading = false
+      state.businesses = state.businesses.filter(business => business._id !== action.payload)
+      if (state.currentBusiness?._id === action.payload) {
+        state.currentBusiness = null
+      }
+    })
+    builder.addCase(deleteBusiness.rejected, (state, action) => {
+      state.loading = false
+      state.error = action.payload as string
+    })
+
+    // Fetch business profile
+    builder.addCase(fetchBusinessProfile.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    builder.addCase(fetchBusinessProfile.fulfilled, (state, action) => {
+      state.loading = false
+      state.businessProfile = action.payload
+    })
+    builder.addCase(fetchBusinessProfile.rejected, (state, action) => {
+      state.loading = false
+      state.error = action.payload as string
+    })
+
+    // Update business profile
+    builder.addCase(updateBusinessProfile.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    builder.addCase(updateBusinessProfile.fulfilled, (state, action) => {
+      state.loading = false
+      state.businessProfile = action.payload
+    })
+    builder.addCase(updateBusinessProfile.rejected, (state, action) => {
+      state.loading = false
+      state.error = action.payload as string
+    })
+  }
 })
 
-export const { clearError, setCurrentBusiness, setSearchFilters, updateBusinessInList } = businessSlice.actions
+export const { clearError, setCurrentBusiness, setSearchFilters, clearBusinesses } = businessSlice.actions
 export default businessSlice.reducer

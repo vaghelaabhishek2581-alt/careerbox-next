@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { User } from './authSlice';
+import { API } from '@/lib/api/services';
 
 interface UserState {
   users: User[];
@@ -30,61 +31,33 @@ const initialState: UserState = {
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
   async ({ page, limit, filters }: { page: number; limit: number; filters: any }) => {
-    const queryParams = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      ...filters,
-    });
-    
-    const response = await fetch(`/api/admin/users?${queryParams}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch users');
+    const response = await API.admin.getUsers({ page, limit, ...filters });
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch users');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 
 export const updateUserRole = createAsyncThunk(
   'users/updateRole',
   async ({ userId, role }: { userId: string; role: string }) => {
-    const response = await fetch(`/api/admin/users/${userId}/role`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify({ role }),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to update user role');
+    const response = await API.admin.updateUserRole(userId, { role });
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to update user role');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 
 export const suspendUser = createAsyncThunk(
   'users/suspend',
   async (userId: string) => {
-    const response = await fetch(`/api/admin/users/${userId}/suspend`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to suspend user');
+    const response = await API.admin.suspendUser(userId);
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to suspend user');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 

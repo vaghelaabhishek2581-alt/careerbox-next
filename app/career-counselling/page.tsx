@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Phone, GraduationCap, BookOpen, ArrowRight, MessageCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import apiClient from '@/lib/api/client';
 
 interface CounsellingFormData {
   name: string;
@@ -60,17 +61,9 @@ export default function CareerCounsellingPage() {
     setSubmitStatus(null);
 
     try {
-      const response = await fetch('/api/career-counselling', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await apiClient.post('/api/career-counselling', formData);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.success) {
         setSubmitStatus('success');
         setFormData({
           name: '',

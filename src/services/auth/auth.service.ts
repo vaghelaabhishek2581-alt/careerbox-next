@@ -1,25 +1,16 @@
 import { signOut } from 'next-auth/react'
 import { LoginInput, RegisterInput } from '@/src/utils/validators/auth.schema'
+import { API } from '@/lib/api/services'
 
 export class AuthService {
   static async login (input: LoginInput) {
-    const response = await fetch('/api/auth/service', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        operation: 'login',
-        data: input
-      })
-    })
+    const response = await API.auth.login(input)
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Login failed')
+    if (!response.success) {
+      throw new Error(response.error || 'Login failed')
     }
 
-    const data = await response.json()
+    const data = response.data
 
     const redirectUrls = {
       admin: '/dashboard/admin',
@@ -37,23 +28,13 @@ export class AuthService {
   }
 
   static async register (input: RegisterInput) {
-    const response = await fetch('/api/auth/service', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        operation: 'register',
-        data: input
-      })
-    })
+    const response = await API.auth.register(input)
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Registration failed')
+    if (!response.success) {
+      throw new Error(response.error || 'Registration failed')
     }
 
-    const data = await response.json()
+    const data = response.data
 
     if (data.requiresApproval) {
       return { requiresApproval: true }

@@ -22,6 +22,7 @@ import {
 import Link from 'next/link'
 import SystemHealthDashboard from '../admin/SystemHealthDashboard'
 import EmailTemplateManager from '../admin/EmailTemplateManager'
+import SessionManager from '../admin/SessionManager'
 
 export default function AdminDashboard() {
   const dispatch = useDispatch<AppDispatch>()
@@ -122,9 +123,10 @@ export default function AdminDashboard() {
           <TabsTrigger value="businesses">Businesses</TabsTrigger>
           <TabsTrigger value="institutes">Institutes</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="system">System Health</TabsTrigger>
-          <TabsTrigger value="emails">Email Templates</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                  <TabsTrigger value="system">System Health</TabsTrigger>
+                  <TabsTrigger value="emails">Email Templates</TabsTrigger>
+                  <TabsTrigger value="sessions">Session Management</TabsTrigger>
+                  <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -371,6 +373,10 @@ export default function AdminDashboard() {
 
         <TabsContent value="emails" className="space-y-4">
           <EmailTemplateManager />
+        </TabsContent>
+
+        <TabsContent value="sessions" className="space-y-4">
+          <SessionManager />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

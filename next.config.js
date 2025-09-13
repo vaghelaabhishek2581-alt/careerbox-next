@@ -21,9 +21,7 @@ const nextConfig = {
 
     return config;
   },
-  experimental: {
-    serverComponentsExternalPackages: ["mongodb"],
-  },
+  serverExternalPackages: ["mongodb"],
 };
 
 module.exports = nextConfig;

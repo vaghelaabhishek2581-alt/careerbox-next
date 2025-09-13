@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { Exam, ExamRegistration, CreateExamRequest, UpdateExamRequest, ExamSearchFilters, ExamSearchResponse } from '@/lib/types/exam.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
+import apiClient from '@/lib/api/client'
 
 interface ExamState {
   exams: Exam[]
@@ -43,11 +44,11 @@ export const fetchExams = createAsyncThunk(
     if (params.createdByType) queryParams.append('createdByType', params.createdByType)
     if (params.status) queryParams.append('status', params.status)
 
-    const response = await fetch(`/api/exams?${queryParams}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch exams')
+    const response = await apiClient.get(`/api/exams?${queryParams}`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch exams')
     }
-    return response.json()
+    return response.data
   }
 )
 
@@ -65,56 +66,42 @@ export const searchExams = createAsyncThunk(
       }
     })
 
-    const response = await fetch(`/api/exams/search?${queryParams}`)
-    if (!response.ok) {
-      throw new Error('Failed to search exams')
+    const response = await apiClient.get(`/api/exams/search?${queryParams}`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to search exams')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const createExam = createAsyncThunk(
   'exams/createExam',
   async (examData: CreateExamRequest) => {
-    const response = await fetch('/api/exams', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(examData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to create exam')
+    const response = await apiClient.post('/api/exams', examData)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to create exam')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const updateExam = createAsyncThunk(
   'exams/updateExam',
   async ({ examId, examData }: { examId: string; examData: UpdateExamRequest }) => {
-    const response = await fetch(`/api/exams/${examId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(examData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to update exam')
+    const response = await apiClient.put(`/api/exams/${examId}`, examData)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to update exam')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const deleteExam = createAsyncThunk(
   'exams/deleteExam',
   async (examId: string) => {
-    const response = await fetch(`/api/exams/${examId}`, {
-      method: 'DELETE',
-    })
-    if (!response.ok) {
-      throw new Error('Failed to delete exam')
+    const response = await apiClient.delete(`/api/exams/${examId}`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to delete exam')
     }
     return { examId }
   }
@@ -123,56 +110,44 @@ export const deleteExam = createAsyncThunk(
 export const fetchExamById = createAsyncThunk(
   'exams/fetchExamById',
   async (examId: string) => {
-    const response = await fetch(`/api/exams/${examId}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch exam')
+    const response = await apiClient.get(`/api/exams/${examId}`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch exam')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const fetchExamRegistrations = createAsyncThunk(
   'exams/fetchExamRegistrations',
   async (examId: string) => {
-    const response = await fetch(`/api/exams/${examId}/registrations`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch exam registrations')
+    const response = await apiClient.get(`/api/exams/${examId}/registrations`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch exam registrations')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const registerForExam = createAsyncThunk(
   'exams/registerForExam',
   async ({ examId, registrationData }: { examId: string; registrationData: any }) => {
-    const response = await fetch(`/api/exams/${examId}/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(registrationData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to register for exam')
+    const response = await apiClient.post(`/api/exams/${examId}/register`, registrationData)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to register for exam')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const submitExamAnswers = createAsyncThunk(
   'exams/submitExamAnswers',
   async ({ examId, answers }: { examId: string; answers: any[] }) => {
-    const response = await fetch(`/api/exams/${examId}/submit`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ answers }),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to submit exam answers')
+    const response = await apiClient.post(`/api/exams/${examId}/submit`, { answers })
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to submit exam answers')
     }
-    return response.json()
+    return response.data
   }
 )
 

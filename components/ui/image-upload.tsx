@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Upload, X } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
+import apiClient from "@/lib/api/client";
 
 interface ImageUploadProps {
   type: "profile" | "cover";
@@ -46,21 +47,16 @@ export function ImageUpload({
       reader.readAsDataURL(file);
 
       // Get upload URL
-      const response = await fetch("/api/user/profile/image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          contentType: file.type,
-        }),
+      const response = await apiClient.post("/api/user/profile/image", {
+        type,
+        contentType: file.type,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to get upload URL");
+      if (!response.success) {
+        throw new Error(response.error || "Failed to get upload URL");
       }
 
-      const { uploadUrl, fileUrl } = await response.json();
+      const { uploadUrl, fileUrl } = response.data;
 
       // Upload to S3
       const uploadResponse = await fetch(uploadUrl, {
@@ -74,16 +70,12 @@ export function ImageUpload({
       }
 
       // Update profile with new image URL
-      const updateResponse = await fetch("/api/user/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          [type === "profile" ? "profileImage" : "coverImage"]: fileUrl,
-        }),
+      const updateResponse = await apiClient.patch("/api/user/profile", {
+        [type === "profile" ? "profileImage" : "coverImage"]: fileUrl,
       });
 
-      if (!updateResponse.ok) {
-        throw new Error("Failed to update profile with new image");
+      if (!updateResponse.success) {
+        throw new Error(updateResponse.error || "Failed to update profile with new image");
       }
 
       onUpload(fileUrl);
@@ -116,16 +108,12 @@ export function ImageUpload({
             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={async () => {
               try {
-                const response = await fetch("/api/user/profile", {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    [type === "profile" ? "profileImage" : "coverImage"]: null,
-                  }),
+                const response = await apiClient.patch("/api/user/profile", {
+                  [type === "profile" ? "profileImage" : "coverImage"]: null,
                 });
 
-                if (!response.ok) {
-                  throw new Error("Failed to remove image");
+                if (!response.success) {
+                  throw new Error(response.error || "Failed to remove image");
                 }
 
                 setPreview(null);

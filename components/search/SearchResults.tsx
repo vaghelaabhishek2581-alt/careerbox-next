@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { SearchFilters, SearchResult, SearchResponse, SEARCH_CATEGORIES, SORT_OPTIONS } from '@/lib/types/search.types'
 import { parseSearchQuery, buildSearchQuery } from '@/lib/types/search.types'
 import UniversalSearch from './UniversalSearch'
+import apiClient from '@/lib/api/client'
 
 export default function SearchResults() {
   const searchParams = useSearchParams()
@@ -32,15 +33,14 @@ export default function SearchResults() {
       
       try {
         const queryString = buildSearchQuery(filters)
-        const response = await fetch(`/api/search?${queryString}`)
+        const response = await apiClient.get(`/api/search?${queryString}`)
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch search results')
+        if (response.success) {
+          setResults(response.data.results)
+          setFacets(response.data.facets || {})
+        } else {
+          throw new Error(response.error || 'Failed to fetch search results')
         }
-        
-        const data: SearchResponse = await response.json()
-        setResults(data.results)
-        setFacets(data.facets || {})
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {

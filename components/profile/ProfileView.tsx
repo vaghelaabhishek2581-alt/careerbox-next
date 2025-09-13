@@ -34,6 +34,7 @@ import {
 import { cn } from '@/lib/utils'
 import { UserProfile, BusinessProfile, InstituteProfile } from '@/lib/types/unified.types'
 import { getDisplayName, getInitials } from '@/lib/types/unified.types'
+import apiClient from '@/lib/api/client'
 
 interface ProfileViewProps {
   profileId: string
@@ -50,19 +51,18 @@ export default function ProfileView({ profileId }: ProfileViewProps) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`/api/profile/${profileId}`)
+        const response = await apiClient.get(`/api/profile/${profileId}`)
         
-        if (response.status === 404) {
-          notFound()
+        if (response.success) {
+          setProfile(response.data.profile)
+          setProfileType(response.data.type)
+        } else {
+          if (response.error?.includes('404') || response.error?.includes('not found')) {
+            notFound()
+          } else {
+            throw new Error(response.error || 'Failed to fetch profile')
+          }
         }
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile')
-        }
-        
-        const data = await response.json()
-        setProfile(data.profile)
-        setProfileType(data.type)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {

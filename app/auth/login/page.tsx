@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { loginUser } from "@/lib/redux/slices/authSlice";
+import apiClient from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,28 +27,36 @@ export default function LoginPage() {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isLoading, error } = useAppSelector((state) => state.auth);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
 
     try {
-      const result = await signIn("credentials", {
+      // Use Redux action for login
+      const result = await dispatch(loginUser({
         email: formData.email,
-        password: formData.password,
-        redirect: false,
-      });
+        password: formData.password
+      })).unwrap();
 
-      if (result?.error) {
-        setError("Invalid email or password. Please try again.");
-      } else {
+      if (result) {
+        // Also sign in with NextAuth for session management
+        const nextAuthResult = await signIn("credentials", {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        });
+
+        if (nextAuthResult?.error) {
+          // Handle NextAuth error
+          console.error("NextAuth sign in failed:", nextAuthResult.error);
+        }
+
         // Check if user needs onboarding
-        const sessionResponse = await fetch("/api/auth/session");
-        const sessionData = await sessionResponse.json();
+        const sessionResponse = await apiClient.get("/api/auth/session");
+        const sessionData = sessionResponse.data as any;
 
         if (sessionData?.user?.needsOnboarding) {
           router.push("/onboarding");
@@ -54,19 +65,15 @@ export default function LoginPage() {
         }
       }
     } catch (error) {
-      setError("An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error("Login error:", error);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
     try {
       await signIn("google", { callbackUrl: "/onboarding" });
     } catch (error) {
-      setError("Google sign-in failed. Please try again.");
-      setIsLoading(false);
+      console.error("Google sign-in failed:", error);
     }
   };
 

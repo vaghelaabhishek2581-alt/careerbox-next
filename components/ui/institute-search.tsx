@@ -13,6 +13,7 @@ import { Button } from "./button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
+import apiClient from "@/lib/api/client";
 
 interface Institute {
   _id: string;
@@ -57,10 +58,12 @@ export function InstituteSearch({
         });
         if (state) params.append("state", state);
 
-        const response = await fetch(`/api/institutes/search?${params}`);
-        if (!response.ok) throw new Error("Failed to fetch institutes");
-        const data = await response.json();
-        setInstitutes(data.institutes);
+        const response = await apiClient.get(`/api/institutes/search?${params}`);
+        if (response.success) {
+          setInstitutes((response.data as any).institutes);
+        } else {
+          throw new Error(response.error || "Failed to fetch institutes");
+        }
       } catch (error) {
         console.error("Error fetching institutes:", error);
       } finally {

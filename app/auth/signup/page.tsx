@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { registerUser } from "@/lib/redux/slices/authSlice";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,11 +38,12 @@ export default function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
+  const dispatch = useAppDispatch();
+  const { isLoading, error: authError } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
@@ -83,53 +86,45 @@ export default function AuthPage() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
 
     if (mode === "signup") {
       if (password !== confirmPassword) {
         setError("Passwords do not match");
-        setIsLoading(false);
         return;
       }
 
       if (password.length < 6) {
         setError("Password must be at least 6 characters long");
-        setIsLoading(false);
         return;
       }
 
       try {
-        const response = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Sign up failed");
-        }
-
-        // Auto sign in after successful signup
-        const result = await signIn("credentials", {
+        // Use Redux action for registration
+        const result = await dispatch(registerUser({
+          name,
           email,
           password,
-          redirect: false,
-        });
+          role: 'user'
+        })).unwrap();
 
-        if (result?.error) {
-          setError(
-            "Account created but sign in failed. Please try signing in manually."
-          );
-        } else if (result?.ok) {
+        if (result) {
+          // Auto sign in after successful signup
+          const signInResult = await signIn("credentials", {
+            email,
+            password,
+            redirect: false,
+          });
+
+          if (signInResult?.error) {
+            setError(
+              "Account created but sign in failed. Please try signing in manually."
+            );
+          }
           // Don't redirect here, let useEffect handle it
         }
       } catch (error: any) {
-        setError(error.message || "An error occurred. Please try again.");
-      } finally {
-        setIsLoading(false);
+        setError(error || "An error occurred. Please try again.");
       }
     } else {
       // Sign in
@@ -142,19 +137,15 @@ export default function AuthPage() {
 
         if (result?.error) {
           setError("Invalid credentials. Please try again.");
-        } else if (result?.ok) {
-          // Don't redirect here, let useEffect handle it
         }
+        // Don't redirect here, let useEffect handle it
       } catch (error) {
         setError("An error occurred. Please try again.");
-      } finally {
-        setIsLoading(false);
       }
     }
   };
 
   const handleGoogleAuth = async () => {
-    setIsLoading(true);
     setError("");
 
     try {
@@ -168,8 +159,6 @@ export default function AuthPage() {
       }
     } catch (error) {
       setError("Google authentication failed. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   };
 

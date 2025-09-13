@@ -1,3 +1,5 @@
+import apiClient from '@/lib/api/client'
+
 type DbOperation = 'find' | 'findOne' | 'insertOne' | 'updateOne' | 'deleteOne'
 
 export async function executeDbOperation (
@@ -7,26 +9,18 @@ export async function executeDbOperation (
   data?: any
 ) {
   try {
-    const response = await fetch('/api/db', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        operation,
-        collection,
-        query,
-        data
-      })
+    const response = await apiClient.post('/api/db', {
+      operation,
+      collection,
+      query,
+      data
     })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Database operation failed')
+    if (response.success) {
+      return (response.data as any).result
+    } else {
+      throw new Error(response.error || 'Database operation failed')
     }
-
-    const result = await response.json()
-    return result.result
   } catch (error) {
     console.error('Database operation error:', error)
     throw error

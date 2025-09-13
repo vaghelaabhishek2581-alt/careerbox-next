@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { Lead, CreateLeadRequest, UpdateLeadStatusRequest, ConvertLeadRequest } from '@/lib/types/lead.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
+import apiClient from '@/lib/api/client'
 
 interface LeadState {
   leads: Lead[]
@@ -38,73 +39,55 @@ export const fetchLeads = createAsyncThunk(
     if (params.type) queryParams.append('type', params.type)
     if (params.status) queryParams.append('status', params.status)
 
-    const response = await fetch(`/api/leads?${queryParams}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch leads')
+    const response = await apiClient.get(`/api/leads?${queryParams}`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch leads')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const createLead = createAsyncThunk(
   'leads/createLead',
   async (leadData: CreateLeadRequest) => {
-    const response = await fetch('/api/leads', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(leadData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to create lead')
+    const response = await apiClient.post('/api/leads', leadData)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to create lead')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const updateLeadStatus = createAsyncThunk(
   'leads/updateLeadStatus',
   async (data: UpdateLeadStatusRequest) => {
-    const response = await fetch(`/api/leads/${data.leadId}/status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status: data.status, notes: data.notes }),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to update lead status')
+    const response = await apiClient.patch(`/api/leads/${data.leadId}/status`, { status: data.status, notes: data.notes })
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to update lead status')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const convertLead = createAsyncThunk(
   'leads/convertLead',
   async (data: ConvertLeadRequest) => {
-    const response = await fetch(`/api/leads/${data.leadId}/convert`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to convert lead')
+    const response = await apiClient.post(`/api/leads/${data.leadId}/convert`, data)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to convert lead')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const fetchLeadById = createAsyncThunk(
   'leads/fetchLeadById',
   async (leadId: string) => {
-    const response = await fetch(`/api/leads/${leadId}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch lead')
+    const response = await apiClient.get(`/api/leads/${leadId}`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch lead')
     }
-    return response.json()
+    return response.data
   }
 )
 

@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { SearchSuggestion, SearchCategory, SEARCH_CATEGORIES } from '@/lib/types/search.types'
 import { useSocket } from '@/hooks/use-socket'
 import { debounce } from 'lodash'
+import apiClient from '@/lib/api/client'
 
 interface UniversalSearchProps {
   placeholder?: string
@@ -66,9 +67,12 @@ export default function UniversalSearch({
       } else {
         // Fallback to API call if socket is not available
         try {
-          const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`)
-          const data = await response.json()
-          setSuggestions(data.suggestions || [])
+          const response = await apiClient.get(`/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`)
+          if (response.success) {
+            setSuggestions((response.data as any).suggestions || [])
+          } else {
+            setSuggestions([])
+          }
         } catch (error) {
           console.error('Error fetching suggestions:', error)
           setSuggestions([])

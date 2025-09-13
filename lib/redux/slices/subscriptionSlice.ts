@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { Subscription, SubscriptionPlanDetails, CreateSubscriptionRequest, UpdateSubscriptionRequest, BillingHistory, UsageStats } from '@/lib/types/subscription.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
+import apiClient from '@/lib/api/client'
 
 interface SubscriptionState {
   currentSubscription: Subscription | null
@@ -24,69 +25,55 @@ const initialState: SubscriptionState = {
 export const fetchCurrentSubscription = createAsyncThunk(
   'subscription/fetchCurrentSubscription',
   async () => {
-    const response = await fetch('/api/subscriptions/current')
-    if (!response.ok) {
-      throw new Error('Failed to fetch current subscription')
+    const response = await apiClient.get('/api/subscriptions/current')
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch current subscription')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const fetchAvailablePlans = createAsyncThunk(
   'subscription/fetchAvailablePlans',
   async () => {
-    const response = await fetch('/api/subscriptions/plans')
-    if (!response.ok) {
-      throw new Error('Failed to fetch available plans')
+    const response = await apiClient.get('/api/subscriptions/plans')
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch available plans')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const createSubscription = createAsyncThunk(
   'subscription/createSubscription',
   async (subscriptionData: CreateSubscriptionRequest) => {
-    const response = await fetch('/api/subscriptions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(subscriptionData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to create subscription')
+    const response = await apiClient.post('/api/subscriptions', subscriptionData)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to create subscription')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const updateSubscription = createAsyncThunk(
   'subscription/updateSubscription',
   async ({ subscriptionId, subscriptionData }: { subscriptionId: string; subscriptionData: UpdateSubscriptionRequest }) => {
-    const response = await fetch(`/api/subscriptions/${subscriptionId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(subscriptionData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to update subscription')
+    const response = await apiClient.put(`/api/subscriptions/${subscriptionId}`, subscriptionData)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to update subscription')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const cancelSubscription = createAsyncThunk(
   'subscription/cancelSubscription',
   async (subscriptionId: string) => {
-    const response = await fetch(`/api/subscriptions/${subscriptionId}/cancel`, {
-      method: 'POST',
-    })
-    if (!response.ok) {
-      throw new Error('Failed to cancel subscription')
+    const response = await apiClient.post(`/api/subscriptions/${subscriptionId}/cancel`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to cancel subscription')
     }
-    return response.json()
+    return response.data
   }
 )
 
@@ -97,39 +84,33 @@ export const fetchBillingHistory = createAsyncThunk(
     if (params.page) queryParams.append('page', params.page.toString())
     if (params.limit) queryParams.append('limit', params.limit.toString())
 
-    const response = await fetch(`/api/subscriptions/billing-history?${queryParams}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch billing history')
+    const response = await apiClient.get(`/api/subscriptions/billing-history?${queryParams}`)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch billing history')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const fetchUsageStats = createAsyncThunk(
   'subscription/fetchUsageStats',
   async () => {
-    const response = await fetch('/api/subscriptions/usage-stats')
-    if (!response.ok) {
-      throw new Error('Failed to fetch usage stats')
+    const response = await apiClient.get('/api/subscriptions/usage-stats')
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch usage stats')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const processPayment = createAsyncThunk(
   'subscription/processPayment',
   async ({ plan, interval, paymentMethodId }: { plan: string; interval: string; paymentMethodId: string }) => {
-    const response = await fetch('/api/subscriptions/process-payment', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ plan, interval, paymentMethodId }),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to process payment')
+    const response = await apiClient.post('/api/subscriptions/process-payment', { plan, interval, paymentMethodId })
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to process payment')
     }
-    return response.json()
+    return response.data
   }
 )
 

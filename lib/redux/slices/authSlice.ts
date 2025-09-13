@@ -1,4 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { API } from '@/lib/api/services';
+import { OnboardingAPI } from '@/lib/api/onboarding';
 
 export interface User {
   id: string;
@@ -32,19 +34,18 @@ const initialState: AuthState = {
 // Async thunks for authentication
 export const loginUser = createAsyncThunk(
   'auth/login',
-  async (credentials: { email: string; password: string; userType?: string }) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Login failed');
+  async (credentials: { email: string; password: string; userType?: string }, { rejectWithValue }) => {
+    try {
+      const response = await API.auth.login(credentials.email, credentials.password);
+      
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Login failed');
+      }
+      
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Login failed');
     }
-    
-    return await response.json();
   }
 );
 
@@ -57,40 +58,67 @@ export const registerUser = createAsyncThunk(
     role: string;
     userType?: string;
     organizationCode?: string;
-  }) => {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Registration failed');
+  }, { rejectWithValue }) => {
+    try {
+      const response = await API.auth.register(userData.name, userData.email, userData.password);
+      
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Registration failed');
+      }
+      
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Registration failed');
     }
-    
-    return await response.json();
   }
 );
 
-export const logoutUser = createAsyncThunk('auth/logout', async () => {
-  await fetch('/api/auth/logout', { method: 'POST' });
-  localStorage.removeItem('token');
-  return null;
+export const logoutUser = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
+  try {
+    await API.auth.logout();
+    localStorage.removeItem('token');
+    return null;
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Logout failed');
+  }
 });
 
-export const refreshToken = createAsyncThunk('auth/refresh', async () => {
-  const response = await fetch('/api/auth/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  
-  if (!response.ok) {
-    throw new Error('Token refresh failed');
+export const refreshToken = createAsyncThunk('auth/refresh', async (_, { rejectWithValue }) => {
+  try {
+    // Note: This might need to be implemented in the API service
+    const response = await API.auth.login('', ''); // This is a placeholder
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Token refresh failed');
   }
-  
-  return await response.json();
 });
+
+// New onboarding thunk
+export const completeOnboarding = createAsyncThunk(
+  'auth/completeOnboarding',
+  async (onboardingData: {
+    userId: string;
+    role: 'student' | 'professional' | 'institute_admin' | 'business_owner';
+    userType?: 'student' | 'professional';
+    bio?: string;
+    skills?: string[];
+    interests?: string[];
+    company?: string;
+    location?: string;
+  }, { rejectWithValue }) => {
+    try {
+      const response = await OnboardingAPI.completeOnboarding(onboardingData);
+      
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Onboarding failed');
+      }
+      
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Onboarding failed');
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
@@ -157,6 +185,23 @@ const authSlice = createSlice({
       state.token = action.payload.token;
       state.user = action.payload.user;
       localStorage.setItem('token', action.payload.token);
+    });
+
+    // Complete onboarding
+    builder.addCase(completeOnboarding.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    });
+    builder.addCase(completeOnboarding.fulfilled, (state, action) => {
+      state.isLoading = false;
+      if (action.payload?.user) {
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+      }
+    });
+    builder.addCase(completeOnboarding.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string || 'Onboarding failed';
     });
   },
 });

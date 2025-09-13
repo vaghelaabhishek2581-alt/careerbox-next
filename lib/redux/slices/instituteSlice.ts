@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { Institute, InstituteProfile, CreateInstituteRequest, UpdateInstituteRequest, InstituteSearchFilters, InstituteSearchResponse } from '@/lib/types/institute.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
+import { API } from '@/lib/api/services'
 
 interface InstituteState {
   institutes: Institute[]
@@ -36,122 +37,88 @@ const initialState: InstituteState = {
 export const fetchInstitutes = createAsyncThunk(
   'institute/fetchInstitutes',
   async (params: { page?: number; limit?: number; status?: string } = {}) => {
-    const queryParams = new URLSearchParams()
-    if (params.page) queryParams.append('page', params.page.toString())
-    if (params.limit) queryParams.append('limit', params.limit.toString())
-    if (params.status) queryParams.append('status', params.status)
-
-    const response = await fetch(`/api/institutes?${queryParams}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch institutes')
+    const response = await API.institutes.getInstitutes(params)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch institutes')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const searchInstitutes = createAsyncThunk(
   'institute/searchInstitutes',
   async (filters: InstituteSearchFilters & { page?: number; limit?: number }) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          value.forEach(v => queryParams.append(key, v.toString()))
-        } else {
-          queryParams.append(key, value.toString())
-        }
-      }
-    })
-
-    const response = await fetch(`/api/institutes/search?${queryParams}`)
-    if (!response.ok) {
-      throw new Error('Failed to search institutes')
+    const response = await API.institutes.searchInstitutes(filters)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to search institutes')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const createInstitute = createAsyncThunk(
   'institute/createInstitute',
   async (instituteData: CreateInstituteRequest) => {
-    const response = await fetch('/api/institutes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(instituteData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to create institute')
+    const response = await API.institutes.createInstitute(instituteData)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to create institute')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const updateInstitute = createAsyncThunk(
   'institute/updateInstitute',
   async ({ instituteId, instituteData }: { instituteId: string; instituteData: UpdateInstituteRequest }) => {
-    const response = await fetch(`/api/institutes/${instituteId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(instituteData),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to update institute')
+    const response = await API.institutes.updateInstitute(instituteId, instituteData)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to update institute')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const fetchInstituteById = createAsyncThunk(
   'institute/fetchInstituteById',
   async (instituteId: string) => {
-    const response = await fetch(`/api/institutes/${instituteId}`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch institute')
+    const response = await API.institutes.getInstituteById(instituteId)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch institute')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const fetchInstituteProfile = createAsyncThunk(
   'institute/fetchInstituteProfile',
   async (instituteId: string) => {
-    const response = await fetch(`/api/institutes/${instituteId}/profile`)
-    if (!response.ok) {
-      throw new Error('Failed to fetch institute profile')
+    const response = await API.institutes.getInstituteProfile(instituteId)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch institute profile')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const fetchMyInstitute = createAsyncThunk(
   'institute/fetchMyInstitute',
   async () => {
-    const response = await fetch('/api/institutes/my-institute')
-    if (!response.ok) {
-      throw new Error('Failed to fetch my institute')
+    const response = await API.institutes.getMyInstitute()
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch my institute')
     }
-    return response.json()
+    return response.data
   }
 )
 
 export const verifyInstitute = createAsyncThunk(
   'institute/verifyInstitute',
   async ({ instituteId, isVerified }: { instituteId: string; isVerified: boolean }) => {
-    const response = await fetch(`/api/institutes/${instituteId}/verify`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ isVerified }),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to verify institute')
+    const response = await API.institutes.verifyInstitute(instituteId, { isVerified })
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to verify institute')
     }
-    return response.json()
+    return response.data
   }
 )
 

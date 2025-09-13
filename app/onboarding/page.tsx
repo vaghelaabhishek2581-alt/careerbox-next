@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks'
+import { completeOnboarding } from '@/lib/redux/slices/authSlice'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -77,64 +79,64 @@ const roleOptions = [
 ]
 
 export default function OnboardingPage() {
-  const { data: session, update } = useSession()
+  const { data: session, update, status } = useSession()
   const router = useRouter()
+  const dispatch = useAppDispatch()
+  const { isLoading, error } = useAppSelector((state) => state.auth)
   const [selectedRole, setSelectedRole] = useState<OnboardingRole | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+
+  // Handle redirect for unauthenticated users
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signup')
+    }
+  }, [status, router])
 
   const handleRoleSelection = async (role: OnboardingRole) => {
     if (!session?.user?.id) return
 
-    setIsLoading(true)
     try {
-      // Update user role
-      const response = await fetch('/api/auth/onboarding/role', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          role,
-          userId: session.user.id
-        })
-      })
+      // Dispatch Redux action to complete onboarding
+      const result = await dispatch(completeOnboarding({
+        userId: session.user.id,
+        role: role,
+        userType: role === 'student' ? 'student' : 'professional'
+      })).unwrap()
 
-      if (response.ok) {
-        // Update session
+      if (result) {
+        // Update session to reflect completed onboarding
         await update({
           ...session,
           user: {
             ...session.user,
             activeRole: role,
-            needsRoleSelection: false
+            needsRoleSelection: false,
+            needsOnboarding: false
           }
-        })
-
-        // Complete onboarding
-        await fetch('/api/auth/onboarding/complete', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            userId: session.user.id
-          })
         })
 
         // Redirect to appropriate dashboard
         router.push('/dashboard')
-      } else {
-        console.error('Failed to update role')
       }
     } catch (error) {
-      console.error('Error updating role:', error)
-    } finally {
-      setIsLoading(false)
+      console.error('Error completing onboarding:', error)
     }
   }
 
-  if (!session) {
-    router.push('/auth/signup')
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render if not authenticated (redirect will happen in useEffect)
+  if (status === 'unauthenticated') {
     return null
   }
 
@@ -145,7 +147,7 @@ export default function OnboardingPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Welcome to CareerBox, {session.user?.name}!
+              Welcome to CareerBox, {session?.user?.name}!
             </h1>
             <p className="text-xl text-gray-600 mb-2">
               Let's get you started by choosing your primary role

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useSocket } from "@/hooks/use-socket";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { Search, Filter, Calendar } from "lucide-react";
 import { ActivityType } from "@/lib/types/activity";
+import { API } from "@/lib/api/services";
 
 interface ActivityLog {
   _id: string;
@@ -38,6 +40,8 @@ export default function AdminLogsPage() {
     search: "",
     userId: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const socket = useSocket();
 
   useEffect(() => {
@@ -51,26 +55,31 @@ export default function AdminLogsPage() {
   }, [socket]);
 
   const fetchLogs = async () => {
-    const queryParams = new URLSearchParams({
-      page: pagination.page.toString(),
-      limit: pagination.limit.toString(),
-    });
-
-    if (filters.type.length > 0) {
-      filters.type.forEach((type) => queryParams.append("type", type));
-    }
-    if (filters.startDate) queryParams.append("startDate", filters.startDate);
-    if (filters.endDate) queryParams.append("endDate", filters.endDate);
-    if (filters.search) queryParams.append("search", filters.search);
-    if (filters.userId) queryParams.append("userId", filters.userId);
+    setLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch(`/api/activities?${queryParams}`);
-      const data = await response.json();
-      setLogs(data.activities);
-      setPagination(data.pagination);
+      const response = await API.admin.getActivities({
+        page: pagination.page,
+        limit: pagination.limit,
+        type: filters.type,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        search: filters.search,
+        userId: filters.userId
+      });
+
+      if (response.success) {
+        setLogs(response.data.activities);
+        setPagination(response.data.pagination);
+      } else {
+        setError(response.error || 'Failed to fetch logs');
+      }
     } catch (error) {
       console.error("Error fetching logs:", error);
+      setError('Failed to fetch logs');
+    } finally {
+      setLoading(false);
     }
   };
 

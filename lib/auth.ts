@@ -80,9 +80,20 @@ export async function isTokenBlacklisted (tokenId: string): Promise<boolean> {
 export async function getUserById (userId: string): Promise<any | null> {
   try {
     const { db } = await connectToDatabase()
+    
+    // Try to find user by ObjectId first
+    if (ObjectId.isValid(userId)) {
+      const user = await db.collection('users').findOne({
+        _id: new ObjectId(userId)
+      })
+      if (user) return user
+    }
+    
+    // If ObjectId lookup fails, try as string ID
     const user = await db.collection('users').findOne({
-      _id: new ObjectId(userId)
+      _id: userId
     })
+    
     return user
   } catch (error) {
     console.error('Error fetching user:', error)

@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { PAYMENT_PLANS } from "@/lib/payment/razorpay";
+import apiClient from "@/lib/api/client";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -48,53 +49,37 @@ export default function PaymentModal({
 
     try {
       // Create payment order
-      const response = await fetch('/api/payment/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planType,
-          billingCycle
-        }),
+      const response = await apiClient.post('/api/payment/create-order', {
+        planType,
+        billingCycle
       });
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create payment order');
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to create payment order');
       }
 
       // Initialize Razorpay
       const options = {
-        key: data.key,
-        amount: data.amount,
-        currency: data.currency,
+        key: (response.data as any).key,
+        amount: (response.data as any).amount,
+        currency: (response.data as any).currency,
         name: 'CareerBox',
         description: plan.name,
-        order_id: data.orderId,
-        handler: async function (response: any) {
+        order_id: (response.data as any).orderId,
+        handler: async function (paymentResponse: any) {
           try {
             // Verify payment
-            const verifyResponse = await fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-              }),
+            const verifyResponse = await apiClient.post('/api/payment/verify', {
+              razorpayOrderId: paymentResponse.razorpay_order_id,
+              razorpayPaymentId: paymentResponse.razorpay_payment_id,
+              razorpaySignature: paymentResponse.razorpay_signature,
             });
 
-            const verifyData = await verifyResponse.json();
-
-            if (verifyData.success) {
-              onSuccess(verifyData.subscription);
+            if (verifyResponse.success) {
+              onSuccess((verifyResponse.data as any).subscription);
               onClose();
             } else {
-              throw new Error(verifyData.error || 'Payment verification failed');
+              throw new Error(verifyResponse.error || 'Payment verification failed');
             }
           } catch (error) {
             console.error('Payment verification error:', error);

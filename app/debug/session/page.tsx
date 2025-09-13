@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import apiClient from '@/lib/api/client'
 
 export default function DebugSessionPage() {
   const { data: session, status } = useSession()
@@ -11,9 +12,8 @@ export default function DebugSessionPage() {
   const fetchDebugData = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/debug/user')
-      const data = await response.json()
-      setDebugData(data)
+      const response = await apiClient.get('/api/debug/user')
+      setDebugData(response.data)
     } catch (error) {
       console.error('Error fetching debug data:', error)
     } finally {

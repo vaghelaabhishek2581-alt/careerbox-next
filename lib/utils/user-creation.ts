@@ -217,6 +217,7 @@ export async function createUserWithProfile(userData: CreateUserData): Promise<{
       name: userData.name.trim(),
       email: userData.email.toLowerCase().trim(),
       role: 'user', // Default role, will be updated during onboarding
+      roles: userData.role ? [userData.role] : [], // Initialize roles array
       activeRole: userData.role || null,
       provider: userData.provider,
       needsOnboarding: true,
@@ -280,15 +281,25 @@ export async function updateUserRole(userId: string, role: OnboardingRole): Prom
       business_owner: 'Business Owner'
     }
     
-    await db.collection('users').updateOne(
-      { _id: ObjectId.isValid(userId) ? new ObjectId(userId) : userId },
-      {
-        $set: {
-          ...updateData,
-          'profile.personalDetails.professionalHeadline': headlineMap[role]
-        }
-      }
-    )
+    const updateResult = ObjectId.isValid(userId) 
+      ? await db.collection('users').updateOne(
+          { _id: new ObjectId(userId) },
+          {
+            $set: {
+              ...updateData,
+              'profile.personalDetails.professionalHeadline': headlineMap[role]
+            }
+          }
+        )
+      : await db.collection('users').updateOne(
+          { _id: userId as any },
+          {
+            $set: {
+              ...updateData,
+              'profile.personalDetails.professionalHeadline': headlineMap[role]
+            }
+          }
+        )
     
     return { success: true }
   } catch (error) {
@@ -310,17 +321,31 @@ export async function completeUserOnboarding(userId: string, role: OnboardingRol
   try {
     const { db } = await connectToDatabase()
     
-    await db.collection('users').updateOne(
-      { _id: ObjectId.isValid(userId) ? new ObjectId(userId) : userId },
-      {
-        $set: {
-          needsOnboarding: false,
-          needsRoleSelection: false,
-          activeRole: role,
-          updatedAt: new Date()
-        }
-      }
-    )
+    const updateResult = ObjectId.isValid(userId) 
+      ? await db.collection('users').updateOne(
+          { _id: new ObjectId(userId) },
+          {
+            $set: {
+              needsOnboarding: false,
+              needsRoleSelection: false,
+              activeRole: role,
+              roles: [role], // Ensure roles array is set
+              updatedAt: new Date()
+            }
+          }
+        )
+      : await db.collection('users').updateOne(
+          { _id: userId as any },
+          {
+            $set: {
+              needsOnboarding: false,
+              needsRoleSelection: false,
+              activeRole: role,
+              roles: [role], // Ensure roles array is set
+              updatedAt: new Date()
+            }
+          }
+        )
     
     return { success: true }
   } catch (error) {

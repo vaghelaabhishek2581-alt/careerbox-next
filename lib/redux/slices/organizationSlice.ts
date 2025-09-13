@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { API } from '@/lib/api/services';
 
 interface Organization {
   id: string;
@@ -46,74 +47,44 @@ const initialState: OrganizationState = {
 export const fetchOrganizations = createAsyncThunk(
   'organization/fetchAll',
   async ({ page, limit }: { page: number; limit: number }) => {
-    const response = await fetch(`/api/admin/organizations?page=${page}&limit=${limit}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch organizations');
+    const response = await API.admin.getOrganizations({ page, limit });
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch organizations');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 
 export const fetchOrganizationMembers = createAsyncThunk(
   'organization/fetchMembers',
   async (organizationId: string) => {
-    const response = await fetch(`/api/organization/${organizationId}/members`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch organization members');
+    const response = await API.organizations.getMembers(organizationId);
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch organization members');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 
 export const createOrganization = createAsyncThunk(
   'organization/create',
   async (organizationData: Partial<Organization>) => {
-    const response = await fetch('/api/admin/organizations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(organizationData),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to create organization');
+    const response = await API.admin.createOrganization(organizationData);
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to create organization');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 
 export const updateOrganization = createAsyncThunk(
   'organization/update',
   async ({ id, data }: { id: string; data: Partial<Organization> }) => {
-    const response = await fetch(`/api/organization/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to update organization');
+    const response = await API.organizations.updateOrganization(id, data);
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to update organization');
     }
-    
-    return await response.json();
+    return response.data;
   }
 );
 

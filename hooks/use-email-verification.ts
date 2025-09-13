@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { API } from '@/lib/api/services';
 
 interface VerificationResult {
   success: boolean;
@@ -18,22 +19,16 @@ export function useEmailVerification() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/auth/verify-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+      const response = await API.auth.sendVerificationCode({ email });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send verification code');
+      if (response.success) {
+        return {
+          success: true,
+          message: response.data.message,
+        };
+      } else {
+        throw new Error(response.error || 'Failed to send verification code');
       }
-
-      return {
-        success: true,
-        message: data.message,
-      };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to send verification code';
       setError(message);
@@ -51,22 +46,16 @@ export function useEmailVerification() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/auth/verify-email', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
-      });
+      const response = await API.auth.verifyEmail({ email, code });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to verify email');
+      if (response.success) {
+        return {
+          success: true,
+          message: response.data.message,
+        };
+      } else {
+        throw new Error(response.error || 'Failed to verify email');
       }
-
-      return {
-        success: true,
-        message: data.message,
-      };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to verify email';
       setError(message);

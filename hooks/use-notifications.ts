@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSocket } from './use-socket';
+import { API } from '@/lib/api/services';
 
 export interface Notification {
   _id: string;
@@ -43,21 +44,19 @@ export function useNotifications() {
       setIsLoading(true);
       setError(null);
 
-      const params = new URLSearchParams();
-      if (options.unreadOnly) params.append('unreadOnly', 'true');
-      if (options.limit) params.append('limit', options.limit.toString());
-      if (options.offset) params.append('offset', options.offset.toString());
+      const response = await API.notifications.getNotifications({
+        unreadOnly: options.unreadOnly,
+        limit: options.limit,
+        offset: options.offset
+      });
 
-      const response = await fetch(`/api/notifications?${params}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch notifications');
+      if (response.success) {
+        setNotifications(response.data.notifications);
+        setUnreadCount(response.data.notifications.filter((n: Notification) => !n.read).length);
+        return response.data;
+      } else {
+        throw new Error(response.error || 'Failed to fetch notifications');
       }
-
-      setNotifications(data.notifications);
-      setUnreadCount(data.notifications.filter((n: Notification) => !n.read).length);
-      return data;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch notifications';
       setError(message);
@@ -71,23 +70,19 @@ export function useNotifications() {
     try {
       setError(null);
 
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'PUT',
-      });
-      const data = await response.json();
+      const response = await API.notifications.markAsRead(notificationId);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to mark notification as read');
+      if (response.success) {
+        setNotifications(prev =>
+          prev.map(n =>
+            n._id === notificationId ? { ...n, read: true } : n
+          )
+        );
+        setUnreadCount(prev => prev - 1);
+        return { success: true };
+      } else {
+        throw new Error(response.error || 'Failed to mark notification as read');
       }
-
-      setNotifications(prev =>
-        prev.map(n =>
-          n._id === notificationId ? { ...n, read: true } : n
-        )
-      );
-      setUnreadCount(prev => prev - 1);
-
-      return { success: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to mark notification as read';
       setError(message);
@@ -99,21 +94,17 @@ export function useNotifications() {
     try {
       setError(null);
 
-      const response = await fetch('/api/notifications/mark-all-read', {
-        method: 'PUT',
-      });
-      const data = await response.json();
+      const response = await API.notifications.markAllAsRead();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to mark all notifications as read');
+      if (response.success) {
+        setNotifications(prev =>
+          prev.map(n => ({ ...n, read: true }))
+        );
+        setUnreadCount(0);
+        return { success: true };
+      } else {
+        throw new Error(response.error || 'Failed to mark all notifications as read');
       }
-
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, read: true }))
-      );
-      setUnreadCount(0);
-
-      return { success: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to mark all notifications as read';
       setError(message);
@@ -125,23 +116,19 @@ export function useNotifications() {
     try {
       setError(null);
 
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'DELETE',
-      });
-      const data = await response.json();
+      const response = await API.notifications.deleteNotification(notificationId);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete notification');
+      if (response.success) {
+        setNotifications(prev =>
+          prev.filter(n => n._id !== notificationId)
+        );
+        setUnreadCount(prev =>
+          notifications.find(n => n._id === notificationId)?.read ? prev : prev - 1
+        );
+        return { success: true };
+      } else {
+        throw new Error(response.error || 'Failed to delete notification');
       }
-
-      setNotifications(prev =>
-        prev.filter(n => n._id !== notificationId)
-      );
-      setUnreadCount(prev =>
-        notifications.find(n => n._id === notificationId)?.read ? prev : prev - 1
-      );
-
-      return { success: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete notification';
       setError(message);
@@ -153,19 +140,15 @@ export function useNotifications() {
     try {
       setError(null);
 
-      const response = await fetch('/api/notifications/delete-all', {
-        method: 'DELETE',
-      });
-      const data = await response.json();
+      const response = await API.notifications.deleteAllNotifications();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete all notifications');
+      if (response.success) {
+        setNotifications([]);
+        setUnreadCount(0);
+        return { success: true };
+      } else {
+        throw new Error(response.error || 'Failed to delete all notifications');
       }
-
-      setNotifications([]);
-      setUnreadCount(0);
-
-      return { success: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete all notifications';
       setError(message);
@@ -177,14 +160,13 @@ export function useNotifications() {
     try {
       setError(null);
 
-      const response = await fetch('/api/notifications/preferences');
-      const data = await response.json();
+      const response = await API.notifications.getPreferences();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to get notification preferences');
+      if (response.success) {
+        return { success: true, preferences: response.data.preferences };
+      } else {
+        throw new Error(response.error || 'Failed to get notification preferences');
       }
-
-      return { success: true, preferences: data.preferences };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to get notification preferences';
       setError(message);
@@ -196,18 +178,13 @@ export function useNotifications() {
     try {
       setError(null);
 
-      const response = await fetch('/api/notifications/preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preferences),
-      });
-      const data = await response.json();
+      const response = await API.notifications.updatePreferences(preferences);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update notification preferences');
+      if (response.success) {
+        return { success: true };
+      } else {
+        throw new Error(response.error || 'Failed to update notification preferences');
       }
-
-      return { success: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update notification preferences';
       setError(message);

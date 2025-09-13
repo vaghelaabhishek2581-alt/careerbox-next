@@ -25,6 +25,7 @@ import {
   PieChart,
   LineChart
 } from "lucide-react";
+import { API } from "@/lib/api/services";
 
 interface SystemHealth {
   api: {
@@ -99,10 +100,11 @@ export default function SystemHealthDashboard() {
 
   const fetchSystemHealth = async () => {
     try {
-      const response = await fetch('/api/admin/system-health');
-      const data = await response.json();
-      setSystemHealth(data);
-      setLastUpdated(new Date());
+      const response = await API.admin.getSystemHealth();
+      if (response.success) {
+        setSystemHealth(response.data);
+        setLastUpdated(new Date());
+      }
     } catch (error) {
       console.error('Error fetching system health:', error);
     }
@@ -110,9 +112,10 @@ export default function SystemHealthDashboard() {
 
   const fetchPlatformStats = async () => {
     try {
-      const response = await fetch('/api/admin/platform-stats');
-      const data = await response.json();
-      setPlatformStats(data);
+      const response = await API.admin.getPlatformStats();
+      if (response.success) {
+        setPlatformStats(response.data);
+      }
     } catch (error) {
       console.error('Error fetching platform stats:', error);
     }
