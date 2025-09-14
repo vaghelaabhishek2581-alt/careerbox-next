@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { Institute as InstituteModel } from '@/src/models'
 import { Institute, CreateInstituteRequest } from '@/lib/types/institute.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
 
@@ -18,8 +19,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const status = searchParams.get('status')
 
-    const db = await connectDB()
-    const institutesCollection = db.collection('institutes')
+    await connectToDatabase()
 
     // Build query
     const query: any = { status: 'active' }
@@ -27,13 +27,13 @@ export async function GET(req: NextRequest) {
 
     // Calculate pagination
     const skip = (page - 1) * limit
-    const total = await institutesCollection.countDocuments(query)
-    const institutes = await institutesCollection
+    const total = await InstituteModel.countDocuments(query)
+    const institutes = await InstituteModel
       .find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .toArray()
+      .lean()
 
     const response: PaginatedResponse<Institute> = {
       data: institutes,
@@ -62,18 +62,16 @@ export async function POST(req: NextRequest) {
     }
 
     const instituteData: CreateInstituteRequest = await req.json()
-    const db = await connectDB()
-    const institutesCollection = db.collection('institutes')
+    await connectToDatabase()
 
     // Check if user already has an institute
-    const existingInstitute = await institutesCollection.findOne({ userId: session.user.id })
+    const existingInstitute = await InstituteModel.findOne({ userId: session.user.id })
     if (existingInstitute) {
       return NextResponse.json({ error: 'User already has an institute profile' }, { status: 400 })
     }
 
     // Create institute
-    const institute: Institute = {
-      id: crypto.randomUUID(),
+    const institute = new InstituteModel({
       userId: session.user.id,
       instituteName: instituteData.instituteName,
       type: instituteData.type,
@@ -91,13 +89,13 @@ export async function POST(req: NextRequest) {
       status: 'active',
       createdAt: new Date(),
       updatedAt: new Date()
-    }
+    })
 
-    await institutesCollection.insertOne(institute)
+    const savedInstitute = await institute.save()
 
     const response: ApiResponse<Institute> = {
       success: true,
-      data: institute,
+      data: savedInstitute.toObject(),
       message: 'Institute profile created successfully'
     }
 

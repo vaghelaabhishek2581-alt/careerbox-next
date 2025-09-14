@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { Job as JobModel, Business } from '@/src/models'
 import { Job, CreateJobRequest } from '@/lib/types/job.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
 
@@ -13,14 +14,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    await connectToDatabase()
+
     const { searchParams } = new URL(req.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const businessId = searchParams.get('businessId')
     const status = searchParams.get('status')
-
-    const db = await connectDB()
-    const jobsCollection = db.collection('jobs')
 
     // Build query
     const query: any = {}
@@ -30,13 +30,13 @@ export async function GET(req: NextRequest) {
 
     // Calculate pagination
     const skip = (page - 1) * limit
-    const total = await jobsCollection.countDocuments(query)
-    const jobs = await jobsCollection
-      .find(query)
+    const total = await JobModel.countDocuments(query)
+    const jobs = await JobModel.find(query)
+      .populate('businessId', 'companyName industry logo')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .toArray()
+      .lean()
 
     const response: PaginatedResponse<Job> = {
       data: jobs,
@@ -64,21 +64,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    await connectToDatabase()
+
     const jobData: CreateJobRequest = await req.json()
-    const db = await connectDB()
-    const jobsCollection = db.collection('jobs')
-    const businessesCollection = db.collection('businesses')
 
     // Verify user has a business
-    const business = await businessesCollection.findOne({ userId: session.user.id })
+    const business = await Business.findOne({ userId: session.user.id })
     if (!business) {
       return NextResponse.json({ error: 'Business profile required' }, { status: 400 })
     }
 
-    // Create job
-    const job: Job = {
-      id: crypto.randomUUID(),
-      businessId: business.id,
+    // Create job using Mongoose
+    const job = new JobModel({
+      businessId: business._id,
       title: jobData.title,
       description: jobData.description,
       requirements: jobData.requirements,
@@ -90,12 +88,13 @@ export async function POST(req: NextRequest) {
       experience: jobData.experience,
       applicationDeadline: jobData.applicationDeadline,
       status: 'draft',
-      applicationsCount: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
+      applicationsCount: 0
+    })
 
-    await jobsCollection.insertOne(job)
+    await job.save()
+
+    // Populate business info for response
+    await job.populate('businessId', 'companyName industry logo')
 
     const response: ApiResponse<Job> = {
       success: true,

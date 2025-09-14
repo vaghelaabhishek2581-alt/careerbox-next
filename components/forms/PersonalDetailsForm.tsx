@@ -41,7 +41,7 @@ import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { useToast } from "@/components/ui/use-toast";
 import { updatePersonalDetails } from "@/lib/redux/slices/profileSlice";
-import type { PersonalDetails } from "@/lib/types/profile.unified";
+import type { IPersonalDetails } from "@/lib/redux/slices/profileSlice";
 import { SkillsForm } from "./SkillsForm";
 import { LanguagesForm } from "./LanguagesForm";
 import { EmailVerification } from "@/components/email-verification";
@@ -52,12 +52,14 @@ const personalDetailsSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   dateOfBirth: z.date().nullable(),
-  gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
+  gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]).optional(),
   professionalHeadline: z.string().min(1, "Professional headline is required"),
   publicProfileId: z.string().min(1, "Public profile ID is required"),
-  aboutMe: z.string().max(500, "About me must be less than 500 characters"),
+  aboutMe: z.string().max(2000, "About me must be less than 2000 characters"),
   interests: z.array(z.string()).optional(),
   professionalBadges: z.array(z.string()).optional(),
+  phone: z.string().optional(),
+  nationality: z.string().optional(),
 });
 
 type PersonalDetailsFormData = z.infer<typeof personalDetailsSchema>;
@@ -74,40 +76,51 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const profile = useAppSelector((state) => state.profile.profile);
+  
+  // Get email from populated user data
+  const userEmail = typeof profile?.userId === 'object' ? profile.userId.email : '';
+  const emailVerified = typeof profile?.userId === 'object' ? profile.userId.emailVerified : false;
   const [newInterest, setNewInterest] = React.useState("");
   const [newBadge, setNewBadge] = React.useState("");
   const [skillsDialogOpen, setSkillsDialogOpen] = React.useState(false);
   const [languagesDialogOpen, setLanguagesDialogOpen] = React.useState(false);
   const [emailVerificationOpen, setEmailVerificationOpen] = React.useState(false);
+  
+  // Profile ID validation hook - called at top level
+  const { validateProfileId, isValidating, validationResult } = useProfileIdValidation();
 
   const form = useForm<PersonalDetailsFormData>({
     context: { mode: "onChange" },
     mode: "onChange",
     resolver: zodResolver(personalDetailsSchema),
     defaultValues: profile?.personalDetails ? {
-      email: profile.email || "",
+      email: userEmail, // Email from User table
       firstName: profile.personalDetails.firstName || "",
       middleName: profile.personalDetails.middleName || "",
       lastName: profile.personalDetails.lastName || "",
-      dateOfBirth: profile.personalDetails.dateOfBirth || null,
-      gender: profile.personalDetails.gender || "Prefer not to say",
+      dateOfBirth: profile.personalDetails.dateOfBirth ? new Date(profile.personalDetails.dateOfBirth) : null,
+      gender: profile.personalDetails.gender || "PREFER_NOT_TO_SAY",
       professionalHeadline: profile.personalDetails.professionalHeadline || "",
       publicProfileId: profile.personalDetails.publicProfileId || "",
       aboutMe: profile.personalDetails.aboutMe || "",
       interests: profile.personalDetails.interests || [],
       professionalBadges: profile.personalDetails.professionalBadges || [],
+      phone: profile.personalDetails.phone || "",
+      nationality: profile.personalDetails.nationality || "",
     } : {
-      email: "",
+      email: userEmail,
       firstName: "",
       middleName: "",
       lastName: "",
       dateOfBirth: null,
-      gender: "Prefer not to say",
+      gender: "PREFER_NOT_TO_SAY",
       professionalHeadline: "",
       publicProfileId: "",
       aboutMe: "",
       interests: [],
       professionalBadges: [],
+      phone: "",
+      nationality: "",
     },
   });
 
@@ -123,19 +136,39 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
   }, []);
 
   const onSubmit = async (data: PersonalDetailsFormData): Promise<void> => {
-    const { validateProfileId } = useProfileIdValidation();
-    const validationResult = await validateProfileId(data.publicProfileId);
-    
-    if (validationResult && !validationResult.isValid) {
-      form.setError("publicProfileId", {
-        type: "manual",
-        message: validationResult.message || "Invalid profile ID"
-      });
-      return;
-    }
-
     try {
-      await dispatch(updatePersonalDetails(data)).unwrap();
+      // Validate profile ID if provided and different from current
+      if (data.publicProfileId && data.publicProfileId !== profile?.personalDetails?.publicProfileId) {
+        const validationResult = await validateProfileId(data.publicProfileId);
+        
+        if (validationResult && !validationResult.isValid) {
+          form.setError("publicProfileId", {
+            type: "manual",
+            message: validationResult.message || "Invalid profile ID"
+          });
+          return;
+        }
+      }
+
+      // Convert form data to match API format (exclude email as it's in User table)
+      const personalDetailsData = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        middleName: data.middleName,
+        dateOfBirth: data.dateOfBirth ? data.dateOfBirth.toISOString() : undefined,
+        gender: data.gender,
+        professionalHeadline: data.professionalHeadline,
+        publicProfileId: data.publicProfileId,
+        aboutMe: data.aboutMe,
+        interests: data.interests,
+        professionalBadges: data.professionalBadges,
+        phone: data.phone,
+        nationality: data.nationality,
+      };
+
+      console.log('Submitting personal details:', personalDetailsData);
+      await dispatch(updatePersonalDetails(personalDetailsData)).unwrap();
+      
       toast({
         title: "Profile Updated",
         description: "Personal details have been updated successfully."
@@ -208,7 +241,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
                           {...field}
                         />
                       </FormControl>
-                      {!profile?.emailVerified && (
+                      {!emailVerified && (
                         <Button
                           type="button"
                           variant="outline"
@@ -222,7 +255,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
                   </FormItem>
                 )}
               />
-              {profile?.emailVerified && (
+              {emailVerified && (
                 <div className="flex items-center gap-2 text-sm text-green-600">
                   <CheckCircle className="h-4 w-4" />
                   Email verified
@@ -274,16 +307,18 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
             </div>
 
             {/* Date of Birth and Gender */}
+            {/* Date of Birth (Shadcn Date Picker) and Gender */}
             <div className="grid grid-cols-2 gap-4">
+              {/* Date of Birth using shadcn DatePicker */}
               <FormField
                 control={form.control}
                 name="dateOfBirth"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Date of Birth*</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
+                    <FormControl>
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
@@ -298,48 +333,50 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                                    selected={field.value || undefined}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value ? new Date(field.value) : undefined}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              {/* Gender Select */}
               <FormField
                 control={form.control}
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Gender</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        defaultValue={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                        <SelectItem value="Prefer not to say">
-                          Prefer not to say
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                        <SelectContent>
+                          <SelectItem value="MALE">Male</SelectItem>
+                          <SelectItem value="FEMALE">Female</SelectItem>
+                          <SelectItem value="OTHER">Other</SelectItem>
+                          <SelectItem value="PREFER_NOT_TO_SAY">
+                            Prefer not to say
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -364,13 +401,48 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
               )}
             />
 
+            {/* Phone and Nationality */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="tel"
+                        placeholder="Enter phone number"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="nationality"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nationality</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter nationality"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Public Profile ID */}
             <FormField
               control={form.control}
               name="publicProfileId"
               render={({ field }) => {
-                const { validateProfileId, isValidating, validationResult } = useProfileIdValidation();
-                
                 React.useEffect(() => {
                   if (field.value) {
                     validateProfileId(field.value);
@@ -460,7 +532,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
               <div className="flex flex-wrap gap-2">
                 {form.watch("professionalBadges")?.map((badge, index) => (
                   <Badge
-                    key={index}
+                    key={`badge-${badge}-${index}`}
                     variant="secondary"
                     className="flex items-center gap-1"
                   >
@@ -493,7 +565,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
               <div className="flex flex-wrap gap-2">
                 {form.watch("interests")?.map((interest, index) => (
                   <Badge
-                    key={index}
+                    key={`interest-${interest}-${index}`}
                     variant="outline"
                     className="flex items-center gap-1"
                   >

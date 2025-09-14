@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { addEducation, updateEducation } from "@/lib/redux/slices/profileSlice";
-import type { Education } from "@/lib/types/profile.unified";
+import type { IEducation } from "@/lib/redux/slices/profileSlice";
 
 const educationSchema = z
   .object({
@@ -78,8 +78,13 @@ type EducationFormData = z.infer<typeof educationSchema>;
 interface EducationFormProps {
   open: boolean;
   onClose: () => void;
-  education?: Education;
+  education?: IEducation;
 }
+
+// Helper function to generate unique IDs
+const generateUniqueId = () => {
+  return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+};
 
 export const EducationForm: React.FC<EducationFormProps> = ({
   open,
@@ -90,29 +95,39 @@ export const EducationForm: React.FC<EducationFormProps> = ({
   const { toast } = useToast();
   const isEditing = !!education;
 
+
+  // Helper function to get default values
+  const getDefaultValues = (edu?: IEducation): EducationFormData => {
+    return {
+      degree: edu?.degree || "",
+      fieldOfStudy: edu?.fieldOfStudy || "",
+      institution: edu?.institution || "",
+      startDate: edu?.startDate ? new Date(edu.startDate) : new Date(),
+      endDate: edu?.endDate ? new Date(edu.endDate) : null,
+      isCurrent: edu?.isCurrent || false,
+      location: edu?.location || "",
+      grade: edu?.grade || "",
+      description: edu?.description || "",
+    };
+  };
+
   const form = useForm<EducationFormData>({
     resolver: zodResolver(educationSchema),
-    defaultValues: {
-      degree: education?.degree || "",
-      fieldOfStudy: education?.fieldOfStudy || "",
-      institution: education?.institution || "",
-      startDate: education?.startDate ? new Date(education.startDate) : new Date(),
-      endDate: education?.endDate ? new Date(education.endDate) : null,
-      isCurrent: education?.isCurrent || false,
-      location: education?.location || "",
-      grade: education?.grade || "",
-      description: education?.description || "",
-    },
+    defaultValues: getDefaultValues(education),
   });
 
   const isCurrent = form.watch("isCurrent");
 
-  // Reset form when dialog closes
+  // Reset form when dialog closes or education changes
   React.useEffect(() => {
     if (!open) {
       form.reset();
+    } else if (education) {
+      // Reset form with new education data when editing
+      const formData = getDefaultValues(education);
+      form.reset(formData);
     }
-  }, [open, form]);
+  }, [open, form, education]);
 
   // Handle current studying toggle
   React.useEffect(() => {
@@ -124,7 +139,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({
   const onSubmit = async (data: EducationFormData) => {
     const educationData = {
       ...data,
-      id: education?.id || Date.now().toString(),
+      id: education?.id || generateUniqueId(),
       startDate: data.startDate.toISOString(),
       endDate: data.isCurrent
         ? undefined
@@ -206,7 +221,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit Education Details" : "Add Education Details"}
+            {isEditing ? `Edit Education - ${education?.institution}` : "Add Education Details"}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             Share your comprehensive academic journey and achievements

@@ -42,17 +42,17 @@ export default function AdminLogsPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const socket = useSocket();
+  // const socket = useSocket();
 
-  useEffect(() => {
-    socket?.on("activity:new", (activity: ActivityLog) => {
-      setLogs((prev) => [activity, ...prev]);
-    });
+  // useEffect(() => {
+  //   socket?.on("activity:new", (activity: ActivityLog) => {
+  //     setLogs((prev) => [activity, ...prev]);
+  //   });
 
-    return () => {
-      socket?.off("activity:new");
-    };
-  }, [socket]);
+  //   return () => {
+  //     socket?.off("activity:new");
+  //   };
+  // }, [socket]);
 
   const fetchLogs = async () => {
     setLoading(true);

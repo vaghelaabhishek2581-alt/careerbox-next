@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase, getUserByEmail, createUser } from '@/lib/db';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { User } from '@/src/models';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -95,6 +96,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await connectToDatabase();
+
     if (action === 'signup') {
       if (!name) {
         return NextResponse.json(
@@ -104,7 +107,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if user already exists
-      const existingUser = await getUserByEmail(email);
+      const existingUser = await User.findOne({ email });
       if (existingUser) {
         return NextResponse.json(
           { success: false, message: 'User already exists' },
@@ -116,17 +119,21 @@ export async function POST(request: NextRequest) {
       const hashedPassword = await bcrypt.hash(password, 12);
 
       // Create user
-      const result = await createUser({
+      const user = new User({
         name,
         email,
         password: hashedPassword,
         role: 'user',
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
+
+      const savedUser = await user.save();
 
       // Generate JWT token
       const token = jwt.sign(
         { 
-          userId: result.insertedId,
+          userId: savedUser._id,
           email,
           role: 'user'
         },
@@ -138,7 +145,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Account created successfully',
         user: {
-          id: result.insertedId,
+          id: savedUser._id,
           name,
           email,
           role: 'user',
@@ -148,7 +155,7 @@ export async function POST(request: NextRequest) {
 
     } else if (action === 'login') {
       // Find user
-      const user = await getUserByEmail(email);
+      const user = await User.findOne({ email });
       if (!user) {
         return NextResponse.json(
           { success: false, message: 'Invalid credentials' },
@@ -164,6 +171,12 @@ export async function POST(request: NextRequest) {
           { status: 401 }
         );
       }
+
+      // Update last login
+      await User.findByIdAndUpdate(user._id, { 
+        lastLogin: new Date(),
+        updatedAt: new Date()
+      });
 
       // Generate JWT token
       const token = jwt.sign(

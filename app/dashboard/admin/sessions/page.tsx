@@ -6,7 +6,7 @@ import { useSocket } from "@/hooks/use-socket";
 import { RootState } from "@/lib/redux/store";
 
 export default function AdminSessionsPage() {
-  const socket = useSocket();
+  // const socket = useSocket();
   const { activeSessions, isConnected, error } = useSelector(
     (state: RootState) => state.session
   );

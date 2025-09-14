@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { Job, Application } from '@/src/models'
 import { JobApplication } from '@/lib/types/job.types'
 import { ApiResponse } from '@/lib/types/api.types'
 
@@ -16,14 +17,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    await connectToDatabase()
+
     const { jobId } = params
     const applicationData = await req.json()
-    const db = await connectDB()
-    const jobsCollection = db.collection('jobs')
-    const applicationsCollection = db.collection('applications')
 
     // Check if job exists and is active
-    const job = await jobsCollection.findOne({ id: jobId })
+    const job = await Job.findById(jobId)
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
     }
@@ -37,7 +37,7 @@ export async function POST(
     }
 
     // Check if user already applied
-    const existingApplication = await applicationsCollection.findOne({
+    const existingApplication = await Application.findOne({
       userId: session.user.id,
       targetId: jobId,
       type: 'job'
@@ -47,25 +47,27 @@ export async function POST(
       return NextResponse.json({ error: 'Already applied to this job' }, { status: 400 })
     }
 
-    // Create job application
-    const jobApplication: JobApplication = {
-      id: crypto.randomUUID(),
-      jobId,
+    // Create job application using Mongoose
+    const jobApplication = new Application({
       userId: session.user.id,
+      type: 'job',
+      targetId: jobId,
       status: 'pending',
       coverLetter: applicationData.coverLetter,
       resumeUrl: applicationData.resumeUrl,
       appliedAt: new Date(),
       updatedAt: new Date()
-    }
+    })
 
-    await applicationsCollection.insertOne(jobApplication)
+    await jobApplication.save()
 
     // Update job applications count
-    await jobsCollection.updateOne(
-      { id: jobId },
-      { $inc: { applicationsCount: 1 } }
-    )
+    await Job.findByIdAndUpdate(jobId, {
+      $inc: { applicationsCount: 1 }
+    })
+
+    // Populate user info for response
+    await jobApplication.populate('userId', 'name email')
 
     const response: ApiResponse<JobApplication> = {
       success: true,

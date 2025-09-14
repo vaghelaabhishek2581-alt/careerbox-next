@@ -7,6 +7,12 @@ export default function AuthError() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
+  // Debug logging
+  console.log('🚨 Auth Error Page - Error details:', {
+    error,
+    allParams: Object.fromEntries(searchParams.entries())
+  });
+
   const getErrorMessage = (error: string | null) => {
     switch (error) {
       case "AccessDenied":

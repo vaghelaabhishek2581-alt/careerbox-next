@@ -31,8 +31,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { useToast } from "@/components/ui/use-toast";
-import { addLanguage, updateLanguage, deleteLanguage } from "@/lib/redux/slices/profileSlice";
-import type { Language } from "@/lib/types/profile.unified";
+import { addLanguage, updateLanguage, deleteLanguage, fetchProfile, removeLanguageOptimistic, addLanguageOptimistic } from "@/lib/redux/slices/profileSlice";
+import type { ILanguage } from "@/lib/redux/slices/profileSlice";
 
 const languageSchema = z.object({
   name: z.string().min(1, "Language name is required"),
@@ -53,43 +53,54 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const profile = useAppSelector((state) => state.profile.profile);
-  const [editingLanguage, setEditingLanguage] = React.useState<Language | null>(
-    null
-  );
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<LanguageFormData>({
     resolver: zodResolver(languageSchema),
     defaultValues: {
       name: "",
-      level: "Basic",
+      level: "BASIC",
     },
   });
 
-  // Cleanup form state on unmount
+  // Reset form when dialog opens/closes and fetch profile if needed
   React.useEffect(() => {
-    return () => {
+    if (!open) {
       form.reset();
-      setEditingLanguage(null);
-    };
-  }, []);
+    } else if (open && !profile) {
+      // Fetch profile when dialog opens if not already loaded
+      dispatch(fetchProfile());
+    }
+  }, [open, form, profile, dispatch]);
 
   const onSubmit = async (data: LanguageFormData) => {
     try {
-      if (editingLanguage) {
-        await dispatch(updateLanguage({ id: editingLanguage.id, languageData: data })).unwrap();
+      setIsSubmitting(true);
+      
+      // Check if language already exists
+      const existingLanguage = profile?.languages?.find(
+        language => language.name.toLowerCase() === data.name.toLowerCase()
+      );
+      
+      if (existingLanguage) {
         toast({
-          title: "Language Updated",
-          description: "Language proficiency has been updated successfully."
+          variant: "destructive",
+          title: "Language Already Exists",
+          description: "This language has already been added to your profile."
         });
-        setEditingLanguage(null);
-      } else {
-        await dispatch(addLanguage(data)).unwrap();
-        toast({
-          title: "Language Added",
-          description: "New language proficiency has been added successfully."
-        });
+        return;
       }
-      form.reset();
+      
+      await dispatch(addLanguage(data)).unwrap();
+      toast({
+        title: "Language Added",
+        description: "New language proficiency has been added successfully."
+      });
+      
+      form.reset({
+        name: "",
+        level: "BASIC",
+      });
     } catch (error) {
       console.error('Failed to save language:', error);
       toast({
@@ -97,28 +108,35 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
         title: "Error",
         description: "Failed to save language proficiency. Please try again."
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleEditLanguage = (language: Language) => {
-    setEditingLanguage(language);
-    form.setValue("name", language.name);
-    form.setValue("level", language.level);
-  };
-
   const handleDeleteLanguage = async (languageId: string) => {
-    try {
-      await dispatch(deleteLanguage(languageId)).unwrap();
+    // Optimistic update - remove locally first
+    const languageToDelete = profile?.languages?.find(language => language.id === languageId);
+    if (languageToDelete) {
+      // Dispatch optimistic update
+      dispatch(removeLanguageOptimistic(languageId));
+      
       toast({
         title: "Language Deleted",
         description: "Language proficiency has been removed successfully."
       });
-      if (editingLanguage?.id === languageId) {
-        setEditingLanguage(null);
-        form.reset();
-      }
+    }
+
+    // API call in background
+    try {
+      await dispatch(deleteLanguage(languageId)).unwrap();
     } catch (error) {
       console.error('Failed to delete language:', error);
+      
+      // Revert optimistic update on error
+      if (languageToDelete) {
+        dispatch(addLanguageOptimistic(languageToDelete));
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",
@@ -127,22 +145,17 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
     }
   };
 
-  const handleCancel = () => {
-    setEditingLanguage(null);
-    form.reset();
-  };
-
   const getLevelColor = (level: string) => {
     switch (level) {
-      case "Basic":
+      case "BASIC":
         return "bg-red-100 text-red-700 border-red-200";
-      case "Intermediate":
+      case "INTERMEDIATE":
         return "bg-blue-100 text-blue-700 border-blue-200";
-      case "Advanced":
+      case "ADVANCED":
         return "bg-green-100 text-green-700 border-green-200";
-      case "Fluent":
+      case "FLUENT":
         return "bg-purple-100 text-purple-700 border-purple-200";
-      case "Native":
+      case "NATIVE":
         return "bg-emerald-100 text-emerald-700 border-emerald-200";
       default:
         return "bg-gray-100 text-gray-700 border-gray-200";
@@ -248,34 +261,18 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
                     />
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      type="submit"
-                      className="bg-purple-600 hover:bg-purple-700"
-                      disabled={form.formState.isSubmitting}
-                    >
-                      {form.formState.isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          {editingLanguage ? "Updating..." : "Adding..."}
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4 mr-2" />
-                          {editingLanguage ? "Update Language" : "Add Language"}
-                        </>
-                      )}
-                    </Button>
-                    {editingLanguage && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCancel}
-                      >
-                        Cancel
-                      </Button>
+                  <Button
+                    type="submit"
+                    className="bg-purple-600 hover:bg-purple-700"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
                     )}
-                  </div>
+                    Add Language
+                  </Button>
                 </form>
               </Form>
             </CardContent>
@@ -283,53 +280,41 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
 
           {/* Languages List */}
           <div className="space-y-3">
-            <h3 className="font-medium">Added Languages</h3>
-            {profile?.languages?.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No languages added yet.
-              </p>
+            <h3 className="font-medium">Added Languages ({profile?.languages?.length || 0})</h3>
+            {!profile?.languages || profile.languages.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-muted-foreground">
+                  No languages added yet. Add your first language above.
+                </p>
+              </div>
             ) : (
-              <div className="space-y-2">
-                {profile?.languages?.map((language) => (
-                  <div
-                    key={language.id}
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      editingLanguage?.id === language.id
-                        ? "ring-2 ring-purple-500 bg-purple-50"
-                        : "bg-white"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-gray-900">
+              <div className="max-h-48 overflow-y-auto">
+                <div className="flex flex-wrap gap-2">
+                  {profile?.languages?.map((language) => (
+                    <div
+                      key={language.id}
+                      className="group flex items-center gap-2 bg-gray-100 hover:bg-gray-200 rounded-full px-3 py-2 transition-colors"
+                    >
+                      <span className="text-sm font-medium text-gray-700">
                         {language.name}
                       </span>
                       <Badge
                         variant="outline"
-                        className={`text-xs ${getLevelColor(language.level)}`}
+                        className={`text-xs px-2 py-0.5 rounded-full ${getLevelColor(language.level)}`}
                       >
                         {language.level}
                       </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditLanguage(language)}
-                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                      >
-                        Edit
-                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteLanguage(language.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3" />
                       </Button>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>

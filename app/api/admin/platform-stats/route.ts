@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { connectToDatabase } from '@/lib/db/mongodb';
+import { User, Business, Institute, Job, Course, Application, Payment } from '@/src/models';
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
       );
     }
 
-    const { db } = await connectToDatabase();
+    await connectToDatabase();
     
     // Get current date for today's calculations
     const today = new Date();
@@ -26,78 +27,78 @@ export async function GET() {
     lastMonth.setMonth(lastMonth.getMonth() - 1);
 
     // Get user statistics
-    const totalUsers = await db.collection('users').countDocuments();
-    const activeUsers = await db.collection('users').countDocuments({ 
+    const totalUsers = await User.countDocuments();
+    const activeUsers = await User.countDocuments({ 
       lastActive: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Active in last 30 days
     });
-    const newUsersToday = await db.collection('users').countDocuments({
+    const newUsersToday = await User.countDocuments({
       createdAt: { $gte: today }
     });
-    const newUsersLastMonth = await db.collection('users').countDocuments({
+    const newUsersLastMonth = await User.countDocuments({
       createdAt: { $gte: lastMonth, $lt: today }
     });
     const userGrowth = newUsersLastMonth > 0 ? ((newUsersToday * 30) / newUsersLastMonth - 1) * 100 : 0;
 
     // Get business statistics
-    const totalBusinesses = await db.collection('businesses').countDocuments();
-    const activeBusinesses = await db.collection('businesses').countDocuments({ 
+    const totalBusinesses = await Business.countDocuments();
+    const activeBusinesses = await Business.countDocuments({ 
       status: 'active' 
     });
-    const newBusinessesToday = await db.collection('businesses').countDocuments({
+    const newBusinessesToday = await Business.countDocuments({
       createdAt: { $gte: today }
     });
-    const newBusinessesLastMonth = await db.collection('businesses').countDocuments({
+    const newBusinessesLastMonth = await Business.countDocuments({
       createdAt: { $gte: lastMonth, $lt: today }
     });
     const businessGrowth = newBusinessesLastMonth > 0 ? ((newBusinessesToday * 30) / newBusinessesLastMonth - 1) * 100 : 0;
 
     // Get institute statistics
-    const totalInstitutes = await db.collection('institutes').countDocuments();
-    const activeInstitutes = await db.collection('institutes').countDocuments({ 
+    const totalInstitutes = await Institute.countDocuments();
+    const activeInstitutes = await Institute.countDocuments({ 
       status: 'active' 
     });
-    const newInstitutesToday = await db.collection('institutes').countDocuments({
+    const newInstitutesToday = await Institute.countDocuments({
       createdAt: { $gte: today }
     });
-    const newInstitutesLastMonth = await db.collection('institutes').countDocuments({
+    const newInstitutesLastMonth = await Institute.countDocuments({
       createdAt: { $gte: lastMonth, $lt: today }
     });
     const instituteGrowth = newInstitutesLastMonth > 0 ? ((newInstitutesToday * 30) / newInstitutesLastMonth - 1) * 100 : 0;
 
     // Get job statistics
-    const totalJobs = await db.collection('jobs').countDocuments();
-    const activeJobs = await db.collection('jobs').countDocuments({ 
+    const totalJobs = await Job.countDocuments();
+    const activeJobs = await Job.countDocuments({ 
       status: 'active',
-      deadline: { $gte: new Date() }
+      applicationDeadline: { $gte: new Date() }
     });
-    const jobsPostedToday = await db.collection('jobs').countDocuments({
+    const jobsPostedToday = await Job.countDocuments({
       createdAt: { $gte: today }
     });
-    const jobsPostedLastMonth = await db.collection('jobs').countDocuments({
+    const jobsPostedLastMonth = await Job.countDocuments({
       createdAt: { $gte: lastMonth, $lt: today }
     });
     const jobGrowth = jobsPostedLastMonth > 0 ? ((jobsPostedToday * 30) / jobsPostedLastMonth - 1) * 100 : 0;
 
     // Get course statistics
-    const totalCourses = await db.collection('courses').countDocuments();
-    const activeCourses = await db.collection('courses').countDocuments({ 
+    const totalCourses = await Course.countDocuments();
+    const activeCourses = await Course.countDocuments({ 
       status: 'active' 
     });
-    const coursesCreatedToday = await db.collection('courses').countDocuments({
+    const coursesCreatedToday = await Course.countDocuments({
       createdAt: { $gte: today }
     });
-    const coursesCreatedLastMonth = await db.collection('courses').countDocuments({
+    const coursesCreatedLastMonth = await Course.countDocuments({
       createdAt: { $gte: lastMonth, $lt: today }
     });
     const courseGrowth = coursesCreatedLastMonth > 0 ? ((coursesCreatedToday * 30) / coursesCreatedLastMonth - 1) * 100 : 0;
 
     // Get revenue statistics
-    const totalRevenue = await db.collection('payments').aggregate([
+    const totalRevenue = await Payment.aggregate([
       { $match: { status: 'completed' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]).toArray();
+    ]);
     
-    const monthlyRevenue = await db.collection('payments').aggregate([
+    const monthlyRevenue = await Payment.aggregate([
       { 
         $match: { 
           status: 'completed',
@@ -105,9 +106,9 @@ export async function GET() {
         } 
       },
       { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]).toArray();
+    ]);
     
-    const dailyRevenue = await db.collection('payments').aggregate([
+    const dailyRevenue = await Payment.aggregate([
       { 
         $match: { 
           status: 'completed',
@@ -115,9 +116,9 @@ export async function GET() {
         } 
       },
       { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]).toArray();
+    ]);
     
-    const lastMonthRevenue = await db.collection('payments').aggregate([
+    const lastMonthRevenue = await Payment.aggregate([
       { 
         $match: { 
           status: 'completed',
@@ -125,7 +126,7 @@ export async function GET() {
         } 
       },
       { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]).toArray();
+    ]);
     
     const totalRevenueAmount = totalRevenue[0]?.total || 0;
     const monthlyRevenueAmount = monthlyRevenue[0]?.total || 0;

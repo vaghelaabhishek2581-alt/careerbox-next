@@ -10,7 +10,13 @@ export interface AuthResult {
 
 export async function authenticateSocket(socket: Socket): Promise<AuthResult> {
   try {
-    const session = await getServerSession()
+    // Add timeout to prevent hanging
+    const sessionPromise = getServerSession()
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Authentication timeout')), 5000)
+    )
+    
+    const session = await Promise.race([sessionPromise, timeoutPromise]) as any
     
     if (!session?.user?.id) {
       return {
@@ -35,7 +41,7 @@ export async function authenticateSocket(socket: Socket): Promise<AuthResult> {
     console.error('Socket authentication error:', error)
     return {
       success: false,
-      error: 'Authentication failed'
+      error: error instanceof Error ? error.message : 'Authentication failed'
     }
   }
 }

@@ -40,7 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import type { WorkExperience } from "@/lib/types/profile.unified";
+import type { IWorkExperience } from "@/lib/redux/slices/profileSlice";
 import type { SubmitHandler } from "react-hook-form";
 import { updateWorkExperience, addWorkExperience } from "@/lib/redux/slices/profileSlice";
 
@@ -88,8 +88,13 @@ type WorkExperienceFormData = z.infer<typeof workExperienceSchema>;
 interface WorkExperienceFormProps {
   open: boolean;
   onClose: () => void;
-  experience?: WorkExperience;
+  experience?: IWorkExperience;
 }
+
+// Helper function to generate unique IDs
+const generateUniqueId = () => {
+  return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+};
 
 export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
   open,
@@ -102,13 +107,14 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
   const [activePositionIndex, setActivePositionIndex] = React.useState(0);
   const isEditing = !!experience;
 
-  const form = useForm<WorkExperienceFormData>({
-    resolver: zodResolver(workExperienceSchema),
-    defaultValues: {
-      company: experience?.company || "",
-      location: experience?.location || "",
-      positions: experience?.positions
-        ? experience.positions.map((pos) => ({
+
+  // Helper function to get default values
+  const getDefaultValues = (exp?: IWorkExperience): WorkExperienceFormData => {
+    return {
+      company: exp?.company || "",
+      location: exp?.location || "",
+      positions: exp?.positions
+        ? exp.positions.map((pos) => ({
             ...pos,
             // Convert string dates to Date objects if needed
             startDate: typeof pos.startDate === "string" ? new Date(pos.startDate) : pos.startDate,
@@ -118,7 +124,7 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
           }))
         : [
             {
-              id: Date.now().toString(),
+              id: generateUniqueId(),
               title: "",
               startDate: new Date(),
               endDate: null,
@@ -128,20 +134,31 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
               skills: [],
             },
           ],
-    },
+    };
+  };
+
+  const form = useForm<WorkExperienceFormData>({
+    resolver: zodResolver(workExperienceSchema),
+    defaultValues: getDefaultValues(experience),
   });
 
   const positions = form.watch("positions");
   const currentPosition = positions[activePositionIndex];
 
-  // Reset form when dialog closes
+  // Reset form when dialog closes or experience changes
   React.useEffect(() => {
     if (!open) {
       form.reset();
       setNewSkill("");
       setActivePositionIndex(0);
+    } else if (experience) {
+      // Reset form with new experience data when editing
+      const formData = getDefaultValues(experience);
+      form.reset(formData);
+      setNewSkill("");
+      setActivePositionIndex(0);
     }
-  }, [open, form]);
+  }, [open, form, experience]);
 
   // Handle current role toggle
   React.useEffect(() => {
@@ -155,13 +172,28 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
     }
   }, [currentPosition?.isCurrent, activePositionIndex, positions, form]);
 
+  // Watch for isCurrent changes and update endDate accordingly
+  const watchedPositions = form.watch("positions");
+  React.useEffect(() => {
+    watchedPositions.forEach((position, index) => {
+      if (position.isCurrent && position.endDate) {
+        const newPositions = [...watchedPositions];
+        newPositions[index] = {
+          ...newPositions[index],
+          endDate: null,
+        };
+        form.setValue("positions", newPositions, { shouldValidate: true });
+      }
+    });
+  }, [watchedPositions, form]);
+
   const onSubmit: SubmitHandler<WorkExperienceFormData> = async (data) => {
     const workData = {
       ...data,
-      id: experience?.id || Date.now().toString(),
+      id: experience?.id || generateUniqueId(),
       positions: data.positions.map((pos) => ({
         ...pos,
-        id: pos.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        id: pos.id || generateUniqueId(),
         startDate: pos.startDate instanceof Date ? pos.startDate.toISOString() : pos.startDate,
         // Convert null to undefined to match the expected type
         endDate: pos.isCurrent
@@ -207,7 +239,7 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
   const addPosition = () => {
     const currentPositions = form.getValues("positions");
     const newPosition = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: generateUniqueId(),
       title: "",
       startDate: new Date(),
       endDate: null,
@@ -284,7 +316,7 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit Work Experience" : "Add Work Experience"}
+            {isEditing ? `Edit Work Experience - ${experience?.company}` : "Add Work Experience"}
           </DialogTitle>
         </DialogHeader>
 
@@ -340,7 +372,7 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
               </div>
 
               {positions.map((position, index) => (
-                <div key={position.id || index} className="p-4 border rounded-lg space-y-4">
+                <div key={`position-${position.id}-${index}`} className="p-4 border rounded-lg space-y-4">
                   <div className="flex justify-between items-center">
                     <h4 className="font-medium">
                       Position {index + 1}
@@ -567,7 +599,7 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
                         <div className="flex flex-wrap gap-2">
                           {positions[index].skills?.map((skill, skillIndex) => (
                             <Badge
-                              key={skillIndex}
+                              key={`skill-${skill}-${skillIndex}-${position.id}`}
                               variant="secondary"
                               className="flex items-center gap-1"
                             >

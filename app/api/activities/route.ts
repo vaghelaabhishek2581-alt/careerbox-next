@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { MongoClient, ObjectId } from 'mongodb'
-
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your Mongo URI to .env.local')
-}
-
-const client = new MongoClient(process.env.MONGODB_URI)
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { Activity } from '@/src/models'
 
 /**
  * @swagger
@@ -47,6 +42,8 @@ export async function GET (request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    await connectToDatabase()
+
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
@@ -59,9 +56,6 @@ export async function GET (request: NextRequest) {
       : undefined
     const search = searchParams.get('search') || undefined
     const userId = searchParams.get('userId') || undefined
-
-    await client.connect()
-    const db = client.db()
 
     const query: any = {}
 
@@ -92,14 +86,13 @@ export async function GET (request: NextRequest) {
     const skip = (page - 1) * limit
 
     const [activities, total] = await Promise.all([
-      db
-        .collection('user_activities')
-        .find(query)
+      Activity.find(query)
+        .populate('userId', 'name email')
         .sort({ timestamp: -1 })
         .skip(skip)
         .limit(limit)
-        .toArray(),
-      db.collection('user_activities').countDocuments(query)
+        .lean(),
+      Activity.countDocuments(query)
     ])
 
     return NextResponse.json({
@@ -117,8 +110,6 @@ export async function GET (request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     )
-  } finally {
-    await client.close()
   }
 }
 
@@ -156,12 +147,11 @@ export async function POST (request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    await connectToDatabase()
+
     const { type, description, metadata } = await request.json()
 
-    await client.connect()
-    const db = client.db()
-
-    const activity = {
+    const activity = new Activity({
       userId: session.user.id,
       type,
       description,
@@ -171,28 +161,21 @@ export async function POST (request: NextRequest) {
       notified: false,
       ip: request.ip,
       userAgent: request.headers.get('user-agent')
-    }
+    })
 
-    const result = await db.collection('user_activities').insertOne(activity)
+    await activity.save()
 
     // Emit socket event for real-time updates
     // This will be handled by the socket server
     const io = (global as any).socketIo
     if (io) {
-      io.to('admin').emit('activity:new', {
-        ...activity,
-        _id: result.insertedId
-      })
-
-      io.to(`user:${session.user.id}`).emit('notification:new', {
-        ...activity,
-        _id: result.insertedId
-      })
+      io.to('admin').emit('activity:new', activity)
+      io.to(`user:${session.user.id}`).emit('notification:new', activity)
     }
 
     return NextResponse.json({
       success: true,
-      activity: { ...activity, _id: result.insertedId }
+      activity
     })
   } catch (error) {
     console.error('Error creating activity:', error)
@@ -200,8 +183,6 @@ export async function POST (request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     )
-  } finally {
-    await client.close()
   }
 }
 
@@ -237,19 +218,16 @@ export async function PATCH (request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { activityIds } = await request.json()
+    await connectToDatabase()
 
-    await client.connect()
-    const db = client.db()
+    const { activityIds } = await request.json()
 
     const query: any = { userId: session.user.id, read: false }
     if (activityIds?.length) {
-      query._id = { $in: activityIds.map(id => new ObjectId(id)) }
+      query._id = { $in: activityIds }
     }
 
-    const result = await db
-      .collection('user_activities')
-      .updateMany(query, { $set: { read: true } })
+    const result = await Activity.updateMany(query, { $set: { read: true } })
 
     return NextResponse.json({ count: result.modifiedCount })
   } catch (error) {
@@ -258,7 +236,5 @@ export async function PATCH (request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     )
-  } finally {
-    await client.close()
   }
 }

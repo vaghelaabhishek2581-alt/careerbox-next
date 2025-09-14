@@ -1,4 +1,5 @@
-import { connectToDatabase } from '@/lib/db/mongodb'
+import { connectToDatabase } from '@/lib/db/mongoose'
+import { EmailVerification, User } from '@/src/models'
 import crypto from 'crypto'
 
 export interface EmailVerificationToken {
@@ -24,23 +25,24 @@ export async function createEmailVerification(email: string): Promise<{
   error?: string
 }> {
   try {
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
     
     // Generate token
     const token = generateVerificationToken()
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
     
     // Remove any existing verification tokens for this email
-    await db.collection('email_verifications').deleteMany({ email })
+    await EmailVerification.deleteMany({ email })
     
     // Create new verification record
-    await db.collection('email_verifications').insertOne({
+    const verification = new EmailVerification({
       token,
       email: email.toLowerCase(),
       expiresAt,
-      createdAt: new Date(),
       verified: false
     })
+    
+    await verification.save()
     
     return {
       success: true,
@@ -64,10 +66,10 @@ export async function verifyEmailToken(token: string): Promise<{
   error?: string
 }> {
   try {
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
     
     // Find verification record
-    const verification = await db.collection('email_verifications').findOne({
+    const verification = await EmailVerification.findOne({
       token,
       verified: false,
       expiresAt: { $gt: new Date() }
@@ -81,13 +83,13 @@ export async function verifyEmailToken(token: string): Promise<{
     }
     
     // Mark as verified
-    await db.collection('email_verifications').updateOne(
-      { token },
+    await EmailVerification.findByIdAndUpdate(
+      verification._id,
       { $set: { verified: true, verifiedAt: new Date() } }
     )
     
     // Update user email verification status
-    await db.collection('users').updateOne(
+    await User.findOneAndUpdate(
       { email: verification.email },
       { $set: { emailVerified: true, updatedAt: new Date() } }
     )

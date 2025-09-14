@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,10 +23,12 @@ import {
 import Link from "next/link";
 import UniversalSearch from "@/components/search/UniversalSearch";
 import RoleDashboard from "@/components/dashboard/RoleDashboard";
+import { SocketDebug } from "@/components/debug/SocketDebug";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -36,13 +38,15 @@ export default function DashboardPage() {
       return;
     }
 
-    if (session.user?.needsOnboarding) {
-      router.replace("/onboarding");
-      return;
-    }
+    // Session is available, no need to refresh
+    setIsCheckingSession(false);
   }, [session, status, router]);
 
-  if (status === "loading") {
+  // Remove redundant onboarding check - middleware handles this
+  // The middleware already redirects users who need onboarding
+  // If we reach this page, the user is properly authenticated and doesn't need onboarding
+
+  if (status === "loading" || isCheckingSession) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -54,10 +58,8 @@ export default function DashboardPage() {
     return null;
   }
 
-  // If user has a specific role and subscription, show role dashboard
-  if (session.user?.role && session.user?.role !== 'user') {
-    return <RoleDashboard />;
-  }
+  // Always show the main dashboard for all users
+  // Role-specific functionality is handled within the dashboard components
 
   // Show enhanced public dashboard with search
   return (
@@ -304,6 +306,9 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+      
+      {/* Temporary Socket Debug Component */}
+      <SocketDebug />
     </div>
   );
 }

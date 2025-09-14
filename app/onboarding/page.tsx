@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks'
 import { completeOnboarding } from '@/lib/redux/slices/authSlice'
+import { useSessionRefresh } from '@/hooks/use-session-refresh'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 
+import { useToast } from '@/components/ui/use-toast'    
 type OnboardingRole = 'student' | 'professional' | 'institute_admin' | 'business_owner'
 
 const roleOptions = [
@@ -79,12 +81,13 @@ const roleOptions = [
 ]
 
 export default function OnboardingPage() {
-  const { data: session, update, status } = useSession()
+  const { data: session, status } = useSession()
+  const { refreshSession } = useSessionRefresh()
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { isLoading, error } = useAppSelector((state) => state.auth)
   const [selectedRole, setSelectedRole] = useState<OnboardingRole | null>(null)
-
+  const { toast } = useToast()
   // Handle redirect for unauthenticated users
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -104,22 +107,25 @@ export default function OnboardingPage() {
       })).unwrap()
 
       if (result) {
-        // Update session to reflect completed onboarding
-        await update({
-          ...session,
-          user: {
-            ...session.user,
-            activeRole: role,
-            needsRoleSelection: false,
-            needsOnboarding: false
-          }
+        // Refresh session to get latest user data
+        await refreshSession()
+
+        // Show success message
+        toast({
+          title: 'Onboarding completed!',
+          description: 'Welcome to CareerBox! Redirecting to your dashboard...',
         })
 
         // Redirect to appropriate dashboard
         router.push('/dashboard')
       }
     } catch (error) {
-      console.error('Error completing onboarding:', error)
+      toast({
+        title: 'Error completing onboarding',
+        description: error as string,
+        variant: 'destructive'
+      })
+      // console.error('Error completing onboarding:', error)
     }
   }
 

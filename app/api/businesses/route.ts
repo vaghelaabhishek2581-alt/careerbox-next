@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { Business as BusinessModel } from '@/src/models'
 import { Business, CreateBusinessRequest } from '@/lib/types/business.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
 
@@ -18,8 +19,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const status = searchParams.get('status')
 
-    const db = await connectDB()
-    const businessesCollection = db.collection('businesses')
+    await connectToDatabase()
 
     // Build query
     const query: any = { status: 'active' }
@@ -27,13 +27,13 @@ export async function GET(req: NextRequest) {
 
     // Calculate pagination
     const skip = (page - 1) * limit
-    const total = await businessesCollection.countDocuments(query)
-    const businesses = await businessesCollection
+    const total = await BusinessModel.countDocuments(query)
+    const businesses = await BusinessModel
       .find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .toArray()
+      .lean()
 
     const response: PaginatedResponse<Business> = {
       data: businesses,
@@ -62,18 +62,16 @@ export async function POST(req: NextRequest) {
     }
 
     const businessData: CreateBusinessRequest = await req.json()
-    const db = await connectDB()
-    const businessesCollection = db.collection('businesses')
+    await connectToDatabase()
 
     // Check if user already has a business
-    const existingBusiness = await businessesCollection.findOne({ userId: session.user.id })
+    const existingBusiness = await BusinessModel.findOne({ userId: session.user.id })
     if (existingBusiness) {
       return NextResponse.json({ error: 'User already has a business profile' }, { status: 400 })
     }
 
     // Create business
-    const business: Business = {
-      id: crypto.randomUUID(),
+    const business = new BusinessModel({
       userId: session.user.id,
       companyName: businessData.companyName,
       industry: businessData.industry,
@@ -91,13 +89,13 @@ export async function POST(req: NextRequest) {
       status: 'active',
       createdAt: new Date(),
       updatedAt: new Date()
-    }
+    })
 
-    await businessesCollection.insertOne(business)
+    const savedBusiness = await business.save()
 
     const response: ApiResponse<Business> = {
       success: true,
-      data: business,
+      data: savedBusiness.toObject(),
       message: 'Business profile created successfully'
     }
 

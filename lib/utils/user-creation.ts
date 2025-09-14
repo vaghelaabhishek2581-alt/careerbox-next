@@ -1,7 +1,6 @@
-import { connectToDatabase } from '@/lib/db/mongodb'
 import bcrypt from 'bcryptjs'
 import { createEmailVerification, sendVerificationEmail } from '@/lib/email/verification'
-import { ObjectId } from 'mongodb'
+import { User, Profile, Business, Institute } from '@/src/models'
 
 // Unified user creation types
 export type OnboardingRole = 'student' | 'professional' | 'institute_admin' | 'business_owner'
@@ -90,27 +89,26 @@ export function generatePublicProfileId(name: string, email: string): string {
  * Generate unique profile ID by checking database
  */
 export async function generateUniqueProfileId(name: string, email: string): Promise<string> {
-  const { db } = await connectToDatabase()
   
   let baseId = generatePublicProfileId(name, email)
   let finalId = baseId
   let counter = 1
   
-  // Check if profile ID exists in users, businesses, or institutes
+  // Check if profile ID exists in profiles, businesses, or institutes
   while (true) {
-    const existingUser = await db.collection('users').findOne({
+    const existingProfile = await Profile.findOne({
       'personalDetails.publicProfileId': finalId
     })
     
-    const existingBusiness = await db.collection('businesses').findOne({
+    const existingBusiness = await Business.findOne({
       'publicProfileId': finalId
     })
     
-    const existingInstitute = await db.collection('institutes').findOne({
+    const existingInstitute = await Institute.findOne({
       'publicProfileId': finalId
     })
     
-    if (!existingUser && !existingBusiness && !existingInstitute) {
+    if (!existingProfile && !existingBusiness && !existingInstitute) {
       break
     }
     
@@ -155,10 +153,10 @@ export async function createUserWithProfile(userData: CreateUserData): Promise<{
   error?: string
 }> {
   try {
-    const { db } = await connectToDatabase()
+   
     
     // Check if user already exists
-    const existingUser = await db.collection('users').findOne({
+    const existingUser = await User.findOne({
       email: userData.email.toLowerCase()
     })
     
@@ -168,36 +166,22 @@ export async function createUserWithProfile(userData: CreateUserData): Promise<{
         error: 'User already exists with this email'
       }
     }
-    
     // Parse name
     const { firstName, lastName } = parseFullName(userData.name)
     
     // Generate unique profile ID
     const publicProfileId = await generateUniqueProfileId(userData.name, userData.email)
     
-    // Create auto-hydrated profile
-    const profile: UserProfile = {
-      personalDetails: {
-        firstName,
-        lastName,
-        publicProfileId,
-        professionalHeadline: userData.role === 'professional' ? 'Professional' : 
-                             userData.role === 'student' ? 'Student' :
-                             userData.role === 'institute_admin' ? 'Institute Administrator' :
-                             userData.role === 'business_owner' ? 'Business Owner' : 'User',
-        aboutMe: `Welcome to my profile! I'm ${firstName} and I'm excited to be part of the CareerBox community.`,
-        avatar: userData.image || undefined
-      },
-      workExperience: [],
-      education: [],
-      skills: [],
-      languages: [],
-      interests: [],
-      socialLinks: [],
-      achievements: [],
-      certifications: [],
-      projects: [],
-      goals: [],
+    // Create user first
+    const newUserData = {
+      email: userData.email.toLowerCase().trim(),
+      role: 'user', // Default role, will be updated during onboarding
+      roles: userData.role ? [userData.role] : [], // Initialize roles array
+      activeRole: userData.role || null,
+      provider: userData.provider,
+      needsOnboarding: true,
+      needsRoleSelection: !userData.role,
+      emailVerified: userData.provider === 'google', // Google users are pre-verified
       preferences: {
         notifications: {
           email: true,
@@ -209,44 +193,63 @@ export async function createUserWithProfile(userData: CreateUserData): Promise<{
           showEmail: false,
           showPhone: false
         }
-      }
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    console.log('newUserData', newUserData)
+    
+    // Add password for credentials users
+    if (userData.provider === 'credentials' && userData.password) {
+      (newUserData as any).password = await bcrypt.hash(userData.password, 12)
     }
     
-    // Prepare user data
-    const newUser = {
-      name: userData.name.trim(),
-      email: userData.email.toLowerCase().trim(),
-      role: 'user', // Default role, will be updated during onboarding
-      roles: userData.role ? [userData.role] : [], // Initialize roles array
-      activeRole: userData.role || null,
-      provider: userData.provider,
-      needsOnboarding: true,
-      needsRoleSelection: !userData.role,
-      emailVerified: userData.provider === 'google', // Google users are pre-verified
-      status: 'active',
-      profile,
+    // Create user
+    console.log('🔧 Creating User with data:', JSON.stringify(newUserData, null, 2))
+    const user = new User(newUserData)
+    console.log('🔧 User instance created, attempting to save...')
+    const savedUser = await user.save()
+    console.log('✅ User saved successfully:', savedUser._id)
+    
+    // Create profile for the user
+    const profileData = {
+      userId: savedUser._id,
+      personalDetails: {
+        firstName,
+        lastName,
+        publicProfileId,
+        professionalHeadline: userData.role === 'professional' ? 'Professional' : 
+                             userData.role === 'student' ? 'Student' :
+                             userData.role === 'institute_admin' ? 'Institute Administrator' :
+                             userData.role === 'business_owner' ? 'Business Owner' : 'User',
+        aboutMe: `Welcome to my profile! I'm ${firstName} and I'm excited to be part of the CareerBox community.`,
+      },
+      workExperiences: [],
+      education: [],
+      skills: [],
+      languages: [],
+      socialLinks: {},
+      profileImage: userData.image || undefined,
+      isPublic: true,
+      isComplete: false,
+      completionPercentage: 0,
       createdAt: new Date(),
       updatedAt: new Date()
     }
     
-    // Add password for credentials users
-    if (userData.provider === 'credentials' && userData.password) {
-      (newUser as any).password = await bcrypt.hash(userData.password, 12)
-    }
+    const profile = new Profile(profileData)
+    const savedProfile = await profile.save()
     
-    // Create user
-    const result = await db.collection('users').insertOne(newUser)
+    // Update user with profile reference
+    savedUser.profileId = savedProfile._id
+    await savedUser.save()
     
     // Return user without password
-    const { password, ...userWithoutPassword } = newUser as any
-    const createdUser = {
-      ...userWithoutPassword,
-      _id: result.insertedId
-    }
+    const { password, ...userWithoutPassword } = savedUser.toObject()
     
     return {
       success: true,
-      user: createdUser
+      user: userWithoutPassword
     }
   } catch (error) {
     console.error('Error creating user with profile:', error)
@@ -265,7 +268,7 @@ export async function updateUserRole(userId: string, role: OnboardingRole): Prom
   error?: string
 }> {
   try {
-    const { db } = await connectToDatabase()
+   
     
     const updateData: any = {
       activeRole: role,
@@ -281,25 +284,15 @@ export async function updateUserRole(userId: string, role: OnboardingRole): Prom
       business_owner: 'Business Owner'
     }
     
-    const updateResult = ObjectId.isValid(userId) 
-      ? await db.collection('users').updateOne(
-          { _id: new ObjectId(userId) },
-          {
-            $set: {
-              ...updateData,
-              'profile.personalDetails.professionalHeadline': headlineMap[role]
-            }
-          }
-        )
-      : await db.collection('users').updateOne(
-          { _id: userId as any },
-          {
-            $set: {
-              ...updateData,
-              'profile.personalDetails.professionalHeadline': headlineMap[role]
-            }
-          }
-        )
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          ...updateData,
+          'profile.personalDetails.professionalHeadline': headlineMap[role]
+        }
+      }
+    )
     
     return { success: true }
   } catch (error) {
@@ -319,33 +312,20 @@ export async function completeUserOnboarding(userId: string, role: OnboardingRol
   error?: string
 }> {
   try {
-    const { db } = await connectToDatabase()
+   
     
-    const updateResult = ObjectId.isValid(userId) 
-      ? await db.collection('users').updateOne(
-          { _id: new ObjectId(userId) },
-          {
-            $set: {
-              needsOnboarding: false,
-              needsRoleSelection: false,
-              activeRole: role,
-              roles: [role], // Ensure roles array is set
-              updatedAt: new Date()
-            }
-          }
-        )
-      : await db.collection('users').updateOne(
-          { _id: userId as any },
-          {
-            $set: {
-              needsOnboarding: false,
-              needsRoleSelection: false,
-              activeRole: role,
-              roles: [role], // Ensure roles array is set
-              updatedAt: new Date()
-            }
-          }
-        )
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          needsOnboarding: false,
+          needsRoleSelection: false,
+          activeRole: role,
+          roles: [role], // Ensure roles array is set
+          updatedAt: new Date()
+        }
+      }
+    )
     
     return { success: true }
   } catch (error) {

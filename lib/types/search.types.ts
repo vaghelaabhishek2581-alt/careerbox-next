@@ -150,7 +150,7 @@ export const BusinessSearchResultSchema = BaseSearchResultSchema.extend({
 export const InstituteSearchResultSchema = BaseSearchResultSchema.extend({
   type: z.literal('institute'),
   instituteName: z.string(),
-  type: z.string(),
+  instituteType: z.string(),
   location: z.string().optional(),
   logo: z.string().url().optional(),
   verified: z.boolean().default(false),
@@ -198,7 +198,7 @@ export const ExamSearchResultSchema = BaseSearchResultSchema.extend({
   type: z.literal('exam'),
   title: z.string(),
   createdBy: z.string(),
-  type: z.string(),
+  examType: z.string(),
   duration: z.number(),
   fee: z.number(),
   examDate: z.date().optional(),
@@ -342,11 +342,13 @@ export function parseSearchQuery(searchParams: URLSearchParams): SearchFilters {
     industries: searchParams.get('industries')?.split(',').filter(Boolean),
     experience: {
       min: searchParams.get('exp_min') ? parseInt(searchParams.get('exp_min')!) : undefined,
-      max: searchParams.get('exp_max') ? parseInt(searchParams.get('exp_max')!) : undefined
+      max: searchParams.get('exp_max') ? parseInt(searchParams.get('exp_max')!) : undefined,
+      unit: 'years'
     },
     salary: {
       min: searchParams.get('salary_min') ? parseInt(searchParams.get('salary_min')!) : undefined,
-      max: searchParams.get('salary_max') ? parseInt(searchParams.get('salary_max')!) : undefined
+      max: searchParams.get('salary_max') ? parseInt(searchParams.get('salary_max')!) : undefined,
+      currency: 'USD'
     },
     rating: {
       min: searchParams.get('rating_min') ? parseFloat(searchParams.get('rating_min')!) : undefined

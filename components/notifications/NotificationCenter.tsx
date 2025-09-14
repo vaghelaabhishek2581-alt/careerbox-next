@@ -42,22 +42,22 @@ export default function NotificationCenter() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'application' | 'system' | 'social' | 'admin'>('all');
   const [isLoading, setIsLoading] = useState(true);
-  const { socket, isConnected } = useSocket();
+  // const { socket, isConnected } = useSocket();
 
-  useEffect(() => {
-    fetchNotifications();
+  // useEffect(() => {
+  //   fetchNotifications();
     
-    // Listen for real-time notifications
-    if (socket) {
-      socket.on('notification', (notification: Notification) => {
-        setNotifications(prev => [notification, ...prev]);
-      });
+  //   // Listen for real-time notifications
+  //   if (socket) {
+  //     socket.on('notification', (notification: Notification) => {
+  //       setNotifications(prev => [notification, ...prev]);
+  //     });
 
-      return () => {
-        socket.off('notification');
-      };
-    }
-  }, [socket]);
+  //     return () => {
+  //       socket.off('notification');
+  //     };
+  //   }
+  // }, [socket]);
 
   const fetchNotifications = async () => {
     try {

@@ -19,10 +19,10 @@ import {
   DollarSign,
   Server
 } from 'lucide-react'
-import Link from 'next/link'
-import SystemHealthDashboard from '../admin/SystemHealthDashboard'
-import EmailTemplateManager from '../admin/EmailTemplateManager'
-import SessionManager from '../admin/SessionManager'
+  import Link from 'next/link'
+        import SystemHealthDashboard from '@/components/admin/SystemHealthDashboard'
+    import EmailTemplateManager from '@/components/admin/EmailTemplateManager'
+    import SessionManager from '@/components/admin/SessionManager'
 
 export default function AdminDashboard() {
   const dispatch = useDispatch<AppDispatch>()
@@ -32,8 +32,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     dispatch(fetchLeads({ status: 'pending' }))
-    dispatch(fetchBusinesses())
-    dispatch(fetchInstitutes())
+    dispatch(fetchBusinesses({}))
+    dispatch(fetchInstitutes({}))
   }, [dispatch])
 
   const pendingLeads = leads.filter(lead => lead.status === 'pending')
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
                       <Building2 className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Active Businesses</span>
                     </div>
-                    <span className="font-medium">{businesses.filter(b => b.status === 'active').length}</span>
+                    <span className="font-medium">{businesses.filter(b => b.isVerified).length}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -284,11 +284,11 @@ export default function AdminDashboard() {
           </div>
           <div className="grid gap-4">
             {businesses.map((business) => (
-              <Card key={business.id}>
-                <CardHeader>
+              <Card key={business._id.toString()}>
+                  <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg">{business.companyName}</CardTitle>
+                        <CardTitle className="text-lg">{business.name}</CardTitle>
                       <CardDescription className="flex items-center gap-4">
                         <span>{business.industry}</span>
                         <span>{business.size}</span>
@@ -299,8 +299,8 @@ export default function AdminDashboard() {
                       <Badge variant={business.isVerified ? 'default' : 'secondary'}>
                         {business.isVerified ? 'Verified' : 'Pending'}
                       </Badge>
-                      <Badge variant={business.status === 'active' ? 'default' : 'destructive'}>
-                        {business.status}
+                      <Badge variant={business.isVerified ? 'default' : 'destructive'}>
+                        {business.isVerified ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
                   </div>
@@ -308,8 +308,10 @@ export default function AdminDashboard() {
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-2">{business.description}</p>
                   <div className="flex items-center gap-4 text-sm">
-                    <span>{business.address.city}, {business.address.country}</span>
-                    <span>Contact: {business.contactInfo.email}</span>
+                    <span>{business.location}</span>
+                    <span>Email: {business.email}</span>
+                    {business.phone && <span>Phone: {business.phone}</span>}
+                    {business.website && <span>Website: {business.website}</span>}
                   </div>
                 </CardContent>
               </Card>

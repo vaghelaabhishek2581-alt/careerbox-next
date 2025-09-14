@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { Course as CourseModel, Institute } from '@/src/models'
 import { Course, CreateCourseRequest } from '@/lib/types/course.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
 
@@ -19,8 +20,7 @@ export async function GET(req: NextRequest) {
     const instituteId = searchParams.get('instituteId')
     const status = searchParams.get('status')
 
-    const db = await connectDB()
-    const coursesCollection = db.collection('courses')
+    await connectToDatabase()
 
     // Build query
     const query: any = { status: 'active' }
@@ -29,13 +29,13 @@ export async function GET(req: NextRequest) {
 
     // Calculate pagination
     const skip = (page - 1) * limit
-    const total = await coursesCollection.countDocuments(query)
-    const courses = await coursesCollection
+    const total = await CourseModel.countDocuments(query)
+    const courses = await CourseModel
       .find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .toArray()
+      .lean()
 
     const response: PaginatedResponse<Course> = {
       data: courses,
@@ -64,20 +64,17 @@ export async function POST(req: NextRequest) {
     }
 
     const courseData: CreateCourseRequest = await req.json()
-    const db = await connectDB()
-    const coursesCollection = db.collection('courses')
-    const institutesCollection = db.collection('institutes')
+    await connectToDatabase()
 
     // Verify user has an institute
-    const institute = await institutesCollection.findOne({ userId: session.user.id })
+    const institute = await Institute.findOne({ userId: session.user.id })
     if (!institute) {
       return NextResponse.json({ error: 'Institute profile required' }, { status: 400 })
     }
 
     // Create course
-    const course: Course = {
-      id: crypto.randomUUID(),
-      instituteId: institute.id,
+    const course = new CourseModel({
+      instituteId: institute._id,
       title: courseData.title,
       description: courseData.description,
       category: courseData.category,
@@ -97,13 +94,13 @@ export async function POST(req: NextRequest) {
       applicationsCount: 0,
       createdAt: new Date(),
       updatedAt: new Date()
-    }
+    })
 
-    await coursesCollection.insertOne(course)
+    const savedCourse = await course.save()
 
     const response: ApiResponse<Course> = {
       success: true,
-      data: course,
+      data: savedCourse.toObject(),
       message: 'Course created successfully'
     }
 

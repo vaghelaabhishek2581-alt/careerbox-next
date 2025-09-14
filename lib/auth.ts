@@ -1,8 +1,8 @@
 // lib/auth.ts
 import jwt from 'jsonwebtoken'
 import { NextRequest } from 'next/server'
-import { connectToDatabase } from '@/lib/db'
-import { ObjectId } from 'mongodb'
+import { connectToDatabase } from '@/lib/db/mongoose'
+import { User, BlacklistedToken } from '@/src/models'
 
 export interface JWTPayload {
   sub: string // user id
@@ -61,8 +61,8 @@ export function verifyJWT (token: string): JWTPayload | null {
  */
 export async function isTokenBlacklisted (tokenId: string): Promise<boolean> {
   try {
-    const { db } = await connectToDatabase()
-    const blacklistedToken = await db.collection('blacklisted_tokens').findOne({
+    await connectToDatabase()
+    const blacklistedToken = await BlacklistedToken.findOne({
       $or: [{ tokenId }, { token: tokenId }],
       expiresAt: { $gt: new Date() }
     })
@@ -79,22 +79,16 @@ export async function isTokenBlacklisted (tokenId: string): Promise<boolean> {
  */
 export async function getUserById (userId: string): Promise<any | null> {
   try {
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
     
     // Try to find user by ObjectId first
-    if (ObjectId.isValid(userId)) {
-      const user = await db.collection('users').findOne({
-        _id: new ObjectId(userId)
-      })
-      if (user) return user
-    }
+    const user = await User.findById(userId)
+    if (user) return user
     
     // If ObjectId lookup fails, try as string ID
-    const user = await db.collection('users').findOne({
-      _id: userId
-    })
+    const userByString = await User.findOne({ _id: userId })
     
-    return user
+    return userByString
   } catch (error) {
     console.error('Error fetching user:', error)
     return null

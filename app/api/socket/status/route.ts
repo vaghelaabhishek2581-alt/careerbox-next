@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSocketServer } from '../socket'
+import { getSocketServer } from '../../../../server.mts'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       message: 'Socket server is running',
       data: {
         connectedClients: connectedSockets.length,
-        serverId: io.id,
+        serverId: 'socket-server',
         namespace: io.name,
         timestamp: new Date().toISOString()
       }

@@ -23,7 +23,7 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <Providers>
           <ReduxProvider>
-            <Header />
+
             <main className="min-h-screen">{children}</main>
           </ReduxProvider>
         </Providers>

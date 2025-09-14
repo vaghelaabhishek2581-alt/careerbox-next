@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils'
 import { SearchSuggestion, SearchCategory, SEARCH_CATEGORIES } from '@/lib/types/search.types'
 import { useSocket } from '@/hooks/use-socket'
-import { debounce } from 'lodash'
+// import { debounce } from 'lodash'
 import apiClient from '@/lib/api/client'
 
 interface UniversalSearchProps {
@@ -28,7 +28,7 @@ export default function UniversalSearch({
 }: UniversalSearchProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { socket, isConnected } = useSocket()
+  // const { socket, isConnected } = useSocket()
   
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
@@ -49,44 +49,44 @@ export default function UniversalSearch({
     }
   }, [])
 
-  // Debounced search suggestions
-  const debouncedSearch = useCallback(
-    debounce(async (searchQuery: string) => {
-      if (searchQuery.length < 2) {
-        setSuggestions([])
-        return
-      }
+  // // Debounced search suggestions
+  // const debouncedSearch = useCallback(
+  //   debounce(async (searchQuery: string) => {
+  //     if (searchQuery.length < 2) {
+  //       setSuggestions([])
+  //       return
+  //     }
 
-      setIsLoading(true)
+  //     setIsLoading(true)
       
-      if (socket && isConnected) {
-        socket.emit('searchSuggestions', searchQuery, (suggestions: SearchSuggestion[]) => {
-          setSuggestions(suggestions)
-          setIsLoading(false)
-        })
-      } else {
-        // Fallback to API call if socket is not available
-        try {
-          const response = await apiClient.get(`/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`)
-          if (response.success) {
-            setSuggestions((response.data as any).suggestions || [])
-          } else {
-            setSuggestions([])
-          }
-        } catch (error) {
-          console.error('Error fetching suggestions:', error)
-          setSuggestions([])
-        }
-        setIsLoading(false)
-      }
-    }, 300),
-    [socket, isConnected]
-  )
+  //     if (socket && isConnected) {
+  //       socket.emit('searchSuggestions', searchQuery, (suggestions: SearchSuggestion[]) => {
+  //         setSuggestions(suggestions)
+  //         setIsLoading(false)
+  //       })
+  //     } else {
+  //       // Fallback to API call if socket is not available
+  //       try {
+  //         const response = await apiClient.get(`/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`)
+  //         if (response.success) {
+  //           setSuggestions((response.data as any).suggestions || [])
+  //         } else {
+  //           setSuggestions([])
+  //         }
+  //       } catch (error) {
+  //         console.error('Error fetching suggestions:', error)
+  //         setSuggestions([])
+  //       }
+  //       setIsLoading(false)
+  //     }
+  //   }, 300),
+  //   [socket, isConnected]
+  // )
 
   // Handle input change
   const handleInputChange = (value: string) => {
     setQuery(value)
-    debouncedSearch(value)
+    // debouncedSearch(value)
   }
 
   // Handle search

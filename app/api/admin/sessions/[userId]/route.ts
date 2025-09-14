@@ -3,7 +3,8 @@ import { withJWTAuthDynamic, createSuccessResponse, createErrorResponse } from '
 import { revokeAllUserTokens } from '@/lib/auth/jwt'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
-
+import { User } from '@/src/models'
+  
 // Terminate all sessions for a specific user
 async function terminateAllUserSessionsHandler(
   request: NextRequest, 
@@ -24,7 +25,7 @@ async function terminateAllUserSessionsHandler(
     const { db } = await connectToDatabase()
     
     // Check if target user exists
-    const targetUser = await db.collection('users').findOne({
+    const targetUser = await User.findOne({
       _id: new ObjectId(userId)
     })
     

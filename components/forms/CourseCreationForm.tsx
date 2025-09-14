@@ -434,7 +434,7 @@ export default function CourseCreationForm() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {form.watch('prerequisites').map((prerequisite, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={`prerequisite-${prerequisite}-${index}`} variant="secondary" className="flex items-center gap-1">
                         {prerequisite}
                         <X
                           className="h-3 w-3 cursor-pointer"
@@ -509,7 +509,7 @@ export default function CourseCreationForm() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {form.watch('instructor.qualifications').map((qualification, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={`qualification-${qualification}-${index}`} variant="secondary" className="flex items-center gap-1">
                         {qualification}
                         <X
                           className="h-3 w-3 cursor-pointer"

@@ -30,12 +30,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { addSkill, updateSkill, deleteSkill } from "@/lib/redux/slices/profileSlice";
-import type { Skill } from "@/lib/types/profile.unified";
+import { useToast } from "@/components/ui/use-toast";
+import { addSkill, updateSkill, deleteSkill, fetchProfile, removeSkillOptimistic, addSkillOptimistic } from "@/lib/redux/slices/profileSlice";
+import type { ISkill } from "@/lib/redux/slices/profileSlice";
 
 const skillSchema = z.object({
   name: z.string().min(1, "Skill name is required"),
-  level: z.enum(["Beginner", "Intermediate", "Advanced", "Expert"]),
+  level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"]),
 });
 
 type SkillFormData = z.infer<typeof skillSchema>;
@@ -47,95 +48,112 @@ interface SkillsFormProps {
 
 export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const profile = useAppSelector((state) => state.profile.profile);
   const isLoading = useAppSelector((state) => state.profile.isLoading);
-  const [editingSkill, setEditingSkill] = React.useState<Skill | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<SkillFormData>({
     resolver: zodResolver(skillSchema),
     defaultValues: {
-      name: "",
-      level: "Beginner",
+      name: "", 
+      level: "BEGINNER",
     },
   });
 
-  // Reset form when dialog opens/closes
+  // Reset form when dialog opens/closes and fetch profile if needed
   React.useEffect(() => {
     if (!open) {
-      setEditingSkill(null);
       form.reset();
+    } else if (open && !profile) {
+      // Fetch profile when dialog opens if not already loaded
+      dispatch(fetchProfile());
     }
-  }, [open, form]);
+  }, [open, form, profile, dispatch]);
 
   const onSubmit = async (data: SkillFormData) => {
     try {
       setIsSubmitting(true);
       
-      // Convert level to uppercase to match backend enum
-      const formattedData = {
-        ...data,
-        level: data.level.toUpperCase() as "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT",
-      };
-
-      if (editingSkill) {
-        await dispatch(updateSkill({ id: editingSkill.id, skillData: formattedData })).unwrap();
-        setEditingSkill(null);
-      } else {
-        await dispatch(addSkill(formattedData)).unwrap();
+      // Check if skill already exists
+      const existingSkill = profile?.skills?.find(
+        skill => skill.name.toLowerCase() === data.name.toLowerCase()
+      );
+      
+      if (existingSkill) {
+        toast({
+          variant: "destructive",
+          title: "Skill Already Exists",
+          description: "This skill has already been added to your profile."
+        });
+        return;
       }
+      
+      await dispatch(addSkill(data)).unwrap();
+      toast({
+        title: "Skill Added",
+        description: "New skill has been added successfully."
+      });
       
       // Reset form after successful submission
       form.reset({
         name: "",
-        level: "Beginner",
+        level: "BEGINNER",
       });
       
     } catch (error) {
       console.error('Failed to save skill:', error);
-      // You could add a toast notification here
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save skill. Please try again."
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEditSkill = (skill: Skill) => {
-    setEditingSkill(skill);
-    form.reset({
-      name: skill.name,
-      level: skill.level as "Beginner" | "Intermediate" | "Advanced" | "Expert",
-    });
-  };
-
   const handleDeleteSkill = async (skillId: string) => {
+    // Optimistic update - remove locally first
+    const skillToDelete = profile?.skills?.find(skill => skill.id === skillId);
+    if (skillToDelete) {
+      // Dispatch optimistic update
+      dispatch(removeSkillOptimistic(skillId));
+      
+      toast({
+        title: "Skill Deleted",
+        description: "Skill has been removed successfully."
+      });
+    }
+
+    // API call in background
     try {
       await dispatch(deleteSkill(skillId)).unwrap();
-      if (editingSkill?.id === skillId) {
-        setEditingSkill(null);
-        form.reset();
-      }
     } catch (error) {
       console.error('Failed to delete skill:', error);
+      
+      // Revert optimistic update on error
+      if (skillToDelete) {
+        dispatch(addSkillOptimistic(skillToDelete));
+      }
+      
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete skill. Please try again."
+      });
     }
-  };
-
-  const handleCancel = () => {
-    setEditingSkill(null);
-    form.reset({
-      name: "",
-      level: "Beginner",
-    });
   };
 
   const getLevelColor = (level: string) => {
     switch (level) {
-      case "Beginner":
+      case "BEGINNER":
         return "bg-red-100 text-red-700 border-red-200";
-      case "Intermediate":
+      case "INTERMEDIATE":
         return "bg-blue-100 text-blue-700 border-blue-200";
-      case "Advanced":
+      case "ADVANCED":
         return "bg-green-100 text-green-700 border-green-200";
-      case "Expert":
+      case "EXPERT":
         return "bg-purple-100 text-purple-700 border-purple-200";
       default:
         return "bg-gray-100 text-gray-700 border-gray-200";
@@ -209,12 +227,12 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Beginner">Beginner</SelectItem>
-                              <SelectItem value="Intermediate">
+                              <SelectItem value="BEGINNER">Beginner</SelectItem>
+                              <SelectItem value="INTERMEDIATE">
                                 Intermediate
                               </SelectItem>
-                              <SelectItem value="Advanced">Advanced</SelectItem>
-                              <SelectItem value="Expert">Expert</SelectItem>
+                              <SelectItem value="ADVANCED">Advanced</SelectItem>
+                              <SelectItem value="EXPERT">Expert</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -223,29 +241,18 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
                     />
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting || isLoading}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4 mr-2" />
-                      )}
-                      {editingSkill ? "Update Skill" : "Add Skill"}
-                    </Button>
-                    {editingSkill && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCancel}
-                      >
-                        Cancel
-                      </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || isLoading}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
                     )}
-                  </div>
+                    Add Skill
+                  </Button>
                 </form>
               </Form>
             </CardContent>
@@ -257,56 +264,39 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
               Added Skills ({profile?.skills?.length || 0})
             </h3>
             {!profile?.skills || profile.skills.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground mb-2">
-                  No skills added yet.
-                </p>
-                <p className="text-xs text-gray-400">
-                  Add your first skill using the form above
+              <div className="text-center py-6">
+                <p className="text-sm text-muted-foreground">
+                  No skills added yet. Add your first skill above.
                 </p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {profile?.skills.map((skill) => (
-                  <div
-                    key={skill.id}
-                    className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                      editingSkill?.id === skill.id
-                        ? "ring-2 ring-blue-500 bg-blue-50"
-                        : "bg-white hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-gray-900">
+              <div className="max-h-48 overflow-y-auto">
+                <div className="flex flex-wrap gap-2">
+                  {profile?.skills.map((skill) => (
+                    <div
+                      key={skill.id}
+                      className="group flex items-center gap-2 bg-gray-100 hover:bg-gray-200 rounded-full px-3 py-2 transition-colors"
+                    >
+                      <span className="text-sm font-medium text-gray-700">
                         {skill.name}
                       </span>
                       <Badge
                         variant="outline"
-                        className={`text-xs ${getLevelColor(skill.level)}`}
+                        className={`text-xs px-2 py-0.5 rounded-full ${getLevelColor(skill.level)}`}
                       >
                         {skill.level}
                       </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditSkill(skill)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        Edit
-                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteSkill(skill.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3" />
                       </Button>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>

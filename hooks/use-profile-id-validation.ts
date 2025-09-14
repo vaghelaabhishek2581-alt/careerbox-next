@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useState, useEffect, useRef } from 'react'
-import { useSocket } from './use-socket'
 import { useDebouncedCallback } from './use-debounced-callback'
 
 interface ValidationResult {
@@ -11,11 +10,11 @@ interface ValidationResult {
 }
 
 export function useProfileIdValidation() {
-  const { socket, isConnected } = useSocket()
   const [isValidating, setIsValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isMountedRef = useRef(true)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Cleanup on unmount
   useEffect(() => {
@@ -24,14 +23,17 @@ export function useProfileIdValidation() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
       }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
     }
   }, [])
 
   const validateProfileId = useCallback(async (profileId: string): Promise<ValidationResult> => {
-    if (!socket || !isConnected || !profileId) {
+    if (!profileId || profileId.length < 3) {
       const result = {
         isValid: false,
-        message: 'Connection not available',
+        message: 'Profile ID must be at least 3 characters',
         suggestions: []
       }
       if (isMountedRef.current) {
@@ -40,60 +42,70 @@ export function useProfileIdValidation() {
       return result
     }
 
-    // Check if socket has emit function
-    if (typeof socket.emit !== 'function') {
-      const result = {
-        isValid: false,
-        message: 'Socket not properly initialized',
-        suggestions: []
-      }
-      if (isMountedRef.current) {
-        setValidationResult(result)
-      }
-      return result
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
     }
 
+    // Create new abort controller
+    abortControllerRef.current = new AbortController()
     setIsValidating(true)
     
-    return new Promise<ValidationResult>((resolve) => {
-      try {
-        // Use the correct event name that matches the server
-        socket.emit('validateProfileId', profileId, (result: ValidationResult) => {
-          if (isMountedRef.current) {
-            setValidationResult(result)
-            setIsValidating(false)
-          }
-          resolve(result)
-        })
+    try {
+      const response = await fetch('/api/profile/validate-id', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ profileId }),
+        signal: abortControllerRef.current.signal
+      })
 
-        // Timeout after 5 seconds
-        timeoutRef.current = setTimeout(() => {
-          if (isValidating && isMountedRef.current) {
-            const timeoutResult = {
-              isValid: false,
-              message: 'Validation timeout',
-              suggestions: []
-            }
-            setValidationResult(timeoutResult)
-            setIsValidating(false)
-            resolve(timeoutResult)
-          }
-        }, 5000)
-      } catch (error) {
-        console.error('Socket emit error:', error)
-        const errorResult = {
-          isValid: false,
-          message: 'Socket communication error',
-          suggestions: []
-        }
-        if (isMountedRef.current) {
-          setValidationResult(errorResult)
-          setIsValidating(false)
-        }
-        resolve(errorResult)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Validation failed')
       }
-    })
-  }, [socket, isConnected, isValidating])
+
+      const result = {
+        isValid: data.isValid,
+        message: data.message,
+        suggestions: data.suggestions || []
+      }
+
+      if (isMountedRef.current) {
+        setValidationResult(result)
+        setIsValidating(false)
+      }
+
+      return result
+
+    } catch (error) {
+      console.error('Profile ID validation error:', error)
+      
+      let errorMessage = 'Validation failed'
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          // Request was cancelled, don't update state
+          return { isValid: false, message: '', suggestions: [] }
+        }
+        errorMessage = error.message
+      }
+
+      const errorResult = {
+        isValid: false,
+        message: errorMessage,
+        suggestions: []
+      }
+
+      if (isMountedRef.current) {
+        setValidationResult(errorResult)
+        setIsValidating(false)
+      }
+
+      return errorResult
+    }
+  }, [])
 
   const debouncedValidate = useDebouncedCallback(validateProfileId, 500)
 

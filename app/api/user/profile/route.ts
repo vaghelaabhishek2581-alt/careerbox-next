@@ -1,10 +1,10 @@
 // app/api/user/profile/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import clientPromise from '../../db'
-import { ObjectId } from 'mongodb'
-import { UserProfileUpdateSchema } from '@/lib/types/profile.unified'
+import { UserProfileUpdateSchema } from '@/lib/types/profile'
 import { authenticateRequest } from '@/lib/auth'
+import { User } from '@/src/models'
+import { connectToDatabase } from '@/lib/db/mongodb'
 
 /**
  * @swagger
@@ -418,31 +418,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const client = await clientPromise
-    const db = client.db()
+    // Connect to database using Mongoose
+    await connectToDatabase()
     
     let user: DatabaseUser | null = null
 
-    // Try different methods to find the user
-    if (ObjectId.isValid(authUser.id)) {
-      user = await db.collection('users').findOne(
-        { _id: new ObjectId(authUser.id) },
-        { projection: { password: 0 } }
-      ) as DatabaseUser | null
+    // Try different methods to find the user using Mongoose
+    if (authUser.id) {
+      user = await User.findById(authUser.id).select('-password') as DatabaseUser | null
     }
-
-    if (!user) {
-      user = await db.collection('users').findOne(
-        { _id: authUser.id as any },
-        { projection: { password: 0 } }
-      ) as DatabaseUser | null
-    }
-
     if (!user && authUser.email) {
-      user = await db.collection('users').findOne(
-        { email: authUser.email },
-        { projection: { password: 0 } }
-      ) as DatabaseUser | null
+      user = await User.findOne({ email: authUser.email }).select('-password') as DatabaseUser | null
     }
 
     if (!user) {
@@ -494,8 +480,8 @@ export async function PATCH(request: NextRequest) {
       throw validationError
     }
 
-    const client = await clientPromise
-    const db = client.db()
+    // Connect to database using Mongoose
+    await connectToDatabase()
 
     // Prepare update data
     const updateData: any = {
@@ -512,39 +498,12 @@ export async function PATCH(request: NextRequest) {
 
     console.log('Update fields:', Object.keys(updateData))
 
-    // Update user
-    let result
-    if (ObjectId.isValid(authUser.id)) {
-      result = await db
-        .collection('users')
-        .updateOne({ _id: new ObjectId(authUser.id) }, { $set: updateData })
-    } else {
-      result = await db
-        .collection('users')
-        .updateOne({ _id: authUser.id as any }, { $set: updateData })
-    }
-
-    if (!result.matchedCount) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    // Get updated user
-    let updatedUser: DatabaseUser | null = null
-    if (ObjectId.isValid(authUser.id)) {
-      updatedUser = await db
-        .collection('users')
-        .findOne(
-          { _id: new ObjectId(authUser.id) },
-          { projection: { password: 0 } }
-        ) as DatabaseUser | null
-    } else {
-      updatedUser = await db
-        .collection('users')
-        .findOne(
-          { _id: authUser.id as any },
-          { projection: { password: 0 } }
-        ) as DatabaseUser | null
-    }
+    // Update user using Mongoose
+    const updatedUser = await User.findByIdAndUpdate(
+      authUser.id,
+      updateData,
+      { new: true, select: '-password' }
+    ) as DatabaseUser | null
 
     if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })

@@ -1,22 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { completeUserOnboarding, OnboardingRole } from '@/lib/utils/user-creation'
-import { connectToDatabase } from '@/lib/db'
+import { OnboardingRole } from '@/lib/utils/user-creation'
 import { ObjectId } from 'mongodb'
+import { User, Profile } from '@/src/models'
+import { connectToDatabase } from '@/lib/db/mongoose'
 
+/**
+ * POST /api/auth/onboarding/complete
+ * Completes onboarding for an existing user, updating their profile and onboarding status.
+ */
 export async function POST(request: NextRequest) {
   try {
     const { userId, role, userType, bio, skills, interests, company, location } = await request.json()
 
+    // Log request for debugging
     console.log('Onboarding completion request:', { userId, role, userType, bio, skills, interests, company, location })
 
-    // Validate input
+    // Validate required fields
     if (!userId) {
       return NextResponse.json(
         { success: false, message: 'UserId is required' },
         { status: 400 }
       )
     }
-
     if (!role) {
       return NextResponse.json(
         { success: false, message: 'Role is required' },
@@ -24,7 +29,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Complete onboarding with profile creation
+    // Complete onboarding and update user profile
     const result = await completeUserOnboardingWithProfile(userId, {
       role,
       userType,
@@ -47,7 +52,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Onboarding completed successfully',
-      user: result.user
+      user: result.user,
+      redirectTo: '/dashboard/user' // Add explicit redirect
     })
   } catch (error) {
     console.error('Onboarding completion error:', error)
@@ -59,33 +65,33 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Complete user onboarding with profile creation
+ * Updates the user document with onboarding completion and profile enrichment.
+ * Uses the User model for update, as in user-creation.ts.
  */
-async function completeUserOnboardingWithProfile(userId: string, data: {
-  role: OnboardingRole
-  userType?: string
-  bio?: string
-  skills?: string[]
-  interests?: string[]
-  company?: string
-  location?: string
-}): Promise<{
+async function completeUserOnboardingWithProfile(
+  userId: string,
+  data: {
+    role: OnboardingRole
+    userType?: string
+    bio?: string
+    skills?: string[]
+    interests?: string[]
+    company?: string
+    location?: string
+  }
+): Promise<{
   success: boolean
   user?: any
   error?: string
 }> {
   try {
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
     
-    const query = ObjectId.isValid(userId) 
-      ? { _id: new ObjectId(userId) }
-      : { _id: userId }
+    // Find user by ObjectId or string id
+    const user = ObjectId.isValid(userId)
+      ? await User.findById(new ObjectId(userId))
+      : await User.findById(userId as any)
 
-    // Get current user
-    const user = ObjectId.isValid(userId) 
-      ? await db.collection('users').findOne({ _id: new ObjectId(userId) })
-      : await db.collection('users').findOne({ _id: userId as any })
-    
     if (!user) {
       return {
         success: false,
@@ -93,69 +99,84 @@ async function completeUserOnboardingWithProfile(userId: string, data: {
       }
     }
 
-    // Prepare profile updates
-    const profileUpdates: any = {
-      'profile.personalDetails.professionalHeadline': getRoleHeadline(data.role),
-      'profile.personalDetails.aboutMe': data.bio || getDefaultBio(user.name, data.role)
+    // Find or create profile
+    let profile = await Profile.findOne({ userId: user._id })
+    
+    if (!profile) {
+      return {
+        success: false,
+        error: 'Profile not found. Please complete profile setup first.'
+      }
     }
 
-    // Add skills if provided
+    // Get user's name from profile or use email as fallback
+    const userName = profile.personalDetails?.firstName 
+      ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName || ''}`.trim()
+      : user.email?.split('@')[0] || 'User'
+
+    // Prepare profile updates
+    const profileUpdates: any = {
+      'personalDetails.professionalHeadline': getRoleHeadline(data.role),
+      'personalDetails.aboutMe': data.bio || getDefaultBio(userName, data.role)
+    }
+
     if (data.skills && data.skills.length > 0) {
-      profileUpdates['profile.skills'] = data.skills.map(skill => ({
+      profileUpdates.skills = data.skills.map(skill => ({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         name: skill,
-        level: 'Beginner',
+        level: 'BEGINNER',
         category: 'General'
       }))
     }
 
-    // Add interests if provided
     if (data.interests && data.interests.length > 0) {
-      profileUpdates['profile.interests'] = data.interests
+      profileUpdates['personalDetails.interests'] = data.interests
     }
 
-    // Add work experience if company is provided
     if (data.company) {
-      profileUpdates['profile.workExperience'] = [{
+      profileUpdates.workExperiences = [{
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         company: data.company,
-        position: getDefaultPosition(data.role),
         location: data.location || '',
-        startDate: new Date(),
-        endDate: null,
-        current: true,
-        description: `Working as ${getDefaultPosition(data.role)} at ${data.company}`
+        positions: [{
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          title: getDefaultPosition(data.role),
+          startDate: new Date(),
+          endDate: null,
+          isCurrent: true,
+          employmentType: 'FULL_TIME',
+          description: `Working as ${getDefaultPosition(data.role)} at ${data.company}`
+        }]
       }]
     }
 
-    // Update user with onboarding completion and profile
-    const updateResult = ObjectId.isValid(userId) 
-      ? await db.collection('users').updateOne(
-          { _id: new ObjectId(userId) },
-          {
-            $set: {
-              needsOnboarding: false,
-              needsRoleSelection: false,
-              activeRole: data.role,
-              roles: [data.role],
-              userType: data.userType || (data.role === 'student' ? 'student' : 'professional'),
-              updatedAt: new Date(),
-              ...profileUpdates
-            }
-          }
-        )
-      : await db.collection('users').updateOne(
-          { _id: userId as any },
-          {
-            $set: {
-              needsOnboarding: false,
-              needsRoleSelection: false,
-              activeRole: data.role,
-              roles: [data.role],
-              userType: data.userType || (data.role === 'student' ? 'student' : 'professional'),
-              updatedAt: new Date(),
-              ...profileUpdates
-            }
-          }
-        )
+    // Update profile
+    const updatedProfile = await Profile.findOneAndUpdate(
+      { userId: user._id },
+      { $set: profileUpdates },
+      { new: true }
+    )
+
+    if (!updatedProfile) {
+      return {
+        success: false,
+        error: 'Failed to update profile'
+      }
+    }
+
+    // Update user
+    const updateResult = await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          needsOnboarding: false,
+          needsRoleSelection: false,
+          activeRole: data.role,
+          roles: [data.role],
+          updatedAt: new Date()
+        }
+      }
+    )
 
     if (updateResult.matchedCount === 0) {
       return {
@@ -164,11 +185,8 @@ async function completeUserOnboardingWithProfile(userId: string, data: {
       }
     }
 
-    // Get updated user
-    const updatedUser = ObjectId.isValid(userId) 
-      ? await db.collection('users').findOne({ _id: new ObjectId(userId) }, { projection: { password: 0 } })
-      : await db.collection('users').findOne({ _id: userId as any }, { projection: { password: 0 } })
-    
+    // Return updated user (excluding password)
+    const updatedUser = await User.findById(user._id, { projection: { password: 0 } })
     return {
       success: true,
       user: updatedUser
@@ -198,7 +216,7 @@ function getRoleHeadline(role: OnboardingRole): string {
 }
 
 function getDefaultBio(name: string, role: OnboardingRole): string {
-  const firstName = name.split(' ')[0] || 'User'
+  const firstName = (name || '').split(' ')[0] || 'User'
   switch (role) {
     case 'student':
       return `Hi! I'm ${firstName}, a student passionate about learning and growing in my field. I'm excited to connect with opportunities and build my career.`

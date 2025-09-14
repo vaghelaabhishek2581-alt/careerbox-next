@@ -256,7 +256,7 @@ export default function JobPostingForm() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {form.watch('requirements').map((requirement, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={`requirement-${requirement}-${index}`} variant="secondary" className="flex items-center gap-1">
                         {requirement}
                         <X
                           className="h-3 w-3 cursor-pointer"
@@ -294,7 +294,7 @@ export default function JobPostingForm() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {form.watch('responsibilities').map((responsibility, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={`responsibility-${responsibility}-${index}`} variant="secondary" className="flex items-center gap-1">
                         {responsibility}
                         <X
                           className="h-3 w-3 cursor-pointer"
@@ -332,7 +332,7 @@ export default function JobPostingForm() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {form.watch('skills').map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={`skill-${skill}-${index}`} variant="secondary" className="flex items-center gap-1">
                         {skill}
                         <X
                           className="h-3 w-3 cursor-pointer"
