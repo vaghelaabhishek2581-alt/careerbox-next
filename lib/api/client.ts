@@ -74,7 +74,7 @@ class ApiClient {
           if (session?.user?.id) {
             config.headers['X-User-ID'] = session.user.id
             config.headers['X-User-Email'] = session.user.email
-            config.headers['X-User-Role'] = session.user.activeRole || session.user.role
+            config.headers['X-User-Role'] = session.user.activeRole || 'user'
           }
 
           // Add CSRF token if available
@@ -186,6 +186,7 @@ class ApiClient {
         success: false,
         error: apiError.message,
         code: apiError.code,
+        data: apiError.details, // Preserve the original response data
         timestamp: new Date().toISOString()
       }
     }
@@ -284,6 +285,3 @@ const apiClient = new ApiClient()
 // Export the instance and class
 export default apiClient
 export { ApiClient }
-
-// Export types
-export type { ApiResponse, ApiError }

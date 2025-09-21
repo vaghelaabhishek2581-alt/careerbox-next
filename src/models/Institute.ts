@@ -83,7 +83,7 @@ InstituteSchema.virtual('id').get(function() {
 })
 
 // Indexes
-InstituteSchema.index({ userId: 1 })
+// userId index is automatically created by unique: true
 InstituteSchema.index({ instituteName: 1 })
 InstituteSchema.index({ type: 1 })
 InstituteSchema.index({ status: 1 })
@@ -143,5 +143,4 @@ export interface IInstitute extends Document {
   updatedAt: Date
 }
 
-export { IInstitute }
 export default mongoose.models.Institute || mongoose.model<IInstitute>('Institute', InstituteSchema)

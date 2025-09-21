@@ -96,16 +96,12 @@ export async function POST(request: NextRequest) {
 
     // Send email verification for credentials signup
     if (provider === 'credentials') {
+      console.log('Sending email verification...')
       await sendEmailVerification(email, name)
     }
 
     // Generate JWT token
-    const token = generateJWT({
-      userId: result.user._id,
-      email: result.user.email,
-      role: result.user.role,
-      activeRole: result.user.activeRole
-    })
+    const token = generateJWT(result.user)
 
     // Return user data without sensitive information
     const { password: _, ...userWithoutPassword } = result.user

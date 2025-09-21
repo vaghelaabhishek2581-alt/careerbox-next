@@ -14,14 +14,12 @@ const EmailVerificationSchema = new Schema<IEmailVerification>({
   token: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   email: {
     type: String,
     required: true,
-    lowercase: true,
-    index: true
+    lowercase: true
   },
   expiresAt: {
     type: Date,
@@ -30,8 +28,7 @@ const EmailVerificationSchema = new Schema<IEmailVerification>({
   },
   verified: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
   },
   verifiedAt: {
     type: Date
@@ -44,5 +41,4 @@ const EmailVerificationSchema = new Schema<IEmailVerification>({
 EmailVerificationSchema.index({ email: 1, verified: 1 })
 EmailVerificationSchema.index({ token: 1, verified: 1, expiresAt: 1 })
 
-export { IEmailVerification }
 export default mongoose.models.EmailVerification || mongoose.model<IEmailVerification>('EmailVerification', EmailVerificationSchema)

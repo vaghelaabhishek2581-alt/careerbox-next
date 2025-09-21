@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { createEmailVerification, sendVerificationEmail } from '@/lib/email/verification'
 import { User, Profile, Business, Institute } from '@/src/models'
+import { connectToDatabase } from '@/lib/db/mongoose'
 
 // Unified user creation types
 export type OnboardingRole = 'student' | 'professional' | 'institute_admin' | 'business_owner'
@@ -89,6 +90,8 @@ export function generatePublicProfileId(name: string, email: string): string {
  * Generate unique profile ID by checking database
  */
 export async function generateUniqueProfileId(name: string, email: string): Promise<string> {
+  // Ensure database connection
+  await connectToDatabase()
   
   let baseId = generatePublicProfileId(name, email)
   let finalId = baseId
@@ -153,7 +156,9 @@ export async function createUserWithProfile(userData: CreateUserData): Promise<{
   error?: string
 }> {
   try {
-   
+    // Ensure database connection
+    await connectToDatabase()
+    console.log('🔌 Database connection established for user creation')
     
     // Check if user already exists
     const existingUser = await User.findOne({
@@ -268,7 +273,8 @@ export async function updateUserRole(userId: string, role: OnboardingRole): Prom
   error?: string
 }> {
   try {
-   
+    // Ensure database connection
+    await connectToDatabase()
     
     const updateData: any = {
       activeRole: role,

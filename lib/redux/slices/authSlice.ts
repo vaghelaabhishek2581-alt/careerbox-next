@@ -6,12 +6,19 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'user' | 'admin' | 'organization' | 'business';
+  role?: 'user' | 'admin' | 'organization' | 'business';
+  roles?: string[];
+  activeRole?: string;
   userType?: 'student' | 'professional';
   avatar?: string;
   organization?: string;
   permissions?: string[];
-  createdAt: string;
+  emailVerified?: boolean;
+  needsEmailVerification?: boolean;
+  needsOnboarding?: boolean;
+  needsRoleSelection?: boolean;
+  profile?: any;
+  createdAt?: string;
   lastLogin?: string;
 }
 

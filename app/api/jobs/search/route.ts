@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/unified-auth'
 import { connectDB } from '@/lib/db'
 import { JobSearchFilters, JobSearchResponse } from '@/lib/types/job.types'
 
 // GET /api/jobs/search - Search jobs with filters
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const userId = await getAuthenticatedUserId(req)
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -31,6 +30,12 @@ export async function GET(req: NextRequest) {
     if (searchParams.get('employmentType')) {
       const employmentTypes = searchParams.getAll('employmentType')
       query.employmentType = { $in: employmentTypes }
+    }
+
+    // Location type filter
+    if (searchParams.get('locationType')) {
+      const locationTypes = searchParams.getAll('locationType')
+      query.locationType = { $in: locationTypes }
     }
 
     // Salary range filter

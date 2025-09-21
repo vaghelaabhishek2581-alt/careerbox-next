@@ -1,35 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
+import { requireAuth } from '@/lib/auth/unified-auth'
 
 const WorkPositionSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   title: z.string().min(1, 'Position title is required'),
   startDate: z.string(),
-  endDate: z.string().optional(),
+  endDate: z.string().optional().nullable(),
   isCurrent: z.boolean(),
   description: z.string().optional(),
-  employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE']),
-  skills: z.array(z.string()).optional(),
-  achievements: z.array(z.string()).optional(),
-  salary: z.object({
-    amount: z.number().optional(),
-    currency: z.string().optional(),
-    isPublic: z.boolean()
-  }).optional()
-})
+  employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE']).default('FULL_TIME'),
+  locationType: z.enum(['ONSITE', 'REMOTE', 'HYBRID']).default('ONSITE'),
+  skills: z.array(z.string()).optional()
+}).refine(
+  (data) => {
+    // If it's a current position, endDate should be null/undefined
+    if (data.isCurrent) {
+      return !data.endDate;
+    }
+    // If it's not current, endDate should be provided
+    return !!data.endDate;
+  },
+  {
+    message: "End date is required for non-current positions",
+    path: ["endDate"],
+  }
+)
 
 const WorkExperienceSchema = z.object({
+  id: z.string().optional(),
   company: z.string().min(1, 'Company name is required'),
   location: z.string().optional(),
-  positions: z.array(WorkPositionSchema).min(1),
-  companyLogo: z.string().optional(),
-  companyWebsite: z.string().optional(),
-  industry: z.string().optional(),
-  companySize: z.string().optional()
+  positions: z.array(WorkPositionSchema).min(1)
 })
 
 // PUT - Update a specific work experience entry
@@ -40,32 +44,29 @@ export async function PUT(
   try {
     console.log('🔄 PUT /api/profile/work-experience/[workExperienceId] - Updating work experience:', params.workExperienceId)
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
+    
     const body = await request.json()
+    console.log('📥 Received work experience data:', JSON.stringify(body, null, 2))
     const validatedData = WorkExperienceSchema.parse(body)
+    console.log('✅ Validated work experience data:', JSON.stringify(validatedData, null, 2))
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Find and update the work experience entry
-    const workExperienceIndex = profile.workExperiences.findIndex(work => work.id === params.workExperienceId)
+    const workExperienceIndex = profile.workExperiences.findIndex((work: { id: string }) => work.id === params.workExperienceId)
     if (workExperienceIndex === -1) {
       return NextResponse.json({ error: 'Work experience entry not found' }, { status: 404 })
     }
 
     // Update the work experience entry
-    profile.workExperiences[workExperienceIndex] = {
-      ...profile.workExperiences[workExperienceIndex],
-      ...validatedData
-    }
+    profile.workExperiences[workExperienceIndex] = validatedData
 
     await profile.save()
 
@@ -100,21 +101,19 @@ export async function DELETE(
   try {
     console.log('🗑️ DELETE /api/profile/work-experience/[workExperienceId] - Deleting work experience:', params.workExperienceId)
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Remove the work experience entry
     const initialLength = profile.workExperiences.length
-    profile.workExperiences = profile.workExperiences.filter(work => work.id !== params.workExperienceId)
+    profile.workExperiences = profile.workExperiences.filter((work: { id: string }) => work.id !== params.workExperienceId)
     
     if (profile.workExperiences.length === initialLength) {
       return NextResponse.json({ error: 'Work experience entry not found' }, { status: 404 })

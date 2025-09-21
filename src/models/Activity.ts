@@ -5,7 +5,7 @@ const ActivitySchema = new Schema({
   userId: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
-    required: true 
+    required: true
   },
   type: { 
     type: String, 
@@ -52,9 +52,10 @@ ActivitySchema.virtual('id').get(function() {
 })
 
 // Indexes
+ActivitySchema.index({ userId: 1 })
 ActivitySchema.index({ type: 1 })
 ActivitySchema.index({ timestamp: -1 })
-ActivitySchema.index({ userId: 1, timestamp: -1 }) // Compound index includes userId
+ActivitySchema.index({ userId: 1, timestamp: -1 })
 ActivitySchema.index({ read: 1 })
 ActivitySchema.index({ notified: 1 })
 
@@ -72,5 +73,4 @@ export interface IActivity extends Document {
   notified: boolean
 }
 
-export { IActivity }
 export default mongoose.models.Activity || mongoose.model<IActivity>('Activity', ActivitySchema)

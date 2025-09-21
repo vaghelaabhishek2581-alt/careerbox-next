@@ -28,7 +28,7 @@ export async function connectToDatabase (): Promise<{
         See docs/DATABASE_SETUP.md for detailed setup instructions.
       `)
     }
-
+    console.log(MONGODB_URI)
     // Validate MongoDB URI format
     if (!MONGODB_URI.startsWith('mongodb://') && !MONGODB_URI.startsWith('mongodb+srv://')) {
       throw new Error(`

@@ -68,6 +68,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { connectToDatabase } from '@/lib/db'
+import { generateJWT } from '@/lib/auth'
 
 export async function POST (request: NextRequest) {
   try {
@@ -134,8 +135,26 @@ export async function POST (request: NextRequest) {
       )
     }
 
-    // Return user data for NextAuth (don't create separate tokens)
-    return NextResponse.json({
+    // Check email verification status for credentials users
+    // Check if user signed up with credentials (has password) or provider is explicitly 'credentials'
+    const isCredentialsUser = user.provider === 'credentials' || (user.password && user.provider !== 'google')
+    if (isCredentialsUser && !user.emailVerified) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Please verify your email address before signing in. Check your inbox for the verification link.',
+          needsEmailVerification: true,
+          email: user.email
+        },
+        { status: 403 }
+      )
+    }
+
+    // Generate JWT token for API access
+    const token = generateJWT(user)
+    
+    // Create response with user data
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user._id.toString(),
@@ -146,8 +165,22 @@ export async function POST (request: NextRequest) {
         needsRoleSelection: user.needsRoleSelection || false,
         needsOnboarding: user.needsOnboarding || false,
         provider: user.provider || 'credentials'
-      }
+      },
+      token
     })
+
+    // Set JWT token as HTTP-only cookie for API access
+    response.cookies.set({
+      name: 'auth-token',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    })
+
+    return response
   } catch (error) {
     console.error('Login API error:', error)
     return NextResponse.json(

@@ -39,6 +39,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isVerificationSent, setIsVerificationSent] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -87,6 +89,7 @@ export default function AuthPage() {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     if (mode === "signup") {
       if (password !== confirmPassword) {
@@ -109,39 +112,89 @@ export default function AuthPage() {
         })).unwrap();
 
         if (result) {
-          // Auto sign in after successful signup
-          const signInResult = await signIn("credentials", {
-            email,
-            password,
-            redirect: false,
-          });
-
-          if (signInResult?.error) {
-            setError(
-              "Account created but sign in failed. Please try signing in manually."
-            );
-          }
-          // Don't redirect here, let useEffect handle it
+          // Show success message and verification sent status
+          setSuccessMessage("Account created successfully! Please check your email for verification link.");
+          setIsVerificationSent(true);
+          // Clear form
+          setName("");
+          setEmail("");
+          setPassword("");
+          setConfirmPassword("");
         }
       } catch (error: any) {
         setError(error || "An error occurred. Please try again.");
       }
     } else {
-      // Sign in
+      // Sign in - call API directly to get detailed error response
       try {
-        const result = await signIn("credentials", {
-          email,
-          password,
-          redirect: false,
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
         });
 
-        if (result?.error) {
-          setError("Invalid credentials. Please try again.");
+        const data = await response.json();
+
+        if (data.success) {
+          // If login successful, use NextAuth to create session
+          const result = await signIn("credentials", {
+            email,
+            password,
+            redirect: false,
+          });
+          
+          if (result?.error) {
+            setError("Session creation failed. Please try again.");
+          } else if (result?.ok) {
+            // Success - redirect will be handled by useEffect
+            setError("");
+          }
+          // Don't redirect here, let useEffect handle it
+        } else {
+          // Handle specific error cases
+          if (data.needsEmailVerification) {
+            setError("Please verify your email address before signing in. Check your inbox for the verification link.");
+            setIsVerificationSent(true);
+          } else {
+            setError(data.message || "Invalid credentials. Please try again.");
+          }
         }
-        // Don't redirect here, let useEffect handle it
       } catch (error) {
         setError("An error occurred. Please try again.");
       }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccessMessage("Verification email sent! Please check your inbox.");
+        setError("");
+      } else {
+        setError(data.message || "Failed to resend verification email.");
+      }
+    } catch (error) {
+      setError("An error occurred while resending verification email.");
     }
   };
 
@@ -165,6 +218,8 @@ export default function AuthPage() {
   const toggleMode = () => {
     setMode(mode === "signup" ? "signin" : "signup");
     setError("");
+    setSuccessMessage("");
+    setIsVerificationSent(false);
     setName("");
     setPassword("");
     setConfirmPassword("");
@@ -303,6 +358,37 @@ export default function AuthPage() {
                       {error}
                     </AlertDescription>
                   </Alert>
+                )}
+
+                {successMessage && (
+                  <Alert className="border-green-200 bg-green-50">
+                    <AlertCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      {successMessage}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {isVerificationSent && (
+                  <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="text-blue-800 font-medium mb-2">
+                      📧 Verification Email Sent
+                    </div>
+                    <p className="text-sm text-blue-700 mb-3">
+                      We've sent a verification link to <strong>{email}</strong>. 
+                      Please check your email and click the link to verify your account.
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      Didn't receive the email? Check your spam folder or{" "}
+                      <button 
+                        className="underline hover:no-underline font-medium"
+                        onClick={handleResendVerification}
+                        disabled={isLoading}
+                      >
+                        resend verification email
+                      </button>
+                    </p>
+                  </div>
                 )}
 
                 {/* Google Auth */}
@@ -494,7 +580,7 @@ export default function AuthPage() {
                   </Button>
                 </form>
 
-                <div className="text-center">
+                <div className="text-center space-y-2">
                   <p className="text-gray-600">
                     {mode === "signup"
                       ? "Already have an account?"
@@ -511,6 +597,17 @@ export default function AuthPage() {
                       {mode === "signup" ? "Sign in here" : "Sign up here"}
                     </button>
                   </p>
+                  
+                  {mode === "signin" && (
+                    <p className="text-gray-600">
+                      <Link
+                        href="/auth/forgot-password"
+                        className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                      >
+                        Forgot your password?
+                      </Link>
+                    </p>
+                  )}
                 </div>
 
                 {mode === "signup" && (

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile, User } from '@/src/models'
 import { z } from 'zod'
+import { IProfile } from '@/src/models/Profile'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 
 // ============================================================================
 // SCHEMAS
@@ -49,6 +49,7 @@ const WorkPositionSchema = z.object({
   isCurrent: z.boolean(),
   description: z.string().optional(),
   employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE']),
+  locationType: z.enum(['ONSITE', 'REMOTE', 'HYBRID']),
   skills: z.array(z.string()).optional(),
   achievements: z.array(z.string()).optional(),
   salary: z.object({
@@ -117,23 +118,24 @@ const ProfileUpdateSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 GET /api/profile - Fetching user profile')
+    console.log('🔍 Fetching profile...')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      console.log('❌ No session found')
+    const auth = await getAuthenticatedUser(request)
+    if (!auth?.userId) {
+      console.log('❌ No authentication found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await connectToDatabase()
-    console.log('✅ Connected to database')
+    console.log('✅ Authentication found for user:', auth.userId, 'via', auth.authType)
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    await connectToDatabase()
+
+    const profile = await Profile.findOne({ userId: auth.userId })
       .populate('userId', 'email emailVerified')
-      .lean()
+      .lean() as IProfile | null
 
     if (!profile) {
-      console.log('❌ Profile not found for user:', session.user.id)
+      console.log('❌ Profile not found for user:', auth.userId)
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
@@ -157,11 +159,13 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🆕 POST /api/profile - Creating new profile')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      console.log('❌ No session found')
+    const auth = await getAuthenticatedUser(request)
+    if (!auth?.userId) {
+      console.log('❌ No authentication found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('✅ Authentication found for user:', auth.userId, 'via', auth.authType)
 
     const body = await request.json()
     console.log('📝 Request body:', body)
@@ -174,9 +178,9 @@ export async function POST(request: NextRequest) {
     console.log('✅ Connected to database')
 
     // Check if profile already exists
-    const existingProfile = await Profile.findOne({ userId: session.user.id })
+    const existingProfile = await Profile.findOne({ userId: auth.userId })
     if (existingProfile) {
-      console.log('❌ Profile already exists for user:', session.user.id)
+      console.log('❌ Profile already exists for user:', auth.userId)
       return NextResponse.json({ error: 'Profile already exists' }, { status: 400 })
     }
 
@@ -196,11 +200,11 @@ export async function POST(request: NextRequest) {
 
     // Create new profile
     const profileData = {
-      userId: session.user.id,
+      userId: auth.userId,
       personalDetails: validatedData.personalDetails || {
         firstName: '',
         lastName: '',
-        publicProfileId: `user-${session.user.id}`
+        publicProfileId: `user-${auth.userId}`
       },
       workExperiences: validatedData.workExperiences || [],
       education: validatedData.education || [],
@@ -249,11 +253,13 @@ export async function PUT(request: NextRequest) {
   try {
     console.log('🔄 PUT /api/profile - Updating entire profile')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      console.log('❌ No session found')
+    const auth = await getAuthenticatedUser(request)
+    if (!auth?.userId) {
+      console.log('❌ No authentication found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('✅ Authentication found for user:', auth.userId, 'via', auth.authType)
 
     const body = await request.json()
     console.log('📝 Request body:', body)
@@ -266,9 +272,9 @@ export async function PUT(request: NextRequest) {
     console.log('✅ Connected to database')
 
     // Check if profile exists
-    const existingProfile = await Profile.findOne({ userId: session.user.id })
+    const existingProfile = await Profile.findOne({ userId: auth.userId })
     if (!existingProfile) {
-      console.log('❌ Profile not found for user:', session.user.id)
+      console.log('❌ Profile not found for user:', auth.userId)
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
@@ -289,7 +295,7 @@ export async function PUT(request: NextRequest) {
 
     // Update profile
     const updatedProfile = await Profile.findOneAndUpdate(
-      { userId: session.user.id },
+      { userId: auth.userId },
       { 
         ...validatedData,
         updatedAt: new Date()

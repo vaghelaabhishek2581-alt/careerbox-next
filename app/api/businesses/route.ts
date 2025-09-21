@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { Business as BusinessModel } from '@/src/models'
 import { Business, CreateBusinessRequest } from '@/lib/types/business.types'
@@ -9,10 +8,12 @@ import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
 // GET /api/businesses - Fetch businesses
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const auth = await getAuthenticatedUser(req)
+    if (!auth?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('✅ Authentication found for user:', auth.userId, 'via', auth.authType)
 
     const { searchParams } = new URL(req.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
       .lean()
 
     const response: PaginatedResponse<Business> = {
-      data: businesses,
+      data: businesses as unknown as Business[],
       total,
       page,
       limit,
@@ -56,23 +57,25 @@ export async function GET(req: NextRequest) {
 // POST /api/businesses - Create a new business
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const auth = await getAuthenticatedUser(req)
+    if (!auth?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('✅ Authentication found for user:', auth.userId, 'via', auth.authType)
 
     const businessData: CreateBusinessRequest = await req.json()
     await connectToDatabase()
 
     // Check if user already has a business
-    const existingBusiness = await BusinessModel.findOne({ userId: session.user.id })
+    const existingBusiness = await BusinessModel.findOne({ userId: auth.userId })
     if (existingBusiness) {
       return NextResponse.json({ error: 'User already has a business profile' }, { status: 400 })
     }
 
     // Create business
     const business = new BusinessModel({
-      userId: session.user.id,
+      userId: auth.userId,
       companyName: businessData.companyName,
       industry: businessData.industry,
       size: businessData.size,

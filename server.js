@@ -22,7 +22,7 @@ app.prepare().then(() => {
   const io = new Server(httpServer, {
     path: '/socket.io',
     cors: {
-      origin: dev 
+      origin: dev
         ? ['http://localhost:3000', 'http://127.0.0.1:3000']
         : process.env.NEXT_PUBLIC_APP_URL,
       methods: ['GET', 'POST'],
@@ -36,7 +36,7 @@ app.prepare().then(() => {
     console.log('✅ User connected:', socket.id)
 
     // Send a welcome message immediately
-    socket.emit('welcome', { 
+    socket.emit('welcome', {
       message: 'Connected to CareerBox Socket.IO server',
       socketId: socket.id,
       timestamp: new Date().toISOString()
@@ -56,9 +56,9 @@ app.prepare().then(() => {
     // Ping/Pong functionality for connection testing
     socket.on('ping', () => {
       console.log('🏓 Ping received from:', socket.id)
-      socket.emit('pong', { 
+      socket.emit('pong', {
         timestamp: new Date().toISOString(),
-        socketId: socket.id 
+        socketId: socket.id
       })
     })
 
@@ -137,7 +137,7 @@ app.prepare().then(() => {
     // Handle disconnection
     socket.on('disconnect', (reason) => {
       console.log('❌ User disconnected:', socket.id, 'Reason:', reason)
-      
+
       // Notify other clients that this user went offline
       io.emit('userOffline', socket.id)
     })

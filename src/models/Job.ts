@@ -116,6 +116,7 @@ export interface IJob extends Document {
   responsibilities: string[]
   location: string
   employmentType: 'full-time' | 'part-time' | 'contract' | 'internship'
+  locationType: 'ONSITE' | 'REMOTE' | 'HYBRID'
   salaryRange: {
     min: number
     max: number
@@ -133,5 +134,4 @@ export interface IJob extends Document {
   updatedAt: Date
 }
 
-export { IJob }
 export default mongoose.models.Job || mongoose.model<IJob>('Job', JobSchema)

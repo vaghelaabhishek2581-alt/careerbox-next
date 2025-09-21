@@ -78,11 +78,12 @@ ApplicationSchema.virtual('id').get(function() {
 })
 
 // Indexes
+ApplicationSchema.index({ userId: 1 })
 ApplicationSchema.index({ type: 1 })
 ApplicationSchema.index({ targetId: 1 })
 ApplicationSchema.index({ status: 1 })
 ApplicationSchema.index({ appliedAt: -1 })
-ApplicationSchema.index({ userId: 1, type: 1, targetId: 1 }, { unique: true }) // Prevent duplicate applications (includes userId)
+ApplicationSchema.index({ userId: 1, type: 1, targetId: 1 }, { unique: true }) // Prevent duplicate applications
 
 // Pre-save middleware
 ApplicationSchema.pre('save', function(next) {
@@ -128,5 +129,4 @@ export interface IApplication extends Document {
   specialRequirements?: string
 }
 
-export { IApplication }
 export default mongoose.models.Application || mongoose.model<IApplication>('Application', ApplicationSchema)

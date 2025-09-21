@@ -145,6 +145,7 @@ async function completeUserOnboardingWithProfile(
           endDate: null,
           isCurrent: true,
           employmentType: 'FULL_TIME',
+          locationType: 'ONSITE',
           description: `Working as ${getDefaultPosition(data.role)} at ${data.company}`
         }]
       }]

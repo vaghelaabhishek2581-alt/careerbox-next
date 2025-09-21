@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { requireAuth } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
@@ -22,30 +21,28 @@ export async function PUT(
   try {
     console.log('🔄 PUT /api/profile/skills/[skillId] - Updating skill:', params.skillId)
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     const validatedData = SkillSchema.parse(body)
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Find and update the skill
-    const skillIndex = profile.skills.findIndex(skill => skill.id === params.skillId)
+    const skillIndex = profile.skills.findIndex((skill: any) => skill.id === params.skillId)
     if (skillIndex === -1) {
       return NextResponse.json({ error: 'Skill not found' }, { status: 404 })
     }
 
     // Check if skill name already exists (excluding current skill)
     const existingSkill = profile.skills.find(
-      (skill, index) => 
+      (skill: any, index: number) => 
         index !== skillIndex && 
         skill.name.toLowerCase() === validatedData.name.toLowerCase()
     )
@@ -92,21 +89,19 @@ export async function DELETE(
   try {
     console.log('🗑️ DELETE /api/profile/skills/[skillId] - Deleting skill:', params.skillId)
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Remove the skill
     const initialLength = profile.skills.length
-    profile.skills = profile.skills.filter(skill => skill.id !== params.skillId)
+    profile.skills = profile.skills.filter((skill: any) => skill.id !== params.skillId)
     
     if (profile.skills.length === initialLength) {
       return NextResponse.json({ error: 'Skill not found' }, { status: 404 })

@@ -115,23 +115,33 @@ export async function sendVerificationEmail(email: string, name: string, token: 
   error?: string
 }> {
   try {
-    // TODO: Implement actual email sending service (SendGrid, AWS SES, etc.)
-    // For now, just log the verification link
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email?token=${token}`
+    const nodemailer = require('nodemailer')
     
-    console.log(`Verification email for ${email}:`)
-    console.log(`Verification URL: ${verificationUrl}`)
+    const verificationUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/verify-email?token=${token}`
     
-    // In production, you would send an actual email here
-    // Example with SendGrid:
-    // const msg = {
-    //   to: email,
-    //   from: 'noreply@careerbox.com',
-    //   subject: 'Verify your CareerBox account',
-    //   html: generateVerificationEmailHTML(name, verificationUrl)
-    // }
-    // await sgMail.send(msg)
+    // Create transporter using Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    })
     
+
+    // Send email
+    const mailOptions = {
+      from: `"CareerBox" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Verify your CareerBox account',
+      html: generateVerificationEmailHTML(name, verificationUrl)
+    }
+
+    await transporter.sendMail(mailOptions)
+    
+    console.log(`Verification email sent to ${email}`)
     return { success: true }
   } catch (error) {
     console.error('Error sending verification email:', error)

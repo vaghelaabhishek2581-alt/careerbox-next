@@ -84,7 +84,7 @@ BusinessSchema.virtual('id').get(function() {
 })
 
 // Indexes
-BusinessSchema.index({ userId: 1 })
+// userId index is automatically created by unique: true
 BusinessSchema.index({ companyName: 1 })
 BusinessSchema.index({ industry: 1 })
 BusinessSchema.index({ status: 1 })
@@ -143,5 +143,4 @@ export interface IBusiness extends Document {
   updatedAt: Date
 }
 
-export { IBusiness }
 export default mongoose.models.Business || mongoose.model<IBusiness>('Business', BusinessSchema)

@@ -14,8 +14,7 @@ const BlacklistedTokenSchema = new Schema<IBlacklistedToken>({
   tokenId: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   token: {
     type: String,
@@ -23,8 +22,7 @@ const BlacklistedTokenSchema = new Schema<IBlacklistedToken>({
   },
   userId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   reason: {
     type: String,
@@ -44,5 +42,4 @@ const BlacklistedTokenSchema = new Schema<IBlacklistedToken>({
 BlacklistedTokenSchema.index({ tokenId: 1, expiresAt: 1 })
 BlacklistedTokenSchema.index({ userId: 1, expiresAt: 1 })
 
-export { IBlacklistedToken }
 export default mongoose.models.BlacklistedToken || mongoose.model<IBlacklistedToken>('BlacklistedToken', BlacklistedTokenSchema)

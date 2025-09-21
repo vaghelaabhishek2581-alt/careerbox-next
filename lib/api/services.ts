@@ -30,6 +30,10 @@ export class AuthAPI {
   static async resetPassword(token: string, password: string): Promise<ApiResponse<any>> {
     return apiClient.post('/api/auth/reset-password', { token, password })
   }
+
+  static async verifyResetToken(token: string): Promise<ApiResponse<any>> {
+    return apiClient.get(`/api/auth/reset-password?token=${token}`)
+  }
 }
 
 // User Profile API

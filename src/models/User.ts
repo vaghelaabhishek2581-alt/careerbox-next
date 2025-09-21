@@ -167,11 +167,4 @@ UserSchema.pre('save', function(next) {
 // EXPORT
 // ============================================================================
 
-// Clear any cached version of the User model
-if (mongoose.models.User) {
-  console.log('🧹 Clearing cached User model')
-  delete mongoose.models.User
-}
-
-console.log('🔧 Creating new User model with schema:', UserSchema.obj)
-export default mongoose.model<IUser>('User', UserSchema)
+export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema)

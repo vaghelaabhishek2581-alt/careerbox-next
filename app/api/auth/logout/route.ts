@@ -24,10 +24,24 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    // Create response and clear auth cookie
+    const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully'
     });
+
+    // Clear the auth-token cookie
+    response.cookies.set({
+      name: 'auth-token',
+      value: '',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0, // Expire immediately
+      path: '/'
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Logout API error:', error);

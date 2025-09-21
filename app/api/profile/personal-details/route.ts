@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { requireAuth } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
@@ -24,11 +23,8 @@ export async function PATCH(request: NextRequest) {
   try {
     console.log('🔄 PATCH /api/profile/personal-details - Updating personal details')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      console.log('❌ No session found')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     console.log('📝 Request body:', body)
@@ -40,9 +36,9 @@ export async function PATCH(request: NextRequest) {
     console.log('✅ Connected to database')
 
     // Check if profile exists
-    const existingProfile = await Profile.findOne({ userId: session.user.id })
+    const existingProfile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!existingProfile) {
-      console.log('❌ Profile not found for user:', session.user.id)
+      console.log('❌ Profile not found for user:', authCheck.auth.userId)
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
@@ -60,7 +56,7 @@ export async function PATCH(request: NextRequest) {
 
     // Update personal details
     const updatedProfile = await Profile.findOneAndUpdate(
-      { userId: session.user.id },
+      { userId: authCheck.auth.userId },
       { 
         $set: {
           'personalDetails': {

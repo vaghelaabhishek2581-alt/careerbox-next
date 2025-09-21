@@ -45,6 +45,7 @@ export interface IWorkPosition {
   isCurrent: boolean
   description?: string
   employmentType: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'FREELANCE'
+  locationType: 'ONSITE' | 'REMOTE' | 'HYBRID'
   skills?: string[]
   achievements?: string[]
   salary?: {

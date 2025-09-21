@@ -1,36 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { requireAuth } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
 
 const WorkPositionSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   title: z.string().min(1, 'Position title is required'),
   startDate: z.string(),
-  endDate: z.string().optional(),
+  endDate: z.string().optional().nullable(),
   isCurrent: z.boolean(),
   description: z.string().optional(),
-  employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE']),
-  skills: z.array(z.string()).optional(),
-  achievements: z.array(z.string()).optional(),
-  salary: z.object({
-    amount: z.number().optional(),
-    currency: z.string().optional(),
-    isPublic: z.boolean()
-  }).optional()
-})
+  employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE']).default('FULL_TIME'),
+  locationType: z.enum(['ONSITE', 'REMOTE', 'HYBRID']).default('ONSITE'),
+  skills: z.array(z.string()).optional()
+}).refine(
+  (data) => {
+    // If it's a current position, endDate should be null/undefined
+    if (data.isCurrent) {
+      return !data.endDate;
+    }
+    // If it's not current, endDate should be provided
+    return !!data.endDate;
+  },
+  {
+    message: "End date is required for non-current positions",
+    path: ["endDate"],
+  }
+)
 
 const WorkExperienceSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   company: z.string().min(1, 'Company name is required'),
   location: z.string().optional(),
-  positions: z.array(WorkPositionSchema).min(1),
-  companyLogo: z.string().optional(),
-  companyWebsite: z.string().optional(),
-  industry: z.string().optional(),
-  companySize: z.string().optional()
+  positions: z.array(WorkPositionSchema).min(1)
 })
 
 const WorkExperienceUpdateSchema = z.object({
@@ -42,14 +45,12 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔍 GET /api/profile/work-experience - Fetching user work experience')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
       .select('workExperiences')
       .lean()
 
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      workExperiences: profile.workExperiences || [] 
+      workExperiences: (profile as any)?.workExperiences || [] 
     })
 
   } catch (error) {
@@ -76,10 +77,8 @@ export async function PUT(request: NextRequest) {
   try {
     console.log('🔄 PUT /api/profile/work-experience - Updating all work experience')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     const validatedData = WorkExperienceUpdateSchema.parse(body)
@@ -87,7 +86,7 @@ export async function PUT(request: NextRequest) {
     await connectToDatabase()
 
     const updatedProfile = await Profile.findOneAndUpdate(
-      { userId: session.user.id },
+      { userId: authCheck.auth.userId },
       { 
         $set: {
           workExperiences: validatedData.workExperiences,
@@ -129,17 +128,15 @@ export async function POST(request: NextRequest) {
   try {
     console.log('➕ POST /api/profile/work-experience - Adding new work experience')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     const validatedWorkExperience = WorkExperienceSchema.parse(body)
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }

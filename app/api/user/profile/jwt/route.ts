@@ -75,6 +75,7 @@ async function getProfileHandler(request: NextRequest, user: any) {
           endDate: pos.endDate || '',
           isCurrent: pos.isCurrent || false,
           description: pos.description || '',
+          locationType: pos.locationType || 'ONSITE',
           employmentType: pos.employmentType || 'FULL_TIME',
           skills: pos.skills || []
         }))

@@ -44,6 +44,7 @@ export interface IWorkPosition {
   isCurrent: boolean
   description?: string
   employmentType: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'FREELANCE'
+  locationType: 'ONSITE' | 'REMOTE' | 'HYBRID'
   skills?: string[]
   achievements?: string[]
   salary?: {
@@ -110,6 +111,10 @@ export interface IProfile extends Document {
   lastUpdated: Date
   createdAt: Date
   updatedAt: Date
+  
+  // Custom methods
+  calculateCompletionPercentage(): number
+  updateCompletionStatus(): this
 }
 
 // ============================================================================
@@ -165,8 +170,7 @@ const PersonalDetailsSchema = new Schema<IPersonalDetails>({
   phone: { type: String, trim: true },
   interests: [{ type: String, trim: true, maxlength: 50 }],
   professionalBadges: [{ type: String, trim: true, maxlength: 50 }],
-  nationality: { type: String, trim: true },
-  languages: [{ type: String, trim: true }]
+  nationality: { type: String, trim: true }
 }, { _id: false })
 
 const WorkPositionSchema = new Schema<IWorkPosition>({
@@ -180,6 +184,12 @@ const WorkPositionSchema = new Schema<IWorkPosition>({
     type: String, 
     enum: ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE'],
     required: true 
+  },
+  locationType: { 
+    type: String, 
+    enum: ['ONSITE', 'REMOTE', 'HYBRID'],
+    required: true,
+    default: 'ONSITE'
   },
   skills: [{ type: String, trim: true }],
   achievements: [{ type: String, trim: true }],
@@ -234,7 +244,7 @@ const ProfileSchema = new Schema<IProfile>({
     type: Schema.Types.ObjectId, 
     ref: 'User', 
     required: true, 
-    unique: true 
+    unique: true
   },
   personalDetails: { type: PersonalDetailsSchema, required: true },
   workExperiences: [WorkExperienceSchema],
@@ -354,5 +364,4 @@ ProfileSchema.pre('save', function(next) {
 // EXPORT
 // ============================================================================
 
-export { IProfile }
 export default mongoose.models.Profile || mongoose.model<IProfile>('Profile', ProfileSchema)

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { UserProfileUpdateSchema } from '@/lib/types/profile'
-import { authenticateRequest } from '@/lib/auth'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { User } from '@/src/models'
 import { connectToDatabase } from '@/lib/db/mongodb'
 
@@ -362,6 +362,7 @@ function convertToUserProfile(user: DatabaseUser) {
         isCurrent: pos.isCurrent || false,
         description: pos.description || '',
         employmentType: pos.employmentType || 'FULL_TIME',
+        locationType: pos.locationType || 'ONSITE',
         skills: pos.skills || []
       }))
     })),
@@ -410,13 +411,15 @@ export async function GET(request: NextRequest) {
   try {
     console.log('=== Profile API GET Debug ===')
 
-    const authUser = await authenticateRequest(request)
-    console.log('Auth result:', authUser)
+    const auth = await getAuthenticatedUser(request)
+    console.log('Auth result:', auth)
 
-    if (!authUser) {
+    if (!auth?.userId) {
       console.log('❌ Authentication failed')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('✅ Authentication found for user:', auth.userId, 'via', auth.authType)
 
     // Connect to database using Mongoose
     await connectToDatabase()
@@ -424,11 +427,11 @@ export async function GET(request: NextRequest) {
     let user: DatabaseUser | null = null
 
     // Try different methods to find the user using Mongoose
-    if (authUser.id) {
-      user = await User.findById(authUser.id).select('-password') as DatabaseUser | null
+    if (auth.userId) {
+      user = await User.findById(auth.userId).select('-password') as DatabaseUser | null
     }
-    if (!user && authUser.email) {
-      user = await User.findOne({ email: authUser.email }).select('-password') as DatabaseUser | null
+    if (!user && auth.user?.email) {
+      user = await User.findOne({ email: auth.user.email }).select('-password') as DatabaseUser | null
     }
 
     if (!user) {
@@ -456,10 +459,12 @@ export async function PATCH(request: NextRequest) {
   try {
     console.log('=== Profile API PATCH Debug ===')
 
-    const authUser = await authenticateRequest(request)
-    if (!authUser) {
+    const auth = await getAuthenticatedUser(request)
+    if (!auth?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('✅ Authentication found for user:', auth.userId, 'via', auth.authType)
 
     const data = await request.json()
     console.log('Update data received:', Object.keys(data))
@@ -500,7 +505,7 @@ export async function PATCH(request: NextRequest) {
 
     // Update user using Mongoose
     const updatedUser = await User.findByIdAndUpdate(
-      authUser.id,
+      auth.userId,
       updateData,
       { new: true, select: '-password' }
     ) as DatabaseUser | null

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { requireAuth } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
@@ -21,14 +20,12 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔍 GET /api/profile/languages - Fetching user languages')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
       .select('languages')
       .lean()
 
@@ -38,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      languages: profile.languages || [] 
+      languages: (profile as any)?.languages || [] 
     })
 
   } catch (error) {
@@ -55,10 +52,8 @@ export async function PUT(request: NextRequest) {
   try {
     console.log('🔄 PUT /api/profile/languages - Updating all languages')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     const validatedData = LanguagesUpdateSchema.parse(body)
@@ -66,7 +61,7 @@ export async function PUT(request: NextRequest) {
     await connectToDatabase()
 
     const updatedProfile = await Profile.findOneAndUpdate(
-      { userId: session.user.id },
+      { userId: authCheck.auth.userId },
       { 
         $set: {
           languages: validatedData.languages,
@@ -108,23 +103,21 @@ export async function POST(request: NextRequest) {
   try {
     console.log('➕ POST /api/profile/languages - Adding new language')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     const validatedLanguage = LanguageSchema.parse(body)
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Check if language already exists
-    const existingLanguage = profile.languages.find(lang => lang.name.toLowerCase() === validatedLanguage.name.toLowerCase())
+    const existingLanguage = profile.languages.find((lang: any) => lang.name.toLowerCase() === validatedLanguage.name.toLowerCase())
     if (existingLanguage) {
       return NextResponse.json({ error: 'Language already exists' }, { status: 400 })
     }

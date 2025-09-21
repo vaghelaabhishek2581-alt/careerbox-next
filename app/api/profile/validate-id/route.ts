@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { requireAuth } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
@@ -21,11 +20,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔍 POST /api/profile/validate-id - Validating profile ID')
     
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      console.log('❌ No session found')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     console.log('📝 Request body:', body)

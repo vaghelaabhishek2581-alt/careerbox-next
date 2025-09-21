@@ -5,6 +5,23 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { useToast } from '@/components/ui/use-toast'
 import { 
   MapPin, 
   Calendar, 
@@ -29,7 +46,10 @@ import {
   Plus,
   CheckCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  Trash2,
+  Edit,
+  MoreVertical
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UserProfile, BusinessProfile, InstituteProfile } from '@/lib/types/unified.types'
@@ -254,15 +274,83 @@ function ProfileContent({ profile, profileType }: { profile: ProfileData; profil
 
 // User Profile Content
 function UserProfileContent({ profile }: { profile: UserProfile }) {
+  const { toast } = useToast()
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: 'experience' | 'position'
+    experienceId: string
+    positionId?: string
+  } | null>(null)
+
+  const handleDeleteExperience = async (experienceId: string) => {
+    try {
+      const response = await apiClient.delete(`/api/profile/work-experience/${experienceId}`)
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: "Work experience deleted successfully",
+        })
+        // Refresh the page or update state
+        window.location.reload()
+      } else {
+        throw new Error(response.error || 'Failed to delete work experience')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete work experience",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeletePosition = async (experienceId: string, positionId: string) => {
+    try {
+      const response = await apiClient.delete(`/api/profile/work-experience/${experienceId}/positions/${positionId}`)
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: "Position deleted successfully",
+        })
+        // Refresh the page or update state
+        window.location.reload()
+      } else {
+        throw new Error(response.error || 'Failed to delete position')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete position",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+
+    if (deleteTarget.type === 'experience') {
+      await handleDeleteExperience(deleteTarget.experienceId)
+    } else if (deleteTarget.type === 'position' && deleteTarget.positionId) {
+      await handleDeletePosition(deleteTarget.experienceId, deleteTarget.positionId)
+    }
+
+    setDeleteDialogOpen(false)
+    setDeleteTarget(null)
+  }
+
   return (
-    <Tabs defaultValue="about" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="about">About</TabsTrigger>
-        <TabsTrigger value="experience">Experience</TabsTrigger>
-        <TabsTrigger value="education">Education</TabsTrigger>
-        <TabsTrigger value="skills">Skills</TabsTrigger>
-        <TabsTrigger value="activity">Activity</TabsTrigger>
-      </TabsList>
+    <>
+      <Tabs defaultValue="about" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="about">About</TabsTrigger>
+          <TabsTrigger value="experience">Experience</TabsTrigger>
+          <TabsTrigger value="education">Education</TabsTrigger>
+          <TabsTrigger value="skills">Skills</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+        </TabsList>
 
       <TabsContent value="about" className="space-y-4">
         <Card>
@@ -306,43 +394,112 @@ function UserProfileContent({ profile }: { profile: UserProfile }) {
         </Card>
       </TabsContent>
 
-      <TabsContent value="experience" className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Work Experience</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {profile.workExperiences && profile.workExperiences.length > 0 ? (
-              <div className="space-y-4">
-                {profile.workExperiences.map((experience) => (
-                  <div key={experience.id} className="border-l-2 border-muted pl-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-medium">{experience.company}</h4>
-                        {experience.positions.map((position) => (
-                          <div key={position.id} className="mt-2">
-                            <p className="font-medium">{position.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(position.startDate).toLocaleDateString()} - {' '}
-                              {position.isCurrent ? 'Present' : new Date(position.endDate || '').toLocaleDateString()}
-                            </p>
-                            {position.description && (
-                              <p className="text-sm mt-1">{position.description}</p>
-                            )}
+        <TabsContent value="experience" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Work Experience</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {profile.workExperiences && profile.workExperiences.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.workExperiences.map((experience) => (
+                    <div key={experience.id} className="border-l-2 border-muted pl-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium">{experience.company}</h4>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Experience
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() => {
+                                    setDeleteTarget({
+                                      type: 'experience',
+                                      experienceId: experience.id!
+                                    })
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Experience
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                        ))}
+                          {experience.positions.map((position) => (
+                            <div key={position.id} className="mt-2 relative">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="font-medium">{position.title}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(position.startDate).toLocaleDateString()} - {' '}
+                                    {position.isCurrent ? 'Present' : new Date(position.endDate || '').toLocaleDateString()}
+                                  </p>
+                                  {position.description && (
+                                    <p className="text-sm mt-1">{position.description}</p>
+                                  )}
+                                  {position.skills && position.skills.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {position.skills.map((skill, index) => (
+                                        <Badge key={index} variant="secondary" className="text-xs">
+                                          {skill}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                {experience.positions.length > 1 && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem>
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Edit Position
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-red-600"
+                                        onClick={() => {
+                                          setDeleteTarget({
+                                            type: 'position',
+                                            experienceId: experience.id!,
+                                            positionId: position.id
+                                          })
+                                          setDeleteDialogOpen(true)
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete Position
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <Badge variant="outline">{experience.industry}</Badge>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No work experience added yet.</p>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No work experience added yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
       <TabsContent value="education" className="space-y-4">
         <Card>
@@ -443,6 +600,31 @@ function UserProfileContent({ profile }: { profile: UserProfile }) {
         </Card>
       </TabsContent>
     </Tabs>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {deleteTarget?.type === 'experience' 
+              ? 'This will permanently delete this work experience and all its positions. This action cannot be undone.'
+              : 'This will permanently delete this position. This action cannot be undone.'
+            }
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={confirmDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   )
 }
 

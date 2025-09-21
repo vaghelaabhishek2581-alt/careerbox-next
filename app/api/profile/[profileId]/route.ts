@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { requireAuth } from '@/lib/auth/unified-auth'
+import { connectToDatabase } from '@/lib/db'
 import { UserProfile, BusinessProfile, InstituteProfile } from '@/lib/types/unified.types'
 
 // GET /api/profile/[profileId] - Fetch profile by public profile ID
@@ -10,13 +9,11 @@ export async function GET(
   { params }: { params: { profileId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requireAuth(req)
+    if (authCheck.error) return authCheck.response
 
     const { profileId } = params
-    const db = await connectDB()
+    const { db } = await connectToDatabase()
 
     // Try to find user profile first
     let profile = await db.collection('users').findOne({
@@ -66,6 +63,8 @@ export async function GET(
         provider: profile.provider || 'credentials',
         privacySettings: profile.privacySettings,
         notificationPreferences: profile.notificationPreferences,
+        followers: profile.followers || [],
+        following: profile.following || [],
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
         lastActiveAt: profile.lastActiveAt,

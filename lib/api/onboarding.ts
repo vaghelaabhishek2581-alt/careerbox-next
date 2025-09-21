@@ -55,6 +55,7 @@ export interface OnboardingResponse {
       }
     }
   }
+  redirectTo?: string
   message?: string
 }
 

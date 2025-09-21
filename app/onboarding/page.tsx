@@ -116,8 +116,9 @@ export default function OnboardingPage() {
           description: 'Welcome to CareerBox! Redirecting to your dashboard...',
         })
 
-        // Redirect to appropriate dashboard
-        router.push('/dashboard')
+        // Redirect to appropriate dashboard using redirectTo from API response
+        const redirectUrl = result.redirectTo || '/dashboard'
+        router.push(redirectUrl)
       }
     } catch (error) {
       toast({

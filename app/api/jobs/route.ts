@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
       responsibilities: jobData.responsibilities,
       location: jobData.location,
       employmentType: jobData.employmentType,
+      locationType: jobData.locationType,
       salaryRange: jobData.salaryRange,
       skills: jobData.skills,
       experience: jobData.experience,

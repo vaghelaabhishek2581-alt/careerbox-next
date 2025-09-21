@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { PersonalDetailsForm } from "@/components/forms/PersonalDetailsForm";
-import { WorkExperienceForm } from "@/components/forms/WorkExperienceForm";
-import { EducationForm } from "@/components/forms/EducationForm";
+// import { WorkExperienceForm } from "@/components/forms/WorkExperienceForm";
+// import { EducationForm } from "@/components/profile/education";
 import { SkillsForm } from "@/components/forms/SkillsForm";
 import { LanguagesForm } from "@/components/forms/LanguagesForm";
 import { ProfileHeader } from "@/components/dashboard/ProfileHeader";
@@ -18,6 +18,8 @@ import { CareerProgressSection } from "@/components/dashboard/CareerProgressSect
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile } from "@/lib/redux/slices/profileSlice";
 import type { IWorkExperience, IEducation } from "@/lib/redux/slices/profileSlice";
+import { WorkExperienceForm } from "@/components/profile/workExperience";
+import { EducationForm } from "@/components/profile/education";
 
 type ModalType =
   | "personal"
@@ -139,6 +141,7 @@ export default function ModernProfileDashboard() {
         open={activeModal === "work"}
         onClose={closeModal}
         experience={editingItem}
+        variant="full-screen"
       />
 
       <EducationForm
@@ -146,6 +149,7 @@ export default function ModernProfileDashboard() {
         open={activeModal === "education"}
         onClose={closeModal}
         education={editingItem}
+        variant="full-screen" 
       />
 
       <SkillsForm 

@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withJWTAuth } from '@/lib/middleware/jwt-auth'
+import { requireRole } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongodb'
-import { createSuccessResponse, createErrorResponse, getPaginationParams } from '@/lib/middleware/jwt-auth'
+
+// Helper functions
+function getPaginationParams(request: NextRequest) {
+  const url = new URL(request.url)
+  const page = parseInt(url.searchParams.get('page') || '1')
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '10'), 100)
+  const skip = (page - 1) * limit
+  return { page, limit, skip }
+}
 
 // Get all active sessions
-async function getSessionsHandler(request: NextRequest, user: any) {
+export async function GET(request: NextRequest) {
+  const authCheck = await requireRole(request, 'admin')
+  if (authCheck.error) return authCheck.response
+
   try {
     const { db } = await connectToDatabase()
     const { page, limit, skip } = getPaginationParams(request)
@@ -59,37 +70,41 @@ async function getSessionsHandler(request: NextRequest, user: any) {
       expiresAt: { $gt: new Date() }
     })
     
-    return createSuccessResponse({
-      sessions,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        pages: Math.ceil(totalCount / limit)
+    return NextResponse.json({
+      success: true,
+      data: {
+        sessions,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          pages: Math.ceil(totalCount / limit)
+        }
       }
     })
     
   } catch (error) {
     console.error('Get sessions error:', error)
-    return createErrorResponse(
-      'Failed to fetch sessions',
-      500,
-      'FETCH_SESSIONS_FAILED'
+    return NextResponse.json(
+      { error: 'Failed to fetch sessions' },
+      { status: 500 }
     )
   }
 }
 
 // Terminate specific session
-async function terminateSessionHandler(request: NextRequest, user: any) {
+export async function POST(request: NextRequest) {
+  const authCheck = await requireRole(request, 'admin')
+  if (authCheck.error) return authCheck.response
+
   try {
     const body = await request.json()
     const { tokenId } = body
     
     if (!tokenId) {
-      return createErrorResponse(
-        'Token ID is required',
-        400,
-        'MISSING_TOKEN_ID'
+      return NextResponse.json(
+        { error: 'Token ID is required' },
+        { status: 400 }
       )
     }
     
@@ -102,30 +117,28 @@ async function terminateSessionHandler(request: NextRequest, user: any) {
         $set: { 
           isActive: false, 
           revokedAt: new Date(),
-          revokedBy: user._id.toString()
+          revokedBy: authCheck.auth.userId
         } 
       }
     )
     
     if (result.matchedCount === 0) {
-      return createErrorResponse(
-        'Session not found or already terminated',
-        404,
-        'SESSION_NOT_FOUND'
+      return NextResponse.json(
+        { error: 'Session not found or already terminated' },
+        { status: 404 }
       )
     }
     
-    return createSuccessResponse(null, 'Session terminated successfully')
+    return NextResponse.json({
+      success: true,
+      message: 'Session terminated successfully'
+    })
     
   } catch (error) {
     console.error('Terminate session error:', error)
-    return createErrorResponse(
-      'Failed to terminate session',
-      500,
-      'TERMINATE_SESSION_FAILED'
+    return NextResponse.json(
+      { error: 'Failed to terminate session' },
+      { status: 500 }
     )
   }
 }
-
-export const GET = withJWTAuth(getSessionsHandler, { requireAdmin: true })
-export const POST = withJWTAuth(terminateSessionHandler, { requireAdmin: true })
