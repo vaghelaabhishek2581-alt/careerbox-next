@@ -13,6 +13,8 @@ import examReducer from './slices/examSlice'
 import subscriptionReducer from './slices/subscriptionSlice'
 import instituteReducer from './slices/instituteSlice'
 import applicationReducer from './slices/applicationSlice'
+import adminReducer from './slices/adminSlice'
+import registrationReducer from './slices/registrationSlice'
 
 export const store = configureStore({
   reducer: {
@@ -29,7 +31,9 @@ export const store = configureStore({
     exams: examReducer,
     subscription: subscriptionReducer,
     institute: instituteReducer,
-    applications: applicationReducer
+    applications: applicationReducer,
+    admin: adminReducer,
+    registration: registrationReducer
   }
 })
 

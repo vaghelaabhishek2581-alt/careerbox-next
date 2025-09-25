@@ -165,6 +165,15 @@ async function completeUserOnboardingWithProfile(
       }
     }
 
+    // Map onboarding role to account role taxonomy for gating
+    const roleMap: Record<string, string> = {
+      student: 'user',
+      professional: 'user',
+      institute_admin: 'institute',
+      business_owner: 'business'
+    }
+    const accountRole = roleMap[data.role] || 'user'
+
     // Update user
     const updateResult = await User.updateOne(
       { _id: user._id },
@@ -172,9 +181,12 @@ async function completeUserOnboardingWithProfile(
         $set: {
           needsOnboarding: false,
           needsRoleSelection: false,
-          activeRole: data.role,
-          roles: [data.role],
+          activeRole: accountRole,
+          role: accountRole,
           updatedAt: new Date()
+        },
+        $addToSet: {
+          roles: accountRole
         }
       }
     )

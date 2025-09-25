@@ -144,6 +144,11 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
     },
+    switchRole: (state, action: PayloadAction<string>) => {
+      if (state.user && state.user.roles?.includes(action.payload)) {
+        state.user.activeRole = action.payload;
+      }
+    },
   },
   extraReducers: (builder) => {
     // Login
@@ -213,5 +218,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser, clearAuth } = authSlice.actions;
+export const { clearError, setUser, clearAuth, switchRole } = authSlice.actions;
 export default authSlice.reducer;

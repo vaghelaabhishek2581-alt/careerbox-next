@@ -161,6 +161,7 @@ export const authOptions: AuthOptions = {
              token.needsOnboarding = dbUser.needsOnboarding
              token.needsRoleSelection = dbUser.needsRoleSelection
              token.provider = account.provider
+             token.subscriptionActive = !!dbUser.subscriptionActive
            } else {
              console.error('❌ [JWT] No user found in database after sign-in attempt')
              token.error = 'UserNotFound'
@@ -186,6 +187,7 @@ export const authOptions: AuthOptions = {
             token.activeRole = dbUser.activeRole || dbUser.role || 'user'
             token.needsOnboarding = dbUser.needsOnboarding
             token.needsRoleSelection = dbUser.needsRoleSelection
+            token.subscriptionActive = !!dbUser.subscriptionActive
           } else {
             console.error('❌ [JWT] User not found during session update')
           }
@@ -212,6 +214,8 @@ export const authOptions: AuthOptions = {
         session.user.needsOnboarding = token.needsOnboarding as boolean
         session.user.needsRoleSelection = token.needsRoleSelection as boolean
         session.user.provider = token.provider as string
+        // Add subscriptionActive for subscription-gated routes in middleware
+        ;(session.user as any).subscriptionActive = token.subscriptionActive as boolean
       } else {
         // If the token is missing critical data, the session is invalid.
         // This can be handled client-side by signing the user out.

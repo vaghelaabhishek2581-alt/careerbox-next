@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input'
 import { Search, Briefcase, GraduationCap, FileText, Building2, Clock, MapPin, DollarSign, Crown } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
-import SubscriptionUpgrade from './SubscriptionUpgrade'
 
 export default function PublicDashboard() {
   const dispatch = useDispatch<AppDispatch>()

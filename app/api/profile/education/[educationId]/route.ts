@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { requireAuth } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
+import { IEducation } from '@/lib/types/profile.unified'
 
 const EducationSchema = z.object({
   degree: z.string().min(1, 'Degree is required'),
@@ -24,49 +24,49 @@ const EducationSchema = z.object({
 // PUT - Update a specific education entry
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { educationId: string } }
+  { params }: { params: Promise<{ educationId: string }> }
 ) {
   try {
-    console.log('🔄 PUT /api/profile/education/[educationId] - Updating education:', params.educationId)
-    
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { educationId } = await params
+    console.log('🔄 PUT /api/profile/education/[educationId] - Updating education:', educationId)
+
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     const validatedData = EducationSchema.parse(body)
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Find and update the education entry
-    const educationIndex = profile.education.findIndex(edu => edu.id === params.educationId)
+    const educationIndex = profile.education.findIndex((edu: IEducation) => edu.id === educationId)
     if (educationIndex === -1) {
       return NextResponse.json({ error: 'Education entry not found' }, { status: 404 })
     }
 
-    // Update the education entry
+    // Update the education entry while preserving the id
     profile.education[educationIndex] = {
       ...profile.education[educationIndex],
-      ...validatedData
+      ...validatedData,
+      id: profile.education[educationIndex].id // Explicitly preserve the id
     }
 
     await profile.save()
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       education: profile.education[educationIndex],
-      message: 'Education updated successfully' 
+      message: 'Education updated successfully'
     })
 
   } catch (error) {
     console.error('❌ Error updating education:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -84,36 +84,35 @@ export async function PUT(
 // DELETE - Remove a specific education entry
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { educationId: string } }
+  { params }: { params: Promise<{ educationId: string }> }
 ) {
   try {
-    console.log('🗑️ DELETE /api/profile/education/[educationId] - Deleting education:', params.educationId)
-    
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { educationId } = await params
+    console.log('🗑️ DELETE /api/profile/education/[educationId] - Deleting education:', educationId)
+
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Remove the education entry
     const initialLength = profile.education.length
-    profile.education = profile.education.filter(edu => edu.id !== params.educationId)
-    
+    profile.education = profile.education.filter((edu: IEducation) => edu.id !== educationId)
+
     if (profile.education.length === initialLength) {
       return NextResponse.json({ error: 'Education entry not found' }, { status: 404 })
     }
 
     await profile.save()
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Education deleted successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Education deleted successfully'
     })
 
   } catch (error) {

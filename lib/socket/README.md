@@ -1,368 +1,222 @@
-# Socket.IO System Documentation
+# Socket Connection Architecture
 
-This directory contains a modular, production-ready Socket.IO system for the CareerBox platform. The system is broken down into smaller, focused components for better maintainability and testability.
+## Overview
 
-## 📁 File Structure
+The CareerBox socket system now uses a **stable, top-level connection** that persists across page navigation and only disconnects/reconnects on page refresh.
 
-```
-lib/socket/
-├── types.ts                 # TypeScript type definitions
-├── auth.ts                  # Authentication utilities
-├── room-manager.ts          # Room management logic
-├── profile-validator.ts     # Profile ID validation
-├── search-handler.ts        # Search suggestions
-├── user-manager.ts          # User status and activity management
-├── system-monitor.ts        # System health monitoring
-├── notification-service.ts  # Notification management
-├── error-handler.ts         # Error handling and validation
-├── index.ts                 # Main exports
-└── README.md               # This documentation
-```
+## Architecture
 
-## 🏗️ Architecture
+### 🏗️ **Top-Level Connection**
+- **SocketProvider** (`lib/socket/SocketProvider.tsx`) - React Context Provider that manages the socket connection at the app level
+- **Connection Persistence** - Socket connection remains active during page navigation
+- **Automatic Reconnection** - Handles reconnection with exponential backoff and retry logic
 
-### Core Components
+### 🔧 **Components**
 
-1. **Types (`types.ts`)**
-   - Comprehensive TypeScript interfaces
-   - Event type definitions
-   - Data structure definitions
+#### 1. **SocketProvider** (`lib/socket/SocketProvider.tsx`)
+- **Purpose**: Manages socket connection at the application level
+- **Features**:
+  - Initializes socket connection when user session is available
+  - Maintains connection across page navigation
+  - Handles reconnection logic with retry mechanisms
+  - Provides socket context to all child components
+  - Automatically disconnects when session ends
 
-2. **Authentication (`auth.ts`)**
-   - Socket authentication middleware
-   - Permission validation
-   - Role-based access control
+#### 2. **useSocket Hook** (`hooks/use-socket.ts`)
+- **Purpose**: Provides access to socket functionality from any component
+- **Features**:
+  - Backward compatible with existing code
+  - Re-exports the context hook for seamless integration
+  - No component-level connection management
 
-3. **Room Manager (`room-manager.ts`)**
-   - User room management
-   - Role-based room joining
-   - Room validation and cleanup
+#### 3. **SocketStatus Component** (`components/socket/SocketStatus.tsx`)
+- **Purpose**: Visual indicator for socket connection status
+- **Features**:
+  - Simple connection indicator (green/red dot)
+  - Optional detailed status display
+  - Lightweight and reusable
 
-4. **Profile Validator (`profile-validator.ts`)**
-   - Real-time profile ID validation
-   - Suggestion generation
-   - Input sanitization
+#### 4. **Organized Events** (`lib/socket/events/`)
+- **Purpose**: Modular event handling system
+- **Structure**:
+  ```
+  events/
+  ├── connection/     # Connection, ping/pong, disconnect
+  ├── messaging/      # Messages, custom events
+  ├── user/          # User status, presence
+  ├── notifications/ # Notification handling
+  ├── profile/       # Profile validation
+  ├── admin/         # Admin monitoring
+  └── system/        # System health
+  ```
 
-5. **Search Handler (`search-handler.ts`)**
-   - Universal search suggestions
-   - Multi-collection search
-   - Search analytics
+## Connection Lifecycle
 
-6. **User Manager (`user-manager.ts`)**
-   - User status management
-   - Activity logging
-   - Presence tracking
+### 🚀 **Initialization**
+1. **App Starts** → SocketProvider initializes
+2. **User Session Available** → Socket connection established
+3. **Connection Established** → All event handlers registered
+4. **Ready for Use** → Components can use socket via useSocket hook
 
-7. **System Monitor (`system-monitor.ts`)**
-   - Health monitoring
-   - Performance metrics
-   - Alert management
+### 🔄 **Navigation**
+1. **User Navigates** → Socket connection **REMAINS ACTIVE**
+2. **Component Unmounts** → Socket connection **PERSISTS**
+3. **New Component Mounts** → Uses existing socket connection
+4. **No Reconnection** → Seamless experience
 
-8. **Notification Service (`notification-service.ts`)**
-   - Real-time notifications
-   - Admin alerts
-   - System broadcasts
+### 🔃 **Page Refresh**
+1. **Page Refreshes** → SocketProvider unmounts
+2. **Socket Disconnects** → Clean disconnection
+3. **Page Reloads** → SocketProvider reinitializes
+4. **Socket Reconnects** → New connection established
 
-9. **Error Handler (`error-handler.ts`)**
-   - Comprehensive error handling
-   - Input validation
-   - User-friendly error messages
+### ❌ **Session End**
+1. **User Logs Out** → Session becomes null
+2. **Socket Disconnects** → Automatic cleanup
+3. **Connection Cleared** → No memory leaks
 
-## 🚀 Usage
+## Benefits
 
-### Basic Setup
+### ✅ **Stable Connection**
+- **No Interruptions**: Socket stays connected during navigation
+- **Better Performance**: No reconnection overhead on page changes
+- **Improved UX**: Real-time features work seamlessly across pages
 
-```typescript
-import { initSocketServer } from '@/lib/socket'
+### ✅ **Automatic Management**
+- **Session-Based**: Connects when logged in, disconnects when logged out
+- **Error Handling**: Robust reconnection logic with exponential backoff
+- **Memory Safe**: Proper cleanup on unmount and session changes
 
-// Initialize socket server
-const io = initSocketServer(server)
-```
+### ✅ **Developer Experience**
+- **Simple API**: Same `useSocket()` hook interface
+- **Backward Compatible**: Existing code works without changes
+- **Type Safe**: Full TypeScript support throughout
 
-### Sending Notifications
+## Usage Examples
 
-```typescript
-import { sendNotification, sendAdminAlert } from '@/lib/socket'
+### Basic Usage
+```tsx
+import { useSocket } from '@/hooks/use-socket'
 
-// Send notification to user
-sendNotification(userId, {
-  id: 'unique_id',
-  type: 'success',
-  category: 'application',
-  title: 'Application Submitted',
-  message: 'Your application has been submitted successfully.',
-  isRead: false
-})
-
-// Send admin alert
-sendAdminAlert({
-  type: 'error',
-  data: { action: 'payment_failed', userId },
-  severity: 'high'
-})
-```
-
-### Using Individual Services
-
-```typescript
-import { ProfileValidator, SearchHandler, UserManager } from '@/lib/socket'
-
-// Profile validation
-const validator = new ProfileValidator()
-const result = await validator.validateProfileId('john_doe', userId)
-
-// Search suggestions
-const searchHandler = new SearchHandler()
-const suggestions = await searchHandler.getSearchSuggestions('react')
-
-// User management
-const userManager = new UserManager()
-await userManager.updateUserStatus(userId, 'online')
-```
-
-## 📡 Socket Events
-
-### Client to Server Events
-
-| Event | Description | Parameters |
-|-------|-------------|------------|
-| `validateProfileId` | Validate profile ID availability | `profileId: string, callback` |
-| `searchSuggestions` | Get search suggestions | `query: string, callback` |
-| `joinRoom` | Join a specific room | `room: string` |
-| `leaveRoom` | Leave a specific room | `room: string` |
-| `updateStatus` | Update user status | `status: UserStatus` |
-| `typing` | Send typing indicator | `{ room: string, isTyping: boolean }` |
-| `adminMonitor` | Admin monitoring (admin only) | `data: any` |
-| `activity` | Log user activity | `activity: UserActivity` |
-| `ping` | Heartbeat | - |
-
-### Server to Client Events
-
-| Event | Description | Data |
-|-------|-------------|------|
-| `notification` | New notification | `NotificationData` |
-| `profileUpdate` | Profile update notification | `ProfileUpdateData` |
-| `userOnline` | User came online | `userId: string` |
-| `userOffline` | User went offline | `userId: string` |
-| `searchSuggestion` | Search suggestions | `SearchSuggestion[]` |
-| `systemHealth` | System health update | `SystemHealthData` |
-| `adminAlert` | Admin alert | `AdminAlertData` |
-| `userStatusUpdate` | User status change | `UserStatusUpdate` |
-| `userTyping` | Typing indicator | `TypingData` |
-| `systemUpdate` | System-wide update | `SystemUpdateData` |
-| `pong` | Heartbeat response | - |
-| `error` | Error notification | `{ code: string, message: string }` |
-
-## 🔧 Configuration
-
-### Environment Variables
-
-```env
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### Socket Configuration
-
-```typescript
-const config: SocketConfig = {
-  path: '/api/socket',
-  cors: {
-    origin: process.env.NEXT_PUBLIC_APP_URL,
-    methods: ['GET', 'POST']
-  },
-  pingTimeout: 60000,
-  pingInterval: 25000
+function MyComponent() {
+  const { isConnected, sendMessage } = useSocket()
+  
+  const handleSendMessage = () => {
+    if (isConnected) {
+      sendMessage({ text: 'Hello!' })
+    }
+  }
+  
+  return (
+    <div>
+      Status: {isConnected ? 'Connected' : 'Disconnected'}
+      <button onClick={handleSendMessage}>Send Message</button>
+    </div>
+  )
 }
 ```
 
-## 🛡️ Security Features
+### Connection Status Indicator
+```tsx
+import { SocketStatus } from '@/components/socket/SocketStatus'
 
-### Authentication
-- Session-based authentication
-- Role-based access control
-- Permission validation
-
-### Input Validation
-- Comprehensive input validation
-- SQL injection prevention
-- XSS protection
-
-### Rate Limiting
-- Built-in rate limiting
-- Per-user request limits
-- Admin monitoring
-
-### Error Handling
-- User-friendly error messages
-- Detailed logging
-- Admin alerts for critical errors
-
-## 📊 Monitoring & Analytics
-
-### System Health
-- Real-time health monitoring
-- Performance metrics
-- Database health checks
-
-### User Analytics
-- Activity tracking
-- Search analytics
-- Connection monitoring
-
-### Error Tracking
-- Comprehensive error logging
-- Admin alerts
-- Performance monitoring
-
-## 🧪 Testing
-
-### Unit Tests
-```bash
-npm test lib/socket/
+function Header() {
+  return (
+    <div className="header">
+      <SocketStatus showDetails={true} />
+    </div>
+  )
+}
 ```
 
-### Integration Tests
-```bash
-npm run test:integration lib/socket/
+### Event Listening
+```tsx
+import { useSocket } from '@/hooks/use-socket'
+import { useEffect } from 'react'
+
+function NotificationComponent() {
+  const { socket } = useSocket()
+  
+  useEffect(() => {
+    if (socket) {
+      const handleNotification = (data) => {
+        console.log('Received notification:', data)
+      }
+      
+      socket.on('notification', handleNotification)
+      
+      return () => {
+        socket.off('notification', handleNotification)
+      }
+    }
+  }, [socket])
+  
+  return <div>Listening for notifications...</div>
+}
 ```
 
-### Manual Testing
+## Migration Guide
+
+### From Component-Level to App-Level
+
+**Before** (Component-level connection):
+```tsx
+// ❌ Old way - connection per component
+function MyComponent() {
+  const { socket, isConnected } = useSocket() // Creates new connection
+  // Component logic
+}
+```
+
+**After** (App-level connection):
+```tsx
+// ✅ New way - shared connection
+function MyComponent() {
+  const { socket, isConnected } = useSocket() // Uses shared connection
+  // Same component logic - no changes needed!
+}
+```
+
+### No Code Changes Required!
+The migration is **completely transparent**. Existing components using `useSocket()` will automatically use the new stable connection without any code changes.
+
+## Configuration
+
+### Environment Variables
+- `NEXT_PUBLIC_APP_URL` - Socket server URL (defaults to window.location.origin)
+
+### Socket Configuration
 ```typescript
-// Test socket connection
-const socket = io('http://localhost:3000')
-
-socket.on('connect', () => {
-  console.log('Connected to socket server')
-})
-
-// Test profile validation
-socket.emit('validateProfileId', 'test_profile', (result) => {
-  console.log('Validation result:', result)
+// In SocketProvider.tsx
+const socket = io(socketUrl, {
+  path: '/api/socket',
+  transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionAttempts: 10,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
+  withCredentials: true
 })
 ```
 
-## 🚀 Performance Optimization
+## Troubleshooting
 
-### Connection Management
-- Efficient room management
-- Automatic cleanup on disconnect
-- Connection pooling
+### Connection Issues
+1. **Check Session**: Socket only connects when user is logged in
+2. **Check Console**: Look for connection logs and error messages
+3. **Check Network**: Ensure WebSocket/polling is not blocked
+4. **Check Server**: Verify socket server is running
 
-### Memory Management
-- Proper cleanup of event listeners
-- Memory usage monitoring
-- Garbage collection optimization
+### Debug Tools
+- **SocketDebug Component**: Shows connection status and allows testing
+- **Browser DevTools**: Network tab shows WebSocket connections
+- **Console Logs**: Detailed logging for connection events
 
-### Database Optimization
-- Connection pooling
-- Query optimization
-- Indexing strategy
+## Future Enhancements
 
-## 🔄 Error Recovery
-
-### Automatic Recovery
-- Connection retry logic
-- Graceful degradation
-- Fallback mechanisms
-
-### Manual Recovery
-- Admin intervention tools
-- System restart procedures
-- Data recovery options
-
-## 📈 Scaling Considerations
-
-### Horizontal Scaling
-- Redis adapter for multiple instances
-- Load balancing
-- Session sharing
-
-### Vertical Scaling
-- Memory optimization
-- CPU optimization
-- Database optimization
-
-## 🛠️ Development
-
-### Adding New Events
-
-1. Define types in `types.ts`
-2. Add handler in main socket file
-3. Add validation schema in `error-handler.ts`
-4. Write tests
-5. Update documentation
-
-### Adding New Services
-
-1. Create service class
-2. Add to exports in `index.ts`
-3. Write comprehensive tests
-4. Add error handling
-5. Update documentation
-
-## 📝 Best Practices
-
-### Code Organization
-- Single responsibility principle
-- Dependency injection
-- Error handling
-
-### Performance
-- Async/await for database operations
-- Proper error handling
-- Memory management
-
-### Security
-- Input validation
-- Authentication checks
-- Permission validation
-
-### Testing
-- Unit tests for all functions
-- Integration tests for workflows
-- Error scenario testing
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Connection Issues**
-   - Check CORS configuration
-   - Verify authentication
-   - Check network connectivity
-
-2. **Performance Issues**
-   - Monitor memory usage
-   - Check database connections
-   - Review query performance
-
-3. **Error Handling**
-   - Check error logs
-   - Verify input validation
-   - Review permission settings
-
-### Debug Mode
-
-```typescript
-// Enable debug logging
-process.env.SOCKET_DEBUG = 'true'
-```
-
-## 📚 Additional Resources
-
-- [Socket.IO Documentation](https://socket.io/docs/)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
-- [MongoDB Documentation](https://docs.mongodb.com/)
-- [Next.js Documentation](https://nextjs.org/docs)
-
-## 🤝 Contributing
-
-1. Follow the existing code structure
-2. Add comprehensive tests
-3. Update documentation
-4. Follow TypeScript best practices
-5. Handle errors properly
-
-## 📄 License
-
-This code is part of the CareerBox project and follows the same license terms.
+- **Authentication Middleware**: Add JWT-based authentication to socket server
+- **Room Management**: Implement user rooms and targeted messaging
+- **Presence System**: Real-time user presence and status
+- **Message Queuing**: Queue messages when offline and send when reconnected
+- **Performance Monitoring**: Track connection metrics and performance

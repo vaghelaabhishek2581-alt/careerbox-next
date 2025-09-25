@@ -28,20 +28,18 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthRe
     }
 
     // 2. Try JWT token from Authorization header
-    // let token = request.headers.get('authorization')?.replace('Bearer ', '')
-    let cookieToken = request.cookies.get('auth-token')?.value
-    // 3. If no header token, try cookie
-    if (!cookieToken) {
-      cookieToken = cookieToken
-    }
+    // Support Authorization: Bearer <token> header and 'auth-token' cookie
+    const headerToken = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+    const cookieToken = request.cookies.get('auth-token')?.value
+    const token = headerToken || cookieToken
 
-    if (!cookieToken) {
+    if (!token) {
       console.log('❌ [UnifiedAuth] No authentication found (no session or token)')
       return null
     }
 
     // 4. Verify JWT token
-    const payload = verifyJWT(cookieToken)
+    const payload = verifyJWT(token)
     if (!payload) {
       console.log('❌ [UnifiedAuth] Invalid JWT token')
       return null

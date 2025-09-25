@@ -1,9 +1,9 @@
-import React, { useRef } from "react";
-import { Edit2, Plus, MapPin, Mail, Globe, Share2, MoreHorizontal, Camera, Verified } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { Edit2, Plus, MapPin, Mail, Globe, Share2, MoreHorizontal, Camera, Verified, Upload, X, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useAppDispatch } from "@/lib/redux/hooks";
-import { uploadProfileImage } from "@/lib/redux/slices/profileSlice";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { uploadProfileImage as uploadProfileImageAction } from "@/lib/redux/slices/profileSlice";
 import type { IProfile } from "@/lib/redux/slices/profileSlice";
 
 interface ProfileHeaderProps {
@@ -15,24 +15,117 @@ function getInitial(name?: string): string {
   return name ? name.charAt(0).toUpperCase() : '';
 }
 
-export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onEditPersonal }) => {
+export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile, onEditPersonal }) => {
   const dispatch = useAppDispatch();
+  const isUploading = useAppSelector((state) => state.profile.isUploadingImage, (prev, next) => prev === next);
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const coverImageInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle profile image upload
+  // Preview states
+  const [profilePreview, setProfilePreview] = useState<string | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [selectedProfileFile, setSelectedProfileFile] = useState<File | null>(null);
+  const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
+
+  // Handle profile image selection with preview
   const handleProfileImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      dispatch(uploadProfileImage({ type: 'profile', file }));
+      // Validate file
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+
+      setSelectedProfileFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfilePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  // Handle cover image upload
+  // Handle cover image selection with preview
   const handleCoverImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      dispatch(uploadProfileImage({ type: 'cover', file }));
+      // Validate file
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+
+      setSelectedCoverFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCoverPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload profile image
+  const handleUploadProfileImage = async () => {
+    if (selectedProfileFile) {
+      try {
+        await dispatch(uploadProfileImageAction({ type: 'profile', file: selectedProfileFile })).unwrap();
+        // Clear preview after successful upload
+        setProfilePreview(null);
+        setSelectedProfileFile(null);
+        if (profileImageInputRef.current) {
+          profileImageInputRef.current.value = '';
+        }
+      } catch (error) {
+        console.error('Upload failed:', error);
+      }
+    }
+  };
+
+  // Upload cover image
+  const handleUploadCoverImage = async () => {
+    if (selectedCoverFile) {
+      try {
+        await dispatch(uploadProfileImageAction({ type: 'cover', file: selectedCoverFile })).unwrap();
+        // Clear preview after successful upload
+        setCoverPreview(null);
+        setSelectedCoverFile(null);
+        if (coverImageInputRef.current) {
+          coverImageInputRef.current.value = '';
+        }
+      } catch (error) {
+        console.error('Upload failed:', error);
+      }
+    }
+  };
+
+  // Cancel profile preview
+  const cancelProfilePreview = () => {
+    setProfilePreview(null);
+    setSelectedProfileFile(null);
+    if (profileImageInputRef.current) {
+      profileImageInputRef.current.value = '';
+    }
+  };
+
+  // Cancel cover preview
+  const cancelCoverPreview = () => {
+    setCoverPreview(null);
+    setSelectedCoverFile(null);
+    if (coverImageInputRef.current) {
+      coverImageInputRef.current.value = '';
     }
   };
 
@@ -55,143 +148,296 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onEditPer
       />
 
       {/* Cover Image Section */}
-      <div className="relative">
+      <div className="relative w-full">
         <div
-          className="h-64 bg-gradient-to-r from-blue-600 to-purple-600 bg-cover bg-center relative"
-          style={{ backgroundImage: profile?.coverImage ? `url(${profile.coverImage})` : undefined }}
+          className="h-48 sm:h-56 md:h-64 lg:h-72 w-full bg-gradient-to-r from-blue-500 to-purple-600 bg-cover bg-center relative"
+          style={{
+            backgroundImage: profile?.coverImage ? `url(${profile.coverImage})` : undefined,
+          }}
         >
-          <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+          {/* Edit Cover Button */}
           <Button
             variant="secondary"
             size="sm"
-            className="absolute top-4 right-4 bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+            className="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-700"
             onClick={() => coverImageInputRef.current?.click()}
           >
             <Camera className="h-4 w-4 mr-2" />
-            Edit Cover
+            Edit cover
           </Button>
         </div>
 
         {/* Profile Image */}
-        <div className="absolute -bottom-16 left-8">
+        <div className="absolute -bottom-12 sm:-bottom-14 md:-bottom-16 left-4 sm:left-6 md:left-8">
           <div className="relative">
-            <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-              <AvatarImage src={profile?.profileImage || ""} alt={profile?.personalDetails?.firstName || ""} />
-              <AvatarFallback className="text-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <Avatar className="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 border-2 sm:border-4 border-white">
+              <AvatarImage src={profile?.profileImage} alt="Profile" />
+              <AvatarFallback className="text-lg sm:text-xl md:text-2xl font-semibold bg-gray-200">
                 {getInitial(profile?.personalDetails?.firstName)}
                 {getInitial(profile?.personalDetails?.lastName)}
               </AvatarFallback>
             </Avatar>
             <Button
-              size="sm"
               variant="secondary"
-              className="absolute bottom-2 right-2 h-8 w-8 rounded-full p-0 bg-white shadow-md"
+              size="icon"
+              className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 h-6 w-6 sm:h-8 sm:w-8 rounded-full p-0 bg-white shadow-md"
               onClick={() => profileImageInputRef.current?.click()}
             >
-              <Camera className="h-4 w-4" />
+              <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-        {/* Profile Header */}
-        <div className="flex justify-between items-start mb-8">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {profile?.personalDetails?.firstName && profile?.personalDetails?.lastName
-                  ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
-                  : "Unnamed Profile"}
-              </h1>
-              {profile?.verified && (
-                <Verified className="h-6 w-6 text-blue-600" />
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onEditPersonal}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <p className="text-lg text-gray-600 mb-3">
-              {profile?.personalDetails?.professionalHeadline || "No headline set"}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
-              {profile?.location && (
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {profile.location}
+      <div className="w-full  mx-auto pt-16 sm:pt-18 md:pt-20 ">
+        {/* Main Profile Header Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
+          <div className="p-6 pb-4">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 lg:gap-8">
+              <div className="flex-1 min-w-0">
+                {/* Name and Verification */}
+                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                  <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 truncate">
+                    {profile?.personalDetails?.firstName || "Your Name"}{" "}
+                    {profile?.personalDetails?.lastName || ""}
+                  </h1>
+                  {profile?.verified && (
+                    <Verified className="h-6 w-6 text-blue-500 flex-shrink-0" />
+                  )}
                 </div>
-              )}
-              {typeof profile?.userId === 'object' && profile.userId.email && (
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-1" />
-                  {profile.userId.email}
-                </div>
-              )}
-              {profile?.socialLinks?.website && (
-                <div className="flex items-center">
-                  <Globe className="h-4 w-4 mr-1" />
-                  <a
-                    href={profile.socialLinks.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Website
-                  </a>
-                </div>
-              )}
-            </div>
 
-            <div className="flex items-center gap-6 mb-4">
-              <div className="text-sm">
-                <span className="font-bold text-gray-900">
-                  {profile?.followers || 0}
-                </span>
-                <span className="text-gray-600 ml-1">Followers</span>
-              </div>
-              <div className="text-sm">
-                <span className="font-bold text-gray-900">
-                  {profile?.following || 0}
-                </span>
-                <span className="text-gray-600 ml-1">Following</span>
-              </div>
-            </div>
-
-            {profile?.personalDetails?.aboutMe &&
-              profile.personalDetails.aboutMe !==
-              "Tell us a bit about yourself" && (
-                <p className="text-gray-700 mb-4 max-w-2xl">
-                  {profile.personalDetails.aboutMe}
+                {/* Professional Headline */}
+                <p className="text-lg text-gray-600 mb-3 font-normal">
+                  {profile?.personalDetails?.professionalHeadline || "Add a professional headline"}
                 </p>
-              )}
-          </div>
 
-          <div className="flex gap-2">
-            <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Profile Sections
-            </Button>
-            <Button variant="outline" onClick={onEditPersonal}>
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit Profile
-            </Button>
-            <Button variant="outline">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-            <Button variant="outline" size="icon">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+                {/* Location, Email, Website */}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-4 text-sm text-gray-600 mb-3">
+                  {profile?.location && (
+                    <div className="flex items-center min-w-0">
+                      <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                      <span className="truncate">{profile.location}</span>
+                    </div>
+                  )}
+                  {typeof profile?.userId === 'object' && profile.userId.email && (
+                    <div className="flex items-center min-w-0">
+                      <Mail className="h-4 w-4 mr-1 flex-shrink-0" />
+                      <span className="truncate">{profile.userId.email}</span>
+                    </div>
+                  )}
+                  {profile?.socialLinks?.website && (
+                    <div className="flex items-center min-w-0">
+                      <Globe className="h-4 w-4 mr-1 flex-shrink-0" />
+                      <a
+                        href={profile.socialLinks.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 truncate"
+                      >
+                        {profile.socialLinks.website.replace(/^https?:\/\//, "")}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Followers/Following Stats */}
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <div className="text-sm">
+                    <span className="font-semibold text-gray-900">
+                      {profile?.followers || 0}
+                    </span>
+                    <span className="text-gray-600 ml-1">followers</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-semibold text-gray-900">
+                      {profile?.following || 0}
+                    </span>
+                    <span className="text-gray-600 ml-1">connections</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-row lg:flex-col xl:flex-row gap-2 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  onClick={onEditPersonal}
+                  className="flex-1 sm:flex-initial text-xs sm:text-sm"
+                >
+                  <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Edit Profile</span>
+                  <span className="sm:hidden">Edit</span>
+                </Button>
+                <Button variant="outline" className="flex-1 sm:flex-initial text-xs sm:text-sm">
+                  <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Share</span>
+                  <span className="sm:hidden">Share</span>
+                </Button>
+                <Button variant="outline" size="icon" className="flex-shrink-0">
+                  <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* About Section - Separate Card */}
+        {profile?.personalDetails?.aboutMe &&
+          profile.personalDetails.aboutMe !== "Tell us a bit about yourself" && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
+              <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
+                {profile.personalDetails.aboutMe}
+              </p>
+            </div>
+          )}
+
+        {/* Professional Badges & Interests - Separate Card */}
+        {((profile?.personalDetails?.professionalBadges && profile.personalDetails.professionalBadges.length > 0) ||
+          (profile?.personalDetails?.interests && profile.personalDetails.interests.length > 0)) && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 p-6">
+              {/* Professional Badges */}
+              {profile?.personalDetails?.professionalBadges && profile.personalDetails.professionalBadges.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-base font-semibold text-gray-900 mb-3">Professional Badges</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.personalDetails.professionalBadges.map((badge, index) => (
+                      <div
+                        key={index}
+                        className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        {badge}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Interests */}
+              {profile?.personalDetails?.interests && profile.personalDetails.interests.length > 0 && (
+                <div>
+                  <h4 className="text-base font-semibold text-gray-900 mb-3">Interests</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.personalDetails.interests.map((interest, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors cursor-pointer"
+                      >
+                        {interest}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        {/* Profile Image Preview Modal */}
+        {profilePreview && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Preview Profile Image</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelProfilePreview}
+                  disabled={isUploading}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Preview Image */}
+              <div className="flex justify-center mb-4">
+                <div
+                  className="h-32 w-32 rounded-full bg-cover bg-center border-4 border-gray-200"
+                  style={{ backgroundImage: `url(${profilePreview})` }}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 justify-center">
+                <Button
+                  onClick={handleUploadProfileImage}
+                  disabled={isUploading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  Upload
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={cancelProfilePreview}
+                  disabled={isUploading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cover Image Preview Modal */}
+        {coverPreview && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Preview Cover Image</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelCoverPreview}
+                  disabled={isUploading}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Preview Image */}
+              <div className="flex justify-center mb-4">
+                <div
+                  className="w-full h-48 bg-cover bg-center border-4 border-gray-200 rounded-lg"
+                  style={{ backgroundImage: `url(${coverPreview})` }}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 justify-center">
+                <Button
+                  onClick={handleUploadCoverImage}
+                  disabled={isUploading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  Upload
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={cancelCoverPreview}
+                  disabled={isUploading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
-};
+});
+

@@ -9,12 +9,7 @@ export function SocketDebug() {
     isConnected, 
     connectionError, 
     sendPing, 
-    updateStatus, 
-    sendMessage,
-    sendCustomEvent,
-    sendNotification,
-    markNotificationRead,
-    clearNotifications,
+    validateProfileId,
     requestSystemHealth
   } = useSocket()
   const [messages, setMessages] = useState<string[]>([])
@@ -23,23 +18,15 @@ export function SocketDebug() {
     setMessages(prev => [...prev.slice(-9), `${new Date().toLocaleTimeString()}: ${message}`])
   }
 
-  // Listen for various socket events
+  // Listen for essential socket events
   React.useEffect(() => {
     if (socket) {
       const handlePong = (data: any) => {
         addMessage(`Received pong from server (${data.socketId})`)
       }
-      
-      const handleWelcome = (data: any) => {
-        addMessage(`Welcome: ${data.message}`)
-      }
 
-      const handleUserStatusUpdate = (data: any) => {
-        addMessage(`User status update: ${data.status}`)
-      }
-
-      const handleNotification = (data: any) => {
-        addMessage(`Notification: ${data.message || 'New notification'}`)
+      const handleProfileValidation = (data: any) => {
+        addMessage(`Profile validation: ${data.profileId} - ${data.message}`)
       }
 
       const handleSystemHealth = (data: any) => {
@@ -47,16 +34,12 @@ export function SocketDebug() {
       }
       
       socket.on('pong', handlePong)
-      socket.on('welcome', handleWelcome)
-      socket.on('userStatusUpdate', handleUserStatusUpdate)
-      socket.on('notification', handleNotification)
+      socket.on('profileId:validation', handleProfileValidation)
       socket.on('systemHealthResponse', handleSystemHealth)
       
       return () => {
         socket.off('pong', handlePong)
-        socket.off('welcome', handleWelcome)
-        socket.off('userStatusUpdate', handleUserStatusUpdate)
-        socket.off('notification', handleNotification)
+        socket.off('profileId:validation', handleProfileValidation)
         socket.off('systemHealthResponse', handleSystemHealth)
       }
     }
@@ -71,69 +54,10 @@ export function SocketDebug() {
     }
   }
 
-  const testSearch = async () => {
-    try {
-      const response = await fetch('/api/search/suggestions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: 'test query' }),
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        addMessage(`Search suggestions: ${JSON.stringify(data.suggestions)}`)
-      } else {
-        addMessage(`Search API error: ${response.status}`)
-      }
-    } catch (error) {
-      addMessage(`Search API error: ${error}`)
-    }
-  }
-
-  const testStatus = () => {
+  const testProfileValidation = () => {
     if (isConnected) {
-      updateStatus('online')
-      addMessage('Status update: online')
-    } else {
-      addMessage('Socket not connected')
-    }
-  }
-
-  const testMessage = () => {
-    if (isConnected) {
-      sendMessage({ 
-        text: 'Hello from SocketDebug!', 
-        timestamp: new Date().toISOString() 
-      })
-      addMessage('Sent test message')
-    } else {
-      addMessage('Socket not connected')
-    }
-  }
-
-  const testCustomEvent = () => {
-    if (isConnected) {
-      sendCustomEvent({ 
-        type: 'test', 
-        data: 'Custom event from SocketDebug',
-        timestamp: new Date().toISOString()
-      })
-      addMessage('Sent custom event')
-    } else {
-      addMessage('Socket not connected')
-    }
-  }
-
-  const testNotification = () => {
-    if (isConnected) {
-      sendNotification({ 
-        type: 'notification',
-        message: 'Test notification from SocketDebug',
-        timestamp: new Date().toISOString()
-      })
-      addMessage('Sent test notification')
+      validateProfileId('test-profile-id')
+      addMessage('Sent profile validation request')
     } else {
       addMessage('Socket not connected')
     }
@@ -143,24 +67,6 @@ export function SocketDebug() {
     if (isConnected) {
       requestSystemHealth()
       addMessage('Requested system health')
-    } else {
-      addMessage('Socket not connected')
-    }
-  }
-
-  const testMarkNotificationRead = () => {
-    if (isConnected) {
-      markNotificationRead('test-notification-id')
-      addMessage('Marked notification as read')
-    } else {
-      addMessage('Socket not connected')
-    }
-  }
-
-  const testClearNotifications = () => {
-    if (isConnected) {
-      clearNotifications()
-      addMessage('Cleared notifications')
     } else {
       addMessage('Socket not connected')
     }
@@ -176,7 +82,7 @@ export function SocketDebug() {
           <span className={`px-2 py-1 rounded text-xs ${
             isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {isConnected ? 'Connected (Stable)' : 'Disconnected'}
           </span>
         </div>
         
@@ -201,35 +107,11 @@ export function SocketDebug() {
         </button>
         
         <button
-          onClick={testStatus}
-          disabled={!isConnected}
-          className="w-full px-2 py-1 bg-purple-500 text-white text-xs rounded disabled:bg-gray-300"
-        >
-          Test Status
-        </button>
-
-        <button
-          onClick={testMessage}
+          onClick={testProfileValidation}
           disabled={!isConnected}
           className="w-full px-2 py-1 bg-green-500 text-white text-xs rounded disabled:bg-gray-300"
         >
-          Test Message
-        </button>
-
-        <button
-          onClick={testCustomEvent}
-          disabled={!isConnected}
-          className="w-full px-2 py-1 bg-orange-500 text-white text-xs rounded disabled:bg-gray-300"
-        >
-          Test Custom Event
-        </button>
-
-        <button
-          onClick={testNotification}
-          disabled={!isConnected}
-          className="w-full px-2 py-1 bg-red-500 text-white text-xs rounded disabled:bg-gray-300"
-        >
-          Test Notification
+          Test Profile Validation
         </button>
 
         <button
@@ -237,30 +119,7 @@ export function SocketDebug() {
           disabled={!isConnected}
           className="w-full px-2 py-1 bg-indigo-500 text-white text-xs rounded disabled:bg-gray-300"
         >
-          System Health
-        </button>
-
-        <button
-          onClick={testMarkNotificationRead}
-          disabled={!isConnected}
-          className="w-full px-2 py-1 bg-yellow-500 text-white text-xs rounded disabled:bg-gray-300"
-        >
-          Mark Read
-        </button>
-
-        <button
-          onClick={testClearNotifications}
-          disabled={!isConnected}
-          className="w-full px-2 py-1 bg-pink-500 text-white text-xs rounded disabled:bg-gray-300"
-        >
-          Clear Notifications
-        </button>
-        
-        <button
-          onClick={testSearch}
-          className="w-full px-2 py-1 bg-gray-500 text-white text-xs rounded"
-        >
-          Test Search API
+          Test System Health
         </button>
       </div>
 

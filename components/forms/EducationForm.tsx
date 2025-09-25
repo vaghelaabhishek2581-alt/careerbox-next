@@ -156,20 +156,11 @@ export const EducationForm: React.FC<EducationFormProps> = ({
       } else {
         await dispatch(addEducation(educationData)).unwrap();
       }
-      toast({
-        title: isEditing ? "Education Updated" : "Education Added",
-        description: isEditing
-          ? "Education details have been updated successfully."
-          : "New education details have been added successfully.",
-      });
+      // Toast is now handled by the thunk
       onClose();
     } catch (error) {
       console.error("Failed to save education:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to save education details. Please try again.",
-      });
+      // Error toast is now handled by the thunk
     }
   };
 

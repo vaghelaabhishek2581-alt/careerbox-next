@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: provider === 'credentials' 
+      message: provider === 'credentials'
         ? 'Account created successfully! Please check your email for verification.'
         : 'Account created successfully!',
       user: userWithoutPassword,

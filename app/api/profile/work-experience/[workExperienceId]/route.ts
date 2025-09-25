@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
 import { requireAuth } from '@/lib/auth/unified-auth'
+import { IWorkExperience } from '@/lib/types/profile.unified'
 
 const WorkPositionSchema = z.object({
   id: z.string().optional(),
@@ -39,14 +40,15 @@ const WorkExperienceSchema = z.object({
 // PUT - Update a specific work experience entry
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { workExperienceId: string } }
+  { params }: { params: Promise<{ workExperienceId: string }> }
 ) {
   try {
-    console.log('🔄 PUT /api/profile/work-experience/[workExperienceId] - Updating work experience:', params.workExperienceId)
-    
+    const { workExperienceId } = await params
+    console.log('🔄 PUT /api/profile/work-experience/[workExperienceId] - Updating work experience:', workExperienceId)
+
     const authCheck = await requireAuth(request)
     if (authCheck.error) return authCheck.response
-    
+
     const body = await request.json()
     console.log('📥 Received work experience data:', JSON.stringify(body, null, 2))
     const validatedData = WorkExperienceSchema.parse(body)
@@ -60,7 +62,7 @@ export async function PUT(
     }
 
     // Find and update the work experience entry
-    const workExperienceIndex = profile.workExperiences.findIndex((work: { id: string }) => work.id === params.workExperienceId)
+    const workExperienceIndex = profile.workExperiences.findIndex((work: IWorkExperience) => work.id === workExperienceId)
     if (workExperienceIndex === -1) {
       return NextResponse.json({ error: 'Work experience entry not found' }, { status: 404 })
     }
@@ -70,15 +72,15 @@ export async function PUT(
 
     await profile.save()
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       workExperience: profile.workExperiences[workExperienceIndex],
-      message: 'Work experience updated successfully' 
+      message: 'Work experience updated successfully'
     })
 
   } catch (error) {
     console.error('❌ Error updating work experience:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -96,11 +98,12 @@ export async function PUT(
 // DELETE - Remove a specific work experience entry
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { workExperienceId: string } }
+  { params }: { params: Promise<{ workExperienceId: string }> }
 ) {
   try {
-    console.log('🗑️ DELETE /api/profile/work-experience/[workExperienceId] - Deleting work experience:', params.workExperienceId)
-    
+    const { workExperienceId } = await params
+    console.log('🗑️ DELETE /api/profile/work-experience/[workExperienceId] - Deleting work experience:', workExperienceId)
+
     const authCheck = await requireAuth(request)
     if (authCheck.error) return authCheck.response
 
@@ -113,17 +116,17 @@ export async function DELETE(
 
     // Remove the work experience entry
     const initialLength = profile.workExperiences.length
-    profile.workExperiences = profile.workExperiences.filter((work: { id: string }) => work.id !== params.workExperienceId)
-    
+    profile.workExperiences = profile.workExperiences.filter((work: IWorkExperience) => work.id !== workExperienceId)
+
     if (profile.workExperiences.length === initialLength) {
       return NextResponse.json({ error: 'Work experience entry not found' }, { status: 404 })
     }
 
     await profile.save()
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Work experience deleted successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Work experience deleted successfully'
     })
 
   } catch (error) {

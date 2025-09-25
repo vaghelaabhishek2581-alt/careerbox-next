@@ -7,14 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Search, 
-  TrendingUp, 
-  Users, 
-  Building2, 
-  GraduationCap, 
-  Briefcase, 
-  BookOpen, 
+import {
+  Search,
+  TrendingUp,
+  Users,
+  Building2,
+  GraduationCap,
+  Briefcase,
+  BookOpen,
   FileText,
   Star,
   ArrowRight,
@@ -78,7 +78,7 @@ export default function DashboardPage() {
 
           {/* Universal Search */}
           <div className="max-w-4xl mx-auto">
-            <UniversalSearch 
+            <UniversalSearch
               placeholder="Search institutes, jobs, courses, exams, or people..."
               showFilters={true}
             />
@@ -306,7 +306,7 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
-      
+
       {/* Temporary Socket Debug Component */}
       <SocketDebug />
     </div>

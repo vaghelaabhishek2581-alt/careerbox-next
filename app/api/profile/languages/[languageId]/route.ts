@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { z } from 'zod'
+import { requireAuth } from '@/lib/auth/unified-auth'
+import { ILanguage } from '@/lib/types/profile.unified'
 
 const LanguageSchema = z.object({
   name: z.string().min(1, 'Language name is required'),
@@ -14,59 +14,59 @@ const LanguageSchema = z.object({
 // PUT - Update a specific language
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { languageId: string } }
+  { params }: { params: Promise<{ languageId: string }> }
 ) {
   try {
-    console.log('🔄 PUT /api/profile/languages/[languageId] - Updating language:', params.languageId)
-    
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { languageId } = await params
+    console.log('🔄 PUT /api/profile/languages/[languageId] - Updating language:', languageId)
+
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     const body = await request.json()
     const validatedData = LanguageSchema.parse(body)
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Find and update the language
-    const languageIndex = profile.languages.findIndex(lang => lang.id === params.languageId)
+    const languageIndex = profile.languages.findIndex((lang: ILanguage) => lang.id === languageId)
     if (languageIndex === -1) {
       return NextResponse.json({ error: 'Language not found' }, { status: 404 })
     }
 
     // Check if language name already exists (excluding current language)
     const existingLanguage = profile.languages.find(
-      (lang, index) => 
-        index !== languageIndex && 
+      (lang: ILanguage, index: number) =>
+        index !== languageIndex &&
         lang.name.toLowerCase() === validatedData.name.toLowerCase()
     )
     if (existingLanguage) {
       return NextResponse.json({ error: 'Language name already exists' }, { status: 400 })
     }
 
-    // Update the language
+    // Update the language while preserving the id
     profile.languages[languageIndex] = {
       ...profile.languages[languageIndex],
-      ...validatedData
+      ...validatedData,
+      id: profile.languages[languageIndex].id // Explicitly preserve the id
     }
 
     await profile.save()
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       language: profile.languages[languageIndex],
-      message: 'Language updated successfully' 
+      message: 'Language updated successfully'
     })
 
   } catch (error) {
     console.error('❌ Error updating language:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -84,36 +84,35 @@ export async function PUT(
 // DELETE - Remove a specific language
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { languageId: string } }
+  { params }: { params: Promise<{ languageId: string }> }
 ) {
   try {
-    console.log('🗑️ DELETE /api/profile/languages/[languageId] - Deleting language:', params.languageId)
-    
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { languageId } = await params
+    console.log('🗑️ DELETE /api/profile/languages/[languageId] - Deleting language:', languageId)
+
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
 
     await connectToDatabase()
 
-    const profile = await Profile.findOne({ userId: session.user.id })
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Remove the language
     const initialLength = profile.languages.length
-    profile.languages = profile.languages.filter(lang => lang.id !== params.languageId)
-    
+    profile.languages = profile.languages.filter((lang: ILanguage) => lang.id !== languageId)
+
     if (profile.languages.length === initialLength) {
       return NextResponse.json({ error: 'Language not found' }, { status: 404 })
     }
 
     await profile.save()
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Language deleted successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Language deleted successfully'
     })
 
   } catch (error) {

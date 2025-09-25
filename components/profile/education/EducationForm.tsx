@@ -93,27 +93,18 @@ export const EducationForm: React.FC<EducationFormProps> = ({
         await dispatch(addEducation(educationData)).unwrap();
       }
 
-      toast({
-        title: isEditing ? "Education Updated" : "Education Added",
-        description: isEditing
-          ? "Education details have been updated successfully."
-          : "New education details have been added successfully.",
-      });
+      // Toast is now handled by the thunk
       onClose();
     } catch (error) {
       console.error("Failed to save education:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to save education details. Please try again.",
-      });
+      // Error toast is now handled by the thunk
     }
   };
 
   const content = (
     <div className="flex h-full min-h-[90vh]">
       {/* Left side - Form */}
-      <div className="flex-1 lg:w-1/2 p-6 overflow-y-auto border-r border-gray-200">
+      <div className="flex-1 lg:w-1/2 p-6 overflow-y-auto border-r border-gray-200 pb-28">
         <Form {...form}>
           <form id="education-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Institution Details */}
@@ -355,8 +346,8 @@ export const EducationForm: React.FC<EducationFormProps> = ({
               {isEditing ? 'Edit Education' : 'Add Education'}
             </h1>
             <div className="flex items-center gap-2">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 form="education-form"
                 disabled={form.formState.isSubmitting}
               >

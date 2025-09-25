@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import { verifyPaymentSignature, getPaymentDetails, calculateRefundAmount } from '@/lib/payment/razorpay';
 import { connectToDatabase } from '@/lib/db/mongodb';
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth';
+import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 
 const verifyPaymentSchema = z.object({
@@ -12,14 +13,16 @@ const verifyPaymentSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const authResult = await getAuthenticatedUser(request);
     
-    if (!session?.user?.id) {
+    if (!authResult) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
+
+    const { userId, user } = authResult;
 
     const body = await request.json();
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = verifyPaymentSchema.parse(body);
@@ -51,11 +54,18 @@ export async function POST(request: NextRequest) {
     }
 
     const payment = paymentResult.payment;
+    
+    if (!payment) {
+      return NextResponse.json(
+        { error: 'Payment details not found' },
+        { status: 404 }
+      );
+    }
 
     // Get order details from database
     const order = await db.collection('payment_orders').findOne({
       orderId: razorpayOrderId,
-      userId: session.user.id
+      userId: userId
     });
 
     if (!order) {
@@ -91,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // Create or update subscription
     const subscription = {
-      userId: session.user.id,
+      userId: userId,
       planType: order.planType,
       billingCycle: order.billingCycle,
       status: 'active',
@@ -106,7 +116,7 @@ export async function POST(request: NextRequest) {
     };
 
     await db.collection('subscriptions').updateOne(
-      { userId: session.user.id },
+      { userId: userId },
       { $set: subscription },
       { upsert: true }
     );
@@ -116,12 +126,16 @@ export async function POST(request: NextRequest) {
                     order.planType === 'INSTITUTE' ? 'institute' : 'user';
 
     await db.collection('users').updateOne(
-      { _id: session.user.id },
+      { _id: new ObjectId(userId) },
       { 
         $set: { 
           role: userRole,
+          activeRole: userRole,
           subscriptionActive: true,
           updatedAt: new Date()
+        },
+        $addToSet: {
+          roles: userRole
         }
       }
     );
@@ -141,7 +155,7 @@ export async function POST(request: NextRequest) {
 
     // Create payment record
     await db.collection('payments').insertOne({
-      userId: session.user.id,
+      userId: userId,
       orderId: razorpayOrderId,
       paymentId: razorpayPaymentId,
       amount: order.amount,

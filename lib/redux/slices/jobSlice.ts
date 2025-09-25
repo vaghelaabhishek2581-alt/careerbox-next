@@ -68,8 +68,8 @@ export const fetchJobs = createAsyncThunk(
   async (params: { page?: number; limit?: number; businessId?: string; status?: string }, { rejectWithValue }) => {
     try {
       const response = await API.jobs.getJobs(
-        params.page || 1, 
-        params.limit || 10, 
+        params.page || 1,
+        params.limit || 10,
         { businessId: params.businessId, status: params.status }
       )
 
@@ -171,7 +171,7 @@ export const applyToJob = createAsyncThunk(
 
 export const fetchApplications = createAsyncThunk(
   'jobs/fetchApplications',
-  async (jobId?: string, { rejectWithValue }) => {
+  async (jobId: string, { rejectWithValue }) => {
     try {
       const response = await API.jobs.getApplications(jobId)
 

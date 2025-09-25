@@ -55,6 +55,21 @@ export class ProfileAPI {
   }
 }
 
+// User API
+export class UserAPI {
+  static async switchRole(activeRole: string): Promise<ApiResponse<any>> {
+    return apiClient.post('/api/user/switch-role', { activeRole })
+  }
+
+  static async getCurrentUser(): Promise<ApiResponse<any>> {
+    return apiClient.get('/api/user/me')
+  }
+
+  static async updatePreferences(preferences: any): Promise<ApiResponse<any>> {
+    return apiClient.patch('/api/user/preferences', preferences)
+  }
+}
+
 // Jobs API
 export class JobsAPI {
   static async getJobs(page: number = 1, limit: number = 10, filters?: any): Promise<ApiResponse<any>> {
@@ -333,6 +348,7 @@ export class ExamsAPI {
 export const API = {
   auth: AuthAPI,
   profile: ProfileAPI,
+  user: UserAPI,
   jobs: JobsAPI,
   courses: CoursesAPI,
   institutes: InstitutesAPI,

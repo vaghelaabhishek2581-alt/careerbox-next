@@ -5,12 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X, Plus, Loader2 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Form,
   FormControl,
   FormField,
@@ -31,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { useToast } from "@/components/ui/use-toast";
-import { addSkill, updateSkill, deleteSkill, fetchProfile, removeSkillOptimistic, addSkillOptimistic } from "@/lib/redux/slices/profileSlice";
+import { addSkill, updateSkill, deleteSkill, fetchProfile } from "@/lib/redux/slices/profileSlice";
 import type { ISkill } from "@/lib/redux/slices/profileSlice";
 
 const skillSchema = z.object({
@@ -42,11 +36,11 @@ const skillSchema = z.object({
 type SkillFormData = z.infer<typeof skillSchema>;
 
 interface SkillsFormProps {
-  open: boolean;
+  isEditing: boolean;
   onClose: () => void;
 }
 
-export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
+export const SkillsForm: React.FC<SkillsFormProps> = ({ isEditing, onClose }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const profile = useAppSelector((state) => state.profile.profile);
@@ -63,13 +57,13 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
 
   // Reset form when dialog opens/closes and fetch profile if needed
   React.useEffect(() => {
-    if (!open) {
+    if (!isEditing) {
       form.reset();
-    } else if (open && !profile) {
+    } else if (isEditing && !profile) {
       // Fetch profile when dialog opens if not already loaded
       dispatch(fetchProfile());
     }
-  }, [open, form, profile, dispatch]);
+  }, [isEditing, form, profile, dispatch]);
 
   const onSubmit = async (data: SkillFormData) => {
     try {
@@ -90,10 +84,7 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
       }
       
       await dispatch(addSkill(data)).unwrap();
-      toast({
-        title: "Skill Added",
-        description: "New skill has been added successfully."
-      });
+      // Toast is now handled by the thunk
       
       // Reset form after successful submission
       form.reset({
@@ -103,45 +94,17 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
       
     } catch (error) {
       console.error('Failed to save skill:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to save skill. Please try again."
-      });
+      // Error toast is now handled by the thunk
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteSkill = async (skillId: string) => {
-    // Optimistic update - remove locally first
-    const skillToDelete = profile?.skills?.find(skill => skill.id === skillId);
-    if (skillToDelete) {
-      // Dispatch optimistic update
-      dispatch(removeSkillOptimistic(skillId));
-      
-      toast({
-        title: "Skill Deleted",
-        description: "Skill has been removed successfully."
-      });
-    }
-
-    // API call in background
     try {
       await dispatch(deleteSkill(skillId)).unwrap();
     } catch (error) {
       console.error('Failed to delete skill:', error);
-      
-      // Revert optimistic update on error
-      if (skillToDelete) {
-        dispatch(addSkillOptimistic(skillToDelete));
-      }
-      
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete skill. Please try again."
-      });
     }
   };
 
@@ -166,15 +129,29 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
     "Vue.js", "PHP", "C++", "Machine Learning", "Data Analysis", "Project Management"
   ];
 
+  if (!isEditing) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Skills</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Manage your professional skills
-          </p>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Edit Skills</h2>
+            <p className="text-sm text-muted-foreground">
+              Manage your professional skills
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="p-6">
 
         <div className="space-y-6">
           {/* Add/Edit Skill Form */}
@@ -335,7 +312,8 @@ export const SkillsForm: React.FC<SkillsFormProps> = ({ open, onClose }) => {
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 };

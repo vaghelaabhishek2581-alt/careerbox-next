@@ -22,7 +22,7 @@ import {
   Globe
 } from "lucide-react";
 import PaymentModal from "@/components/payment/PaymentModal";
-import { PAYMENT_PLANS } from "@/lib/payment/razorpay";
+import { PAYMENT_PLANS } from "@/lib/payment/plans";
 
 export default function EnhancedSubscriptionUpgrade() {
   const [selectedPlan, setSelectedPlan] = useState<'BUSINESS' | 'INSTITUTE' | 'STUDENT_PREMIUM' | null>(null);

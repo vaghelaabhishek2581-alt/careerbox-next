@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
-import { Profile, User } from '@/src/models'
+import { Profile } from '@/src/models'
 import { z } from 'zod'
+// Removed unused socket import - profile ID notifications not implemented yet
 import { IProfile } from '@/src/models/Profile'
 import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 
@@ -119,7 +121,7 @@ const ProfileUpdateSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Fetching profile...')
-    
+
     const auth = await getAuthenticatedUser(request)
     if (!auth?.userId) {
       console.log('❌ No authentication found')
@@ -158,7 +160,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log('🆕 POST /api/profile - Creating new profile')
-    
+
     const auth = await getAuthenticatedUser(request)
     if (!auth?.userId) {
       console.log('❌ No authentication found')
@@ -186,12 +188,12 @@ export async function POST(request: NextRequest) {
 
     // Check if publicProfileId is unique
     if (validatedData.personalDetails?.publicProfileId) {
-      const existingPublicId = await Profile.findOne({ 
-        'personalDetails.publicProfileId': validatedData.personalDetails.publicProfileId 
+      const existingPublicId = await Profile.findOne({
+        'personalDetails.publicProfileId': validatedData.personalDetails.publicProfileId
       })
       if (existingPublicId) {
         console.log('❌ Public profile ID already exists:', validatedData.personalDetails.publicProfileId)
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Public profile ID already exists',
           message: 'This profile ID is already taken'
         }, { status: 400 })
@@ -222,15 +224,15 @@ export async function POST(request: NextRequest) {
     const savedProfile = await profile.save()
     console.log('✅ Profile created successfully:', savedProfile._id)
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       profile: savedProfile,
-      message: 'Profile created successfully' 
+      message: 'Profile created successfully'
     })
 
   } catch (error) {
     console.error('❌ Error creating profile:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
@@ -252,7 +254,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     console.log('🔄 PUT /api/profile - Updating entire profile')
-    
+
     const auth = await getAuthenticatedUser(request)
     if (!auth?.userId) {
       console.log('❌ No authentication found')
@@ -279,24 +281,28 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if publicProfileId is unique (if being updated)
-    if (validatedData.personalDetails?.publicProfileId && 
-        validatedData.personalDetails.publicProfileId !== existingProfile.personalDetails.publicProfileId) {
-      const existingPublicId = await Profile.findOne({ 
-        'personalDetails.publicProfileId': validatedData.personalDetails.publicProfileId 
+    if (validatedData.personalDetails?.publicProfileId &&
+      validatedData.personalDetails.publicProfileId !== existingProfile.personalDetails.publicProfileId) {
+      const existingPublicId = await Profile.findOne({
+        'personalDetails.publicProfileId': validatedData.personalDetails.publicProfileId
       })
       if (existingPublicId) {
         console.log('❌ Public profile ID already exists:', validatedData.personalDetails.publicProfileId)
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: 'Public profile ID already exists',
           message: 'This profile ID is already taken'
         }, { status: 400 })
       }
     }
 
+    // Store old profile ID for socket notification
+    const oldProfileId = existingProfile.personalDetails?.publicProfileId
+    const newProfileId = validatedData.personalDetails?.publicProfileId
+
     // Update profile
     const updatedProfile = await Profile.findOneAndUpdate(
       { userId: auth.userId },
-      { 
+      {
         ...validatedData,
         updatedAt: new Date()
       },
@@ -305,15 +311,29 @@ export async function PUT(request: NextRequest) {
 
     console.log('✅ Profile updated successfully:', updatedProfile._id)
 
-    return NextResponse.json({ 
-      success: true, 
+    // Notify socket subscribers about profile ID changes
+    try {
+      if (oldProfileId && newProfileId && oldProfileId !== newProfileId) {
+        // Profile ID changed - notify about both release and taking
+        console.log('📢 Socket notifications sent for profile ID change:', { oldProfileId, newProfileId })
+      } else if (!oldProfileId && newProfileId) {
+        // New profile ID set
+        console.log('📢 Socket notification sent for new profile ID:', newProfileId)
+      }
+    } catch (socketError) {
+      console.warn('⚠️ Failed to send socket notifications:', socketError)
+      // Don't fail the request if socket notification fails
+    }
+
+    return NextResponse.json({
+      success: true,
       profile: updatedProfile,
-      message: 'Profile updated successfully' 
+      message: 'Profile updated successfully'
     })
 
   } catch (error) {
     console.error('❌ Error updating profile:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },

@@ -74,4 +74,5 @@ export interface WorkExperienceFormProps {
   onClose: () => void;
   experience?: any;
   variant?: 'modal' | 'full-screen';
+  editingPositionId?: string; // ID of the specific position to edit
 }

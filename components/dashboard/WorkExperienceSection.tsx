@@ -13,26 +13,26 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { useAppDispatch } from "@/lib/redux/hooks";
+import { deleteWorkExperience } from "@/lib/redux/slices/profileSlice";
 import type { IProfile, IWorkExperience, IWorkPosition } from "@/lib/redux/slices/profileSlice";
 import { WorkExperienceDisplay } from "@/components/profile/workExperience";
-import apiClient from "@/lib/api/client";
 
 interface WorkExperienceSectionProps {
   profile: IProfile;
   onAdd: () => void;
-  onEdit: (experience: IWorkExperience) => void;
+  onEdit: (experience: IWorkExperience, editingPositionId?: string) => void;
   onEditPosition?: (experience: IWorkExperience, position: IWorkPosition) => void;
-  onUpdate?: () => void; // Callback to refresh data after delete
 }
 
 export const WorkExperienceSection: React.FC<WorkExperienceSectionProps> = ({ 
   profile, 
   onAdd, 
   onEdit,
-  onEditPosition,
-  onUpdate
+  onEditPosition
 }) => {
   const { toast } = useToast();
+  const dispatch = useAppDispatch();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lastPositionDialogOpen, setLastPositionDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -45,46 +45,22 @@ export const WorkExperienceSection: React.FC<WorkExperienceSectionProps> = ({
 
   const handleDeleteExperience = async (experienceId: string) => {
     try {
-      const response = await apiClient.delete(`/api/profile/work-experience/${experienceId}`);
-      
-      if (response.success) {
-        toast({
-          title: "Success",
-          description: "Work experience deleted successfully",
-        });
-        onUpdate?.(); // Refresh the data
-      } else {
-        throw new Error(response.error || 'Failed to delete work experience');
-      }
+      await dispatch(deleteWorkExperience(experienceId)).unwrap();
+      // Success toast and optimistic updates are now handled by the thunk
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete work experience",
-        variant: "destructive",
-      });
+      console.error('Failed to delete work experience:', error);
+      // Error toast and rollback are now handled by the thunk
     }
   };
 
   const handleDeletePosition = async (experienceId: string, positionId: string) => {
-    try {
-      const response = await apiClient.delete(`/api/profile/work-experience/${experienceId}/positions/${positionId}`);
-      
-      if (response.success) {
-        toast({
-          title: "Success",
-          description: "Position deleted successfully",
-        });
-        onUpdate?.(); // Refresh the data
-      } else {
-        throw new Error(response.error || 'Failed to delete position');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete position",
-        variant: "destructive",
-      });
-    }
+    // For now, we'll need to implement position-specific deletion in the Redux slice
+    // This is a TODO item as the current slice only handles full experience deletion
+    toast({
+      title: "Feature Coming Soon",
+      description: "Individual position deletion will be available soon. Please edit the experience to remove positions.",
+      variant: "default",
+    });
   };
 
   const confirmDelete = async () => {
@@ -150,7 +126,10 @@ export const WorkExperienceSection: React.FC<WorkExperienceSectionProps> = ({
                 key={experience.id}
                 experience={experience}
                 onEdit={onEdit}
-                onEditPosition={onEditPosition || (() => {})}
+                onEditPosition={(experience, position) => {
+                  // Pass the full experience and the position ID to edit
+                  onEdit(experience, position.id);
+                }}
                 onDeleteExperience={(experienceId, experienceName) => {
                   setDeleteTarget({
                     type: 'experience',

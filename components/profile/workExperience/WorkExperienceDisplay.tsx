@@ -209,7 +209,7 @@ export const WorkExperienceDisplay: React.FC<WorkExperienceDisplayProps> = ({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit(experience)}>
+                            <DropdownMenuItem onClick={() => onEditPosition(experience, position)}>
                               <Edit2 className="h-4 w-4 mr-2" />
                               Edit Position
                             </DropdownMenuItem>

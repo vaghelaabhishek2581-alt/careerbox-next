@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import { createPaymentOrder } from '@/lib/payment/razorpay';
 import { connectToDatabase } from '@/lib/db/mongodb';
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth';
 import { z } from 'zod';
 
 const createOrderSchema = z.object({
@@ -11,23 +11,25 @@ const createOrderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.user?.id) {
+    const authResult = await getAuthenticatedUser(request);
+
+    if (!authResult) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    const { userId, user } = authResult;
+
     const body = await request.json();
     const { planType, billingCycle } = createOrderSchema.parse(body);
 
     const { db } = await connectToDatabase();
-    
+
     // Check if user already has an active subscription
     const existingSubscription = await db.collection('subscriptions').findOne({
-      userId: session.user.id,
+      userId: userId,
       status: 'active'
     });
 
@@ -42,9 +44,9 @@ export async function POST(request: NextRequest) {
     const orderResult = await createPaymentOrder(
       planType,
       billingCycle,
-      session.user.id,
-      session.user.email || '',
-      session.user.name || ''
+      userId,
+      user?.email || '',
+      user?.name || ''
     );
 
     if (!orderResult.success) {
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Store order in database
     await db.collection('payment_orders').insertOne({
       orderId: orderResult.orderId,
-      userId: session.user.id,
+      userId: userId,
       planType,
       billingCycle,
       amount: orderResult.amount,
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating payment order:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },

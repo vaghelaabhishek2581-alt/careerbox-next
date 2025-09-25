@@ -3,8 +3,9 @@ import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
 import { requireAuth } from '@/lib/auth/unified-auth'
 import { z } from 'zod'
+import { IWorkExperience, IWorkPosition } from '@/lib/types/profile.unified'
 
-// Position schema for validation (if we add PUT/PATCH methods later)
+// Position schema for validation
 const WorkPositionSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, 'Position title is required'),
@@ -28,17 +29,18 @@ const WorkPositionSchema = z.object({
   }
 )
 
-// DELETE - Remove a specific position from work experience
-export async function DELETE(
+// GET - Fetch a specific position from work experience
+export async function GET(
   request: NextRequest,
-  { params }: { params: { workExperienceId: string; positionId: string } }
+  { params }: { params: Promise<{ workExperienceId: string; positionId: string }> }
 ) {
   try {
-    console.log('🗑️ DELETE /api/profile/work-experience/[workExperienceId]/positions/[positionId] - Deleting position:', params.positionId)
-    
+    const { workExperienceId, positionId } = await params
+    console.log('📤 GET /api/profile/work-experience/[workExperienceId]/positions/[positionId] - Fetching position:', positionId)
+
     const authCheck = await requireAuth(request)
     if (authCheck.error) return authCheck.response
-    
+
     await connectToDatabase()
 
     const profile = await Profile.findOne({ userId: authCheck.auth.userId })
@@ -47,33 +49,78 @@ export async function DELETE(
     }
 
     // Find the work experience entry
-    const workExperienceIndex = profile.workExperiences.findIndex((work: { id: string }) => work.id === params.workExperienceId)
+    const workExperience = profile.workExperiences.find((work: IWorkExperience) => work.id === workExperienceId)
+    if (!workExperience) {
+      return NextResponse.json({ error: 'Work experience entry not found' }, { status: 404 })
+    }
+
+    // Find the specific position
+    const position = workExperience.positions.find((pos: IWorkPosition) => pos.id === positionId)
+    if (!position) {
+      return NextResponse.json({ error: 'Position not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      position: position
+    })
+
+  } catch (error) {
+    console.error('❌ Error fetching position:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch position' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Remove a specific position from work experience
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ workExperienceId: string; positionId: string }> }
+) {
+  try {
+    const { workExperienceId, positionId } = await params
+    console.log('🗑️ DELETE /api/profile/work-experience/[workExperienceId]/positions/[positionId] - Deleting position:', positionId)
+
+    const authCheck = await requireAuth(request)
+    if (authCheck.error) return authCheck.response
+
+    await connectToDatabase()
+
+    const profile = await Profile.findOne({ userId: authCheck.auth.userId })
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
+    // Find the work experience entry
+    const workExperienceIndex = profile.workExperiences.findIndex((work: IWorkExperience) => work.id === workExperienceId)
     if (workExperienceIndex === -1) {
       return NextResponse.json({ error: 'Work experience entry not found' }, { status: 404 })
     }
 
     const workExperience = profile.workExperiences[workExperienceIndex]
-    
+
     // Check if there's only one position (can't delete the last position)
     if (workExperience.positions.length <= 1) {
-      return NextResponse.json({ 
-        error: 'Cannot delete the last position. Delete the entire work experience instead.' 
+      return NextResponse.json({
+        error: 'Cannot delete the last position. Delete the entire work experience instead.'
       }, { status: 400 })
     }
 
     // Remove the specific position
-    const initialLength = workExperience.positions.length
-    workExperience.positions = workExperience.positions.filter((pos: { id: string }) => pos.id !== params.positionId)
-    
-    if (workExperience.positions.length === initialLength) {
+    const positionIndex = workExperience.positions.findIndex((pos: IWorkPosition) => pos.id === positionId)
+    if (positionIndex === -1) {
       return NextResponse.json({ error: 'Position not found' }, { status: 404 })
     }
 
+    workExperience.positions.splice(positionIndex, 1)
+
     await profile.save()
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Position deleted successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Position deleted successfully'
     })
 
   } catch (error) {
@@ -88,14 +135,15 @@ export async function DELETE(
 // PUT - Update a specific position within work experience
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { workExperienceId: string; positionId: string } }
+  { params }: { params: Promise<{ workExperienceId: string; positionId: string }> }
 ) {
   try {
-    console.log('🔄 PUT /api/profile/work-experience/[workExperienceId]/positions/[positionId] - Updating position:', params.positionId)
-    
+    const { workExperienceId, positionId } = await params
+    console.log('🔄 PUT /api/profile/work-experience/[workExperienceId]/positions/[positionId] - Updating position:', positionId)
+
     const authCheck = await requireAuth(request)
     if (authCheck.error) return authCheck.response
-    
+
     const body = await request.json()
     console.log('📥 Received position data:', JSON.stringify(body, null, 2))
     const validatedData = WorkPositionSchema.parse(body)
@@ -109,33 +157,37 @@ export async function PUT(
     }
 
     // Find the work experience entry
-    const workExperienceIndex = profile.workExperiences.findIndex((work: { id: string }) => work.id === params.workExperienceId)
+    const workExperienceIndex = profile.workExperiences.findIndex((work: IWorkExperience) => work.id === workExperienceId)
     if (workExperienceIndex === -1) {
       return NextResponse.json({ error: 'Work experience entry not found' }, { status: 404 })
     }
 
     const workExperience = profile.workExperiences[workExperienceIndex]
-    
+
     // Find the specific position
-    const positionIndex = workExperience.positions.findIndex((pos: { id: string }) => pos.id === params.positionId)
+    const positionIndex = workExperience.positions.findIndex((pos: IWorkPosition) => pos.id === positionId)
     if (positionIndex === -1) {
       return NextResponse.json({ error: 'Position not found' }, { status: 404 })
     }
 
-    // Update the specific position
-    workExperience.positions[positionIndex] = validatedData
+    // Update the specific position while preserving the id
+    workExperience.positions[positionIndex] = {
+      ...workExperience.positions[positionIndex],
+      ...validatedData,
+      id: workExperience.positions[positionIndex].id // Explicitly preserve the id
+    }
 
     await profile.save()
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       position: workExperience.positions[positionIndex],
-      message: 'Position updated successfully' 
+      message: 'Position updated successfully'
     })
 
   } catch (error) {
     console.error('❌ Error updating position:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },

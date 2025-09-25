@@ -6,17 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Check, 
-  CreditCard, 
-  Smartphone, 
-  Building, 
-  GraduationCap, 
+import {
+  Check,
+  CreditCard,
+  Smartphone,
+  Building,
+  GraduationCap,
   Crown,
   Loader2,
   AlertCircle
 } from "lucide-react";
-import { PAYMENT_PLANS } from "@/lib/payment/razorpay";
+import { PAYMENT_PLANS } from "@/lib/payment/plans";
 import apiClient from "@/lib/api/client";
 
 interface PaymentModalProps {
@@ -27,27 +27,62 @@ interface PaymentModalProps {
   onSuccess: (subscription: any) => void;
 }
 
-export default function PaymentModal({ 
-  isOpen, 
-  onClose, 
-  planType, 
-  billingCycle, 
-  onSuccess 
+export default function PaymentModal({
+  isOpen,
+  onClose,
+  planType,
+  billingCycle,
+  onSuccess
 }: PaymentModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'netbanking'>('card');
 
   const plan = PAYMENT_PLANS[planType][billingCycle];
+
+
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      // Check if Razorpay is already loaded
+      if (typeof (window as any).Razorpay !== 'undefined') {
+        resolve(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => {
+        resolve(true);
+      };
+      script.onerror = () => {
+        resolve(false);
+      };
+      document.body.appendChild(script);
+    });
+  };
+
+  // Preload Razorpay script when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadRazorpayScript().catch(console.error);
+    }
+  }, [isOpen]);
   const savings = planType === 'BUSINESS' && billingCycle === 'YEARLY' ? 6000 :
-                 planType === 'INSTITUTE' && billingCycle === 'YEARLY' ? 10000 :
-                 planType === 'STUDENT_PREMIUM' && billingCycle === 'YEARLY' ? 600 : 0;
+    planType === 'INSTITUTE' && billingCycle === 'YEARLY' ? 10000 :
+      planType === 'STUDENT_PREMIUM' && billingCycle === 'YEARLY' ? 600 : 0;
 
   const handlePayment = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Load Razorpay script first
+      const isRazorpayLoaded = await loadRazorpayScript();
+
+      if (!isRazorpayLoaded) {
+        throw new Error('Failed to load Razorpay. Please check your internet connection and try again.');
+      }
+
       // Create payment order
       const response = await apiClient.post('/api/payment/create-order', {
         planType,
@@ -98,7 +133,7 @@ export default function PaymentModal({
           color: '#2563eb',
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             setIsLoading(false);
           }
         }

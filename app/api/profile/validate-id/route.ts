@@ -13,13 +13,49 @@ const ValidateProfileIdSchema = z.object({
 })
 
 // ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Generate alternative profile ID suggestions
+ */
+function generateSuggestions(profileId: string): string[] {
+  const suggestions: string[] = []
+  const currentYear = new Date().getFullYear()
+  
+  try {
+    // Add numbers to the end
+    for (let i = 1; i <= 5; i++) {
+      suggestions.push(`${profileId}${i}`)
+    }
+    
+    // Add current year
+    suggestions.push(`${profileId}${currentYear}`)
+    
+    // Add underscore variations
+    suggestions.push(`${profileId}_1`)
+    suggestions.push(`${profileId}_${currentYear}`)
+    
+    // Add random numbers
+    const randomNum = Math.floor(Math.random() * 999) + 100
+    suggestions.push(`${profileId}${randomNum}`)
+    
+    // Remove duplicates and return max 5 suggestions
+    return [...new Set(suggestions)].slice(0, 5)
+  } catch (error) {
+    console.error('Error generating suggestions:', error)
+    return []
+  }
+}
+
+// ============================================================================
 // POST - Validate profile ID availability
 // ============================================================================
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🔍 POST /api/profile/validate-id - Validating profile ID')
-    
+
     const authCheck = await requireAuth(request)
     if (authCheck.error) return authCheck.response
 
@@ -34,20 +70,34 @@ export async function POST(request: NextRequest) {
     console.log('✅ Connected to database')
 
     // Check if profile ID is already taken
-    const existingProfile = await Profile.findOne({ 
-      'personalDetails.publicProfileId': profileId 
+    const existingProfile = await Profile.findOne({
+      'personalDetails.publicProfileId': profileId
     }).lean()
 
     if (existingProfile) {
-      console.log('❌ Profile ID already exists:', profileId)
-      
+      console.log('🔍 Profile ID exists, checking ownership:', profileId)
+
+      // Check if the profile ID belongs to the current user
+      if (existingProfile.userId.toString() === authCheck.userId) {
+        console.log('✅ Profile ID belongs to current user:', profileId)
+        return NextResponse.json({
+          success: true,
+          isValid: true,
+          message: 'This is your current profile ID',
+          suggestions: [],
+          isOwnProfile: true
+        })
+      }
+
+      console.log('❌ Profile ID belongs to another user:', profileId)
+
       // Generate suggestions
       const suggestions = generateSuggestions(profileId)
-      
+
       return NextResponse.json({
         success: false,
         isValid: false,
-        message: 'This profile ID is already taken',
+        message: 'This profile ID is already taken by another user',
         suggestions
       })
     }
@@ -62,7 +112,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error validating profile ID:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json({
         success: false,
@@ -82,30 +132,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-function generateSuggestions(profileId: string): string[] {
-  const suggestions: string[] = []
-  const base = profileId.toLowerCase()
-  
-  // Add numbers
-  for (let i = 1; i <= 5; i++) {
-    suggestions.push(`${base}${i}`)
-  }
-  
-  // Add current year
-  const currentYear = new Date().getFullYear()
-  suggestions.push(`${base}${currentYear}`)
-  
-  // Add random suffix
-  const randomSuffix = Math.floor(Math.random() * 1000)
-  suggestions.push(`${base}${randomSuffix}`)
-  
-  // Add underscore variations
-  suggestions.push(`${base}_pro`)
-  suggestions.push(`${base}_official`)
-  
-  return suggestions.slice(0, 5) // Return max 5 suggestions
-}

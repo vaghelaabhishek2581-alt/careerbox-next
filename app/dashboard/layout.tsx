@@ -21,7 +21,7 @@ export default function DashboardLayout({
 
       {/* Page Content */}
       <main className="p-4 md:p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-8xl mx-auto">
           {children}
         </div>
       </main>

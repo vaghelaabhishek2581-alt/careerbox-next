@@ -5,12 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X, Plus, Loader2 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Form,
   FormControl,
   FormField,
@@ -31,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { useToast } from "@/components/ui/use-toast";
-import { addLanguage, updateLanguage, deleteLanguage, fetchProfile, removeLanguageOptimistic, addLanguageOptimistic } from "@/lib/redux/slices/profileSlice";
+import { addLanguage, updateLanguage, deleteLanguage, fetchProfile } from "@/lib/redux/slices/profileSlice";
 import type { ILanguage } from "@/lib/redux/slices/profileSlice";
 
 const languageSchema = z.object({
@@ -42,12 +36,12 @@ const languageSchema = z.object({
 type LanguageFormData = z.infer<typeof languageSchema>;
 
 interface LanguagesFormProps {
-  open: boolean;
+  isEditing: boolean;
   onClose: () => void;
 }
 
 export const LanguagesForm: React.FC<LanguagesFormProps> = ({
-  open,
+  isEditing,
   onClose,
 }) => {
   const dispatch = useAppDispatch();
@@ -65,13 +59,13 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
 
   // Reset form when dialog opens/closes and fetch profile if needed
   React.useEffect(() => {
-    if (!open) {
+    if (!isEditing) {
       form.reset();
-    } else if (open && !profile) {
+    } else if (isEditing && !profile) {
       // Fetch profile when dialog opens if not already loaded
       dispatch(fetchProfile());
     }
-  }, [open, form, profile, dispatch]);
+  }, [isEditing, form, profile, dispatch]);
 
   const onSubmit = async (data: LanguageFormData) => {
     try {
@@ -92,10 +86,7 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
       }
       
       await dispatch(addLanguage(data)).unwrap();
-      toast({
-        title: "Language Added",
-        description: "New language proficiency has been added successfully."
-      });
+      // Toast is now handled by the thunk
       
       form.reset({
         name: "",
@@ -103,45 +94,19 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
       });
     } catch (error) {
       console.error('Failed to save language:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to save language proficiency. Please try again."
-      });
+      // Error toast is now handled by the thunk
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteLanguage = async (languageId: string) => {
-    // Optimistic update - remove locally first
-    const languageToDelete = profile?.languages?.find(language => language.id === languageId);
-    if (languageToDelete) {
-      // Dispatch optimistic update
-      dispatch(removeLanguageOptimistic(languageId));
-      
-      toast({
-        title: "Language Deleted",
-        description: "Language proficiency has been removed successfully."
-      });
-    }
-
-    // API call in background
     try {
       await dispatch(deleteLanguage(languageId)).unwrap();
+      // Success toast and optimistic updates are now handled by the thunk
     } catch (error) {
       console.error('Failed to delete language:', error);
-      
-      // Revert optimistic update on error
-      if (languageToDelete) {
-        dispatch(addLanguageOptimistic(languageToDelete));
-      }
-      
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete language proficiency. Please try again."
-      });
+      // Error toast and rollback are now handled by the thunk
     }
   };
 
@@ -185,15 +150,29 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
     "Punjabi",
   ];
 
+  if (!isEditing) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Languages</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Showcase your language proficiencies
-          </p>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Edit Languages</h2>
+            <p className="text-sm text-muted-foreground">
+              Showcase your language proficiencies
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="p-6">
 
         <div className="space-y-6">
           {/* Add/Edit Language Form */}
@@ -363,7 +342,8 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 };

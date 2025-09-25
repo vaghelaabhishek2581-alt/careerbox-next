@@ -117,11 +117,17 @@ export interface IProfile {
   lastUpdated: string
   createdAt: string
   updatedAt: string
+  verified?: boolean
+  followers?: number
+  following?: number
 }
 
 interface ProfileState {
   profile: IProfile | null
-  isLoading: boolean
+  isLoading: boolean // Only for initial profile fetch
+  isUploadingImage: boolean
+  isUpdating: boolean // For profile updates (personal details, work, education, etc.)
+  isCreating: boolean // For creating new profile
   error: string | null
   isDirty: boolean
 }
@@ -129,6 +135,9 @@ interface ProfileState {
 const initialState: ProfileState = {
   profile: null,
   isLoading: false,
+  isUploadingImage: false,
+  isUpdating: false,
+  isCreating: false,
   error: null,
   isDirty: false
 }
@@ -209,7 +218,13 @@ export const updateProfile = createAsyncThunk(
 // Update personal details
 export const updatePersonalDetails = createAsyncThunk(
   'profile/updatePersonalDetails',
-  async (personalDetails: Partial<IPersonalDetails>, { rejectWithValue }) => {
+  async (personalDetails: Partial<IPersonalDetails>, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Saving personal details...')
+    const prev = (getState() as any)?.profile?.profile?.personalDetails
+    // Optimistic update
+    dispatch(updateLocalProfile({ personalDetails: { ...prev, ...personalDetails } as any }))
+
     try {
       const response = await fetch('/api/profile/personal-details', {
         method: 'PATCH',
@@ -221,12 +236,19 @@ export const updatePersonalDetails = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(updateLocalProfile({ personalDetails: prev }))
+        toast.error(data.error || 'Failed to update personal details')
         return rejectWithValue(data.error || 'Failed to update personal details')
       }
 
+      toast.success('Personal details saved')
       return data.profile
     } catch (error) {
+      if (prev) dispatch(updateLocalProfile({ personalDetails: prev }))
+      toast.error(error instanceof Error ? error.message : 'Failed to update personal details')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to update personal details')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
@@ -252,32 +274,49 @@ export const fetchSkills = createAsyncThunk(
 
 export const addSkill = createAsyncThunk(
   'profile/addSkill',
-  async (skill: Omit<ISkill, 'id'>, { rejectWithValue }) => {
+  async (skill: Omit<ISkill, 'id'>, { rejectWithValue, dispatch }) => {
+    const { toast } = await import('sonner')
+    const tempId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
+    const tempSkill: ISkill = { ...skill, id: tempId }
+    // Optimistic add
+    dispatch(addSkillOptimistic(tempSkill))
+    const t = toast.loading('Adding skill...')
     try {
-      const skillWithId = { ...skill, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) }
       const response = await fetch('/api/profile/skills', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(skillWithId),
+        body: JSON.stringify(tempSkill),
       })
       const data = await response.json()
 
       if (!response.ok) {
+        dispatch(removeSkillOptimistic(tempId))
+        toast.error(data.error || 'Failed to add skill')
         return rejectWithValue(data.error || 'Failed to add skill')
       }
 
+      toast.success('Skill added')
       return data.skill
     } catch (error) {
+      dispatch(removeSkillOptimistic(tempId))
+      toast.error(error instanceof Error ? error.message : 'Failed to add skill')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to add skill')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
 
 export const updateSkill = createAsyncThunk(
   'profile/updateSkill',
-  async ({ id, skillData }: { id: string; skillData: Partial<ISkill> }, { rejectWithValue }) => {
+  async ({ id, skillData }: { id: string; skillData: Partial<ISkill> }, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Updating skill...')
+    const prev = (getState() as any)?.profile?.profile?.skills?.find((s: ISkill) => s.id === id)
+    // Optimistic update
+    dispatch(updateSkillOptimistic({ id, changes: skillData }))
     try {
       const response = await fetch(`/api/profile/skills/${id}`, {
         method: 'PUT',
@@ -289,19 +328,31 @@ export const updateSkill = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(updateSkillOptimistic({ id, changes: prev }))
+        toast.error(data.error || 'Failed to update skill')
         return rejectWithValue(data.error || 'Failed to update skill')
       }
 
+      toast.success('Skill updated')
       return data.skill
     } catch (error) {
+      if (prev) dispatch(updateSkillOptimistic({ id, changes: prev }))
+      toast.error(error instanceof Error ? error.message : 'Failed to update skill')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to update skill')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
 
 export const deleteSkill = createAsyncThunk(
   'profile/deleteSkill',
-  async (skillId: string, { rejectWithValue }) => {
+  async (skillId: string, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Deleting skill...')
+    const prev = (getState() as any)?.profile?.profile?.skills?.find((s: ISkill) => s.id === skillId)
+    // Optimistic remove
+    dispatch(removeSkillOptimistic(skillId))
     try {
       const response = await fetch(`/api/profile/skills/${skillId}`, {
         method: 'DELETE',
@@ -309,12 +360,19 @@ export const deleteSkill = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(addSkillOptimistic(prev))
+        toast.error(data.error || 'Failed to delete skill')
         return rejectWithValue(data.error || 'Failed to delete skill')
       }
 
+      toast.success('Skill deleted')
       return skillId
     } catch (error) {
+      if (prev) dispatch(addSkillOptimistic(prev))
+      toast.error(error instanceof Error ? error.message : 'Failed to delete skill')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete skill')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
@@ -340,32 +398,49 @@ export const fetchLanguages = createAsyncThunk(
 
 export const addLanguage = createAsyncThunk(
   'profile/addLanguage',
-  async (language: Omit<ILanguage, 'id'>, { rejectWithValue }) => {
+  async (language: Omit<ILanguage, 'id'>, { rejectWithValue, dispatch }) => {
+    const { toast } = await import('sonner')
+    const tempId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
+    const tempLanguage: ILanguage = { ...language, id: tempId }
+    // Optimistic add
+    dispatch(addLanguageOptimistic(tempLanguage))
+    const t = toast.loading('Adding language...')
     try {
-      const languageWithId = { ...language, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) }
       const response = await fetch('/api/profile/languages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(languageWithId),
+        body: JSON.stringify(tempLanguage),
       })
       const data = await response.json()
 
       if (!response.ok) {
+        dispatch(removeLanguageOptimistic(tempId))
+        toast.error(data.error || 'Failed to add language')
         return rejectWithValue(data.error || 'Failed to add language')
       }
 
+      toast.success('Language added')
       return data.language
     } catch (error) {
+      dispatch(removeLanguageOptimistic(tempId))
+      toast.error(error instanceof Error ? error.message : 'Failed to add language')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to add language')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
 
 export const updateLanguage = createAsyncThunk(
   'profile/updateLanguage',
-  async ({ id, languageData }: { id: string; languageData: Partial<ILanguage> }, { rejectWithValue }) => {
+  async ({ id, languageData }: { id: string; languageData: Partial<ILanguage> }, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Updating language...')
+    const prev = (getState() as any)?.profile?.profile?.languages?.find((l: ILanguage) => l.id === id)
+    // Optimistic update
+    dispatch(updateLanguageOptimistic({ id, changes: languageData }))
     try {
       const response = await fetch(`/api/profile/languages/${id}`, {
         method: 'PUT',
@@ -377,19 +452,31 @@ export const updateLanguage = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(updateLanguageOptimistic({ id, changes: prev }))
+        toast.error(data.error || 'Failed to update language')
         return rejectWithValue(data.error || 'Failed to update language')
       }
 
+      toast.success('Language updated')
       return data.language
     } catch (error) {
+      if (prev) dispatch(updateLanguageOptimistic({ id, changes: prev }))
+      toast.error(error instanceof Error ? error.message : 'Failed to update language')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to update language')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
 
 export const deleteLanguage = createAsyncThunk(
   'profile/deleteLanguage',
-  async (languageId: string, { rejectWithValue }) => {
+  async (languageId: string, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Deleting language...')
+    const prev = (getState() as any)?.profile?.profile?.languages?.find((l: ILanguage) => l.id === languageId)
+    // Optimistic remove
+    dispatch(removeLanguageOptimistic(languageId))
     try {
       const response = await fetch(`/api/profile/languages/${languageId}`, {
         method: 'DELETE',
@@ -397,12 +484,19 @@ export const deleteLanguage = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(addLanguageOptimistic(prev))
+        toast.error(data.error || 'Failed to delete language')
         return rejectWithValue(data.error || 'Failed to delete language')
       }
 
+      toast.success('Language deleted')
       return languageId
     } catch (error) {
+      if (prev) dispatch(addLanguageOptimistic(prev))
+      toast.error(error instanceof Error ? error.message : 'Failed to delete language')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete language')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
@@ -428,32 +522,49 @@ export const fetchEducation = createAsyncThunk(
 
 export const addEducation = createAsyncThunk(
   'profile/addEducation',
-  async (education: Omit<IEducation, 'id'>, { rejectWithValue }) => {
+  async (education: Omit<IEducation, 'id'>, { rejectWithValue, dispatch }) => {
+    const { toast } = await import('sonner')
+    const tempId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
+    const tempEducation: IEducation = { ...education, id: tempId }
+    // Optimistic add
+    dispatch(addEducationOptimistic(tempEducation))
+    const t = toast.loading('Adding education...')
     try {
-      const educationWithId = { ...education, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) }
       const response = await fetch('/api/profile/education', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(educationWithId),
+        body: JSON.stringify(tempEducation),
       })
       const data = await response.json()
 
       if (!response.ok) {
+        dispatch(removeEducationOptimistic(tempId))
+        toast.error(data.error || 'Failed to add education')
         return rejectWithValue(data.error || 'Failed to add education')
       }
 
+      toast.success('Education added')
       return data.education
     } catch (error) {
+      dispatch(removeEducationOptimistic(tempId))
+      toast.error(error instanceof Error ? error.message : 'Failed to add education')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to add education')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
 
 export const updateEducation = createAsyncThunk(
   'profile/updateEducation',
-  async ({ id, educationData }: { id: string; educationData: Partial<IEducation> }, { rejectWithValue }) => {
+  async ({ id, educationData }: { id: string; educationData: Partial<IEducation> }, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Updating education...')
+    const prev = (getState() as any)?.profile?.profile?.education?.find((e: IEducation) => e.id === id)
+    // Optimistic update
+    dispatch(updateEducationOptimistic({ id, changes: educationData }))
     try {
       const response = await fetch(`/api/profile/education/${id}`, {
         method: 'PUT',
@@ -465,19 +576,31 @@ export const updateEducation = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(updateEducationOptimistic({ id, changes: prev }))
+        toast.error(data.error || 'Failed to update education')
         return rejectWithValue(data.error || 'Failed to update education')
       }
 
+      toast.success('Education updated')
       return data.education
     } catch (error) {
+      if (prev) dispatch(updateEducationOptimistic({ id, changes: prev }))
+      toast.error(error instanceof Error ? error.message : 'Failed to update education')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to update education')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
 
 export const deleteEducation = createAsyncThunk(
   'profile/deleteEducation',
-  async (educationId: string, { rejectWithValue }) => {
+  async (educationId: string, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Deleting education...')
+    const prev = (getState() as any)?.profile?.profile?.education?.find((e: IEducation) => e.id === educationId)
+    // Optimistic remove
+    dispatch(removeEducationOptimistic(educationId))
     try {
       const response = await fetch(`/api/profile/education/${educationId}`, {
         method: 'DELETE',
@@ -485,12 +608,19 @@ export const deleteEducation = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(addEducationOptimistic(prev))
+        toast.error(data.error || 'Failed to delete education')
         return rejectWithValue(data.error || 'Failed to delete education')
       }
 
+      toast.success('Education deleted')
       return educationId
     } catch (error) {
+      if (prev) dispatch(addEducationOptimistic(prev))
+      toast.error(error instanceof Error ? error.message : 'Failed to delete education')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete education')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
@@ -516,32 +646,49 @@ export const fetchWorkExperience = createAsyncThunk(
 
 export const addWorkExperience = createAsyncThunk(
   'profile/addWorkExperience',
-  async (workExperience: Omit<IWorkExperience, 'id'>, { rejectWithValue }) => {
+  async (workExperience: Omit<IWorkExperience, 'id'>, { rejectWithValue, dispatch }) => {
+    const { toast } = await import('sonner')
+    const tempId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
+    const tempWork: IWorkExperience = { ...workExperience, id: tempId }
+    // Optimistic add
+    dispatch(addWorkExperienceOptimistic(tempWork))
+    const t = toast.loading('Adding work experience...')
     try {
-      const workExperienceWithId = { ...workExperience, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) }
       const response = await fetch('/api/profile/work-experience', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(workExperienceWithId),
+        body: JSON.stringify(tempWork),
       })
       const data = await response.json()
 
       if (!response.ok) {
+        dispatch(removeWorkExperienceOptimistic(tempId))
+        toast.error(data.error || 'Failed to add work experience')
         return rejectWithValue(data.error || 'Failed to add work experience')
       }
 
+      toast.success('Work experience added')
       return data.workExperience
     } catch (error) {
+      dispatch(removeWorkExperienceOptimistic(tempId))
+      toast.error(error instanceof Error ? error.message : 'Failed to add work experience')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to add work experience')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
 
 export const updateWorkExperience = createAsyncThunk(
   'profile/updateWorkExperience',
-  async ({ id, workData }: { id: string; workData: Partial<IWorkExperience> }, { rejectWithValue }) => {
+  async ({ id, workData }: { id: string; workData: Partial<IWorkExperience> }, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Updating work experience...')
+    const prev = (getState() as any)?.profile?.profile?.workExperiences?.find((w: IWorkExperience) => w.id === id)
+    // Optimistic update
+    dispatch(updateWorkExperienceOptimistic({ id, changes: workData }))
     try {
       const response = await fetch(`/api/profile/work-experience/${id}`, {
         method: 'PUT',
@@ -553,19 +700,31 @@ export const updateWorkExperience = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(updateWorkExperienceOptimistic({ id, changes: prev }))
+        toast.error(data.error || 'Failed to update work experience')
         return rejectWithValue(data.error || 'Failed to update work experience')
       }
 
+      toast.success('Work experience updated')
       return data.workExperience
     } catch (error) {
+      if (prev) dispatch(updateWorkExperienceOptimistic({ id, changes: prev }))
+      toast.error(error instanceof Error ? error.message : 'Failed to update work experience')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to update work experience')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
 
 export const deleteWorkExperience = createAsyncThunk(
   'profile/deleteWorkExperience',
-  async (workExperienceId: string, { rejectWithValue }) => {
+  async (workExperienceId: string, { rejectWithValue, dispatch, getState }) => {
+    const { toast } = await import('sonner')
+    const t = toast.loading('Deleting work experience...')
+    const prev = (getState() as any)?.profile?.profile?.workExperiences?.find((w: IWorkExperience) => w.id === workExperienceId)
+    // Optimistic remove
+    dispatch(removeWorkExperienceOptimistic(workExperienceId))
     try {
       const response = await fetch(`/api/profile/work-experience/${workExperienceId}`, {
         method: 'DELETE',
@@ -573,12 +732,19 @@ export const deleteWorkExperience = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        if (prev) dispatch(addWorkExperienceOptimistic(prev))
+        toast.error(data.error || 'Failed to delete work experience')
         return rejectWithValue(data.error || 'Failed to delete work experience')
       }
 
+      toast.success('Work experience deleted')
       return workExperienceId
     } catch (error) {
+      if (prev) dispatch(addWorkExperienceOptimistic(prev))
+      toast.error(error instanceof Error ? error.message : 'Failed to delete work experience')
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete work experience')
+    } finally {
+      toast.dismiss(t)
     }
   }
 )
@@ -652,6 +818,17 @@ const profileSlice = createSlice({
         state.isDirty = true
       }
     },
+    updateSkillOptimistic: (state, action: PayloadAction<{ id: string; changes: Partial<ISkill> }>) => {
+      if (state.profile?.skills) {
+        const idx = state.profile.skills.findIndex(s => s.id === action.payload.id)
+        if (idx !== -1) {
+          state.profile.skills[idx] = { ...state.profile.skills[idx], ...action.payload.changes }
+        } else {
+          state.profile.skills.push({ id: action.payload.id, name: '', level: 'BEGINNER', ...action.payload.changes } as ISkill)
+        }
+        state.isDirty = true
+      }
+    },
     // Optimistic updates for languages
     removeLanguageOptimistic: (state, action: PayloadAction<string>) => {
       if (state.profile && state.profile.languages) {
@@ -667,8 +844,74 @@ const profileSlice = createSlice({
         state.profile.languages.push(action.payload)
         state.isDirty = true
       }
+    },
+    updateLanguageOptimistic: (state, action: PayloadAction<{ id: string; changes: Partial<ILanguage> }>) => {
+      if (state.profile?.languages) {
+        const idx = state.profile.languages.findIndex(l => l.id === action.payload.id)
+        if (idx !== -1) {
+          state.profile.languages[idx] = { ...state.profile.languages[idx], ...action.payload.changes }
+        } else {
+          state.profile.languages.push({ id: action.payload.id, name: '', level: 'BASIC', ...action.payload.changes } as ILanguage)
+        }
+        state.isDirty = true
+      }
+    },
+    // Optimistic updates for work experience
+    addWorkExperienceOptimistic: (state, action: PayloadAction<IWorkExperience>) => {
+      if (state.profile) {
+        if (!state.profile.workExperiences) {
+          state.profile.workExperiences = []
+        }
+        state.profile.workExperiences.push(action.payload)
+        state.isDirty = true
+      }
+    },
+    updateWorkExperienceOptimistic: (state, action: PayloadAction<{ id: string; changes: Partial<IWorkExperience> }>) => {
+      if (state.profile?.workExperiences) {
+        const idx = state.profile.workExperiences.findIndex(w => w.id === action.payload.id)
+        if (idx !== -1) {
+          state.profile.workExperiences[idx] = { ...state.profile.workExperiences[idx], ...action.payload.changes }
+        } else {
+          state.profile.workExperiences.push({ id: action.payload.id, company: '', positions: [], ...action.payload.changes } as IWorkExperience)
+        }
+        state.isDirty = true
+      }
+    },
+    removeWorkExperienceOptimistic: (state, action: PayloadAction<string>) => {
+      if (state.profile?.workExperiences) {
+        state.profile.workExperiences = state.profile.workExperiences.filter(w => w.id !== action.payload)
+        state.isDirty = true
+      }
+    },
+    // Optimistic updates for education
+    addEducationOptimistic: (state, action: PayloadAction<IEducation>) => {
+      if (state.profile) {
+        if (!state.profile.education) {
+          state.profile.education = []
+        }
+        state.profile.education.push(action.payload)
+        state.isDirty = true
+      }
+    },
+    updateEducationOptimistic: (state, action: PayloadAction<{ id: string; changes: Partial<IEducation> }>) => {
+      if (state.profile?.education) {
+        const idx = state.profile.education.findIndex(e => e.id === action.payload.id)
+        if (idx !== -1) {
+          state.profile.education[idx] = { ...state.profile.education[idx], ...action.payload.changes }
+        } else {
+          state.profile.education.push({ id: action.payload.id, degree: '', institution: '', startDate: '', isCurrent: false, ...action.payload.changes } as IEducation)
+        }
+        state.isDirty = true
+      }
+    },
+    removeEducationOptimistic: (state, action: PayloadAction<string>) => {
+      if (state.profile?.education) {
+        state.profile.education = state.profile.education.filter(e => e.id !== action.payload)
+        state.isDirty = true
+      }
     }
   },
+
   extraReducers: (builder) => {
     // Fetch profile
     builder.addCase(fetchProfile.pending, (state) => {
@@ -692,46 +935,46 @@ const profileSlice = createSlice({
 
     // Create profile
     builder.addCase(createProfile.pending, (state) => {
-      state.isLoading = true
+      state.isCreating = true
       state.error = null
     })
     builder.addCase(createProfile.fulfilled, (state, action) => {
-      state.isLoading = false
+      state.isCreating = false
       state.profile = action.payload
       state.isDirty = false
     })
     builder.addCase(createProfile.rejected, (state, action) => {
-      state.isLoading = false
+      state.isCreating = false
       state.error = action.payload as string
     })
 
     // Update profile
     builder.addCase(updateProfile.pending, (state) => {
-      state.isLoading = true
+      state.isUpdating = true
       state.error = null
     })
     builder.addCase(updateProfile.fulfilled, (state, action) => {
-      state.isLoading = false
+      state.isUpdating = false
       state.profile = action.payload
       state.isDirty = false
     })
     builder.addCase(updateProfile.rejected, (state, action) => {
-      state.isLoading = false
+      state.isUpdating = false
       state.error = action.payload as string
     })
 
     // Update personal details
     builder.addCase(updatePersonalDetails.pending, (state) => {
-      state.isLoading = true
+      state.isUpdating = true
       state.error = null
     })
     builder.addCase(updatePersonalDetails.fulfilled, (state, action) => {
-      state.isLoading = false
+      state.isUpdating = false
       state.profile = action.payload
       state.isDirty = false
     })
     builder.addCase(updatePersonalDetails.rejected, (state, action) => {
-      state.isLoading = false
+      state.isUpdating = false
       state.error = action.payload as string
     })
 
@@ -742,9 +985,15 @@ const profileSlice = createSlice({
         if (!state.profile.skills) {
           state.profile.skills = []
         }
-        state.profile.skills.push(action.payload)
+        // Upsert: replace existing or add new
+        const existingIndex = state.profile.skills.findIndex(s => s.id === action.payload.id)
+        if (existingIndex !== -1) {
+          state.profile.skills[existingIndex] = action.payload
+        } else {
+          state.profile.skills.push(action.payload)
+        }
         state.isDirty = true
-        console.log('✅ Skill added to profile, new skills count:', state.profile.skills.length)
+        console.log('✅ Skill upserted to profile, new skills count:', state.profile.skills.length)
       } else {
         console.log('❌ No profile found when adding skill')
       }
@@ -772,9 +1021,15 @@ const profileSlice = createSlice({
         if (!state.profile.languages) {
           state.profile.languages = []
         }
-        state.profile.languages.push(action.payload)
+        // Upsert: replace existing or add new
+        const existingIndex = state.profile.languages.findIndex(l => l.id === action.payload.id)
+        if (existingIndex !== -1) {
+          state.profile.languages[existingIndex] = action.payload
+        } else {
+          state.profile.languages.push(action.payload)
+        }
         state.isDirty = true
-        console.log('✅ Language added to profile, new languages count:', state.profile.languages.length)
+        console.log('✅ Language upserted to profile, new languages count:', state.profile.languages.length)
       } else {
         console.log('❌ No profile found when adding language')
       }
@@ -798,7 +1053,16 @@ const profileSlice = createSlice({
     // Education
     builder.addCase(addEducation.fulfilled, (state, action) => {
       if (state.profile) {
-        state.profile.education.push(action.payload)
+        if (!state.profile.education) {
+          state.profile.education = []
+        }
+        // Upsert: replace existing or add new
+        const existingIndex = state.profile.education.findIndex(e => e.id === action.payload.id)
+        if (existingIndex !== -1) {
+          state.profile.education[existingIndex] = action.payload
+        } else {
+          state.profile.education.push(action.payload)
+        }
         state.isDirty = true
       }
     })
@@ -821,7 +1085,16 @@ const profileSlice = createSlice({
     // Work experience
     builder.addCase(addWorkExperience.fulfilled, (state, action) => {
       if (state.profile) {
-        state.profile.workExperiences.push(action.payload)
+        if (!state.profile.workExperiences) {
+          state.profile.workExperiences = []
+        }
+        // Upsert: replace existing or add new
+        const existingIndex = state.profile.workExperiences.findIndex(w => w.id === action.payload.id)
+        if (existingIndex !== -1) {
+          state.profile.workExperiences[existingIndex] = action.payload
+        } else {
+          state.profile.workExperiences.push(action.payload)
+        }
         state.isDirty = true
       }
     })
@@ -843,35 +1116,59 @@ const profileSlice = createSlice({
 
     // Upload profile image
     builder.addCase(uploadProfileImage.pending, (state) => {
-      state.isLoading = true
+      state.isUploadingImage = true
       state.error = null
     })
     builder.addCase(uploadProfileImage.fulfilled, (state, action) => {
-      state.isLoading = false
-      if (state.profile && action.payload) {
-        if (action.payload.type === 'profile') {
-          state.profile.profileImage = action.payload.url
-        } else if (action.payload.type === 'cover') {
-          state.profile.coverImage = action.payload.url
+      state.isUploadingImage = false
+      if (state.profile && action.payload && action.payload.imageUrl) {
+        // Only update the specific image field - no full profile refresh
+        const uploadType = action.meta.arg.type
+        if (uploadType === 'profile') {
+          state.profile.profileImage = action.payload.imageUrl
+        } else if (uploadType === 'cover') {
+          state.profile.coverImage = action.payload.imageUrl
         }
+        
+        // Update timestamps for optimistic UI
+        state.profile.updatedAt = new Date().toISOString()
         state.isDirty = true
+        state.error = null
       }
     })
     builder.addCase(uploadProfileImage.rejected, (state, action) => {
-      state.isLoading = false
+      state.isUploadingImage = false
       state.error = action.payload as string
     })
   }
 })
 
-export const { 
-  clearError, 
-  setDirty, 
-  clearProfile, 
+export const {
+  clearError,
+  setDirty,
+  clearProfile,
   updateLocalProfile,
   removeSkillOptimistic,
   addSkillOptimistic,
+  updateSkillOptimistic,
   removeLanguageOptimistic,
-  addLanguageOptimistic
+  addLanguageOptimistic,
+  updateLanguageOptimistic,
+  addWorkExperienceOptimistic,
+  updateWorkExperienceOptimistic,
+  removeWorkExperienceOptimistic,
+  addEducationOptimistic,
+  updateEducationOptimistic,
+  removeEducationOptimistic
 } = profileSlice.actions
+
+// Selectors
+export const selectProfile = (state: { profile: ProfileState }) => state.profile.profile
+export const selectIsLoading = (state: { profile: ProfileState }) => state.profile.isLoading
+export const selectIsUpdating = (state: { profile: ProfileState }) => state.profile.isUpdating
+export const selectIsCreating = (state: { profile: ProfileState }) => state.profile.isCreating
+export const selectIsUploadingImage = (state: { profile: ProfileState }) => state.profile.isUploadingImage
+export const selectError = (state: { profile: ProfileState }) => state.profile.error
+export const selectIsDirty = (state: { profile: ProfileState }) => state.profile.isDirty
+
 export default profileSlice.reducer

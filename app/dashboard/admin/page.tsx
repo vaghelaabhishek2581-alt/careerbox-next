@@ -1,17 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/lib/redux/store';
+import { fetchAdminStats, fetchAllRegistrationIntents } from '@/lib/redux/slices/adminSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { fetchDashboardStats } from '@/lib/redux/slices/dashboardSlice';
-import { fetchUsers } from '@/lib/redux/slices/userSlice';
-import { fetchOrganizations } from '@/lib/redux/slices/organizationSlice';
-import { fetchBusinesses } from '@/lib/redux/slices/businessSlice';
-import DashboardLayout from '@/components/dashboard/layout';
 import { 
   Users, 
   Building2, 
@@ -22,62 +19,75 @@ import {
   Settings,
   Shield,
   BarChart3,
-  Globe
+  Globe,
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const dispatch = useAppDispatch();
-  const { stats, isLoading } = useAppSelector((state) => state.dashboard);
-  const { users, totalUsers } = useAppSelector((state) => state.users);
-  const { organizations, totalOrganizations } = useAppSelector((state) => state.organization);
-  const { businesses, totalBusinesses, businessStats } = useAppSelector((state) => state.business);
+  const dispatch = useDispatch<AppDispatch>();
+  const { stats, registrationIntents, loading } = useSelector((state: RootState) => state.admin);
 
   useEffect(() => {
-    dispatch(fetchDashboardStats({ role: 'admin', dateRange: '30d' }));
-    dispatch(fetchUsers({ page: 1, limit: 10, filters: {} }));
-    dispatch(fetchOrganizations({ page: 1, limit: 5 }));
-    dispatch(fetchBusinesses({ page: 1, limit: 5, filters: {} }));
+    dispatch(fetchAdminStats());
+    dispatch(fetchAllRegistrationIntents({ page: 1 }));
   }, [dispatch]);
 
   const adminStats = [
     {
       title: 'Total Users',
-      value: totalUsers.toLocaleString(),
+      value: stats?.totalUsers?.toLocaleString() || '0',
       change: '+12%',
       icon: Users,
       color: 'blue'
     },
     {
-      title: 'Organizations',
-      value: totalOrganizations.toString(),
+      title: 'Total Institutes',
+      value: stats?.totalInstitutes?.toString() || '0',
       change: '+8%',
       icon: Building2,
-      color: 'green'
+      color: 'orange'
     },
     {
-      title: 'Businesses',
-      value: totalBusinesses.toString(),
+      title: 'Total Businesses',
+      value: stats?.totalBusinesses?.toString() || '0',
       change: '+15%',
       icon: Briefcase,
       color: 'purple'
     },
     {
-      title: 'Revenue',
-      value: `$${businessStats.totalRevenue.toLocaleString()}`,
-      change: '+23%',
-      icon: DollarSign,
-      color: 'orange'
+      title: 'Pending Reviews',
+      value: stats?.pendingRegistrations?.toString() || '0',
+      change: 'New',
+      icon: FileText,
+      color: 'red'
     }
   ];
 
   return (
-    <DashboardLayout
-      title="System Administration"
-      subtitle="Manage users, organizations, and system-wide settings"
-      role="admin"
-    >
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Manage users, registrations, and system-wide settings
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge variant="secondary" className="bg-red-100 text-red-700">
+            <Shield className="w-3 h-3 mr-1" />
+            Admin Access
+          </Badge>
+        </div>
+      </div>
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {adminStats.map((stat, index) => {
           const IconComponent = stat.icon;
           return (
@@ -101,16 +111,69 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="organizations">Organizations</TabsTrigger>
-          <TabsTrigger value="businesses">Businesses</TabsTrigger>
+      <Tabs defaultValue="registrations" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="registrations">Registration Requests</TabsTrigger>
+          <TabsTrigger value="system">System Health</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="registrations" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Pending Registration Reviews</CardTitle>
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+                {registrationIntents?.filter(intent => intent.status === 'pending').length || 0} Pending
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {registrationIntents?.slice(0, 5).map((intent) => {
+                  const TypeIcon = intent.type === 'institute' ? Building2 : Briefcase;
+                  const statusConfig = {
+                    pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+                    approved: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
+                    rejected: { color: 'bg-red-100 text-red-800', icon: XCircle },
+                    payment_required: { color: 'bg-blue-100 text-blue-800', icon: CreditCard },
+                    completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle }
+                  };
+                  const StatusIcon = statusConfig[intent.status as keyof typeof statusConfig]?.icon || Clock;
+                  
+                  return (
+                    <div key={intent.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${intent.type === 'institute' ? 'bg-orange-100' : 'bg-purple-100'}`}>
+                          <TypeIcon className={`h-5 w-5 ${intent.type === 'institute' ? 'text-orange-600' : 'text-purple-600'}`} />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{intent.organizationName}</h4>
+                          <p className="text-sm text-gray-600">{intent.email} • {intent.type}</p>
+                          <p className="text-xs text-gray-500">Applied: {new Date(intent.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge className={statusConfig[intent.status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {intent.status.replace('_', ' ')}
+                        </Badge>
+                        <Button variant="outline" size="sm">
+                          Review
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }) || (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>No registration requests found</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-6">
           <div className="grid lg:grid-cols-2 gap-6">
             {/* System Health */}
             <Card>
@@ -157,9 +220,9 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { action: 'New organization registered', time: '2 mins ago', type: 'success' },
-                  { action: 'User reported content', time: '15 mins ago', type: 'warning' },
-                  { action: 'Business subscription upgraded', time: '1 hour ago', type: 'info' },
+                  { action: 'New institute registration', time: '2 mins ago', type: 'success' },
+                  { action: 'Business application reviewed', time: '15 mins ago', type: 'info' },
+                  { action: 'Subscription granted', time: '1 hour ago', type: 'success' },
                   { action: 'System backup completed', time: '3 hours ago', type: 'success' },
                   { action: 'Security scan finished', time: '6 hours ago', type: 'info' }
                 ].map((activity, index) => (
@@ -177,115 +240,6 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="users" className="space-y-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>User Management</CardTitle>
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add User
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {users.slice(0, 5).map((user, index) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-                        {user.name.charAt(0)}
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{user.name}</h4>
-                        <p className="text-sm text-gray-600">{user.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                        {user.role}
-                      </Badge>
-                      <Button variant="outline" size="sm">
-                        Manage
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="organizations" className="space-y-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Organization Management</CardTitle>
-              <Button className="bg-gradient-to-r from-green-600 to-blue-600 text-white">
-                <Building2 className="h-4 w-4 mr-2" />
-                Add Organization
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {organizations.slice(0, 5).map((org, index) => (
-                  <div key={org.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Building2 className="h-10 w-10 text-green-600" />
-                      <div>
-                        <h4 className="font-medium">{org.name}</h4>
-                        <p className="text-sm text-gray-600">{org.type} • {org.memberCount} members</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant={org.status === 'active' ? 'default' : 'secondary'}>
-                        {org.status}
-                      </Badge>
-                      <Button variant="outline" size="sm">
-                        Manage
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="businesses" className="space-y-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Business Management</CardTitle>
-              <Button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-                <Briefcase className="h-4 w-4 mr-2" />
-                Add Business
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {businesses.slice(0, 5).map((business, index) => (
-                  <div key={business.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Briefcase className="h-10 w-10 text-purple-600" />
-                      <div>
-                        <h4 className="font-medium">{business.name}</h4>
-                        <p className="text-sm text-gray-600">
-                          {business.industry} • {business.employees} employees
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant={business.status === 'active' ? 'default' : 'secondary'}>
-                        {business.subscription.plan}
-                      </Badge>
-                      <Button variant="outline" size="sm">
-                        Manage
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
@@ -338,6 +292,6 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
       </Tabs>
-    </DashboardLayout>
+    </div>
   );
 }

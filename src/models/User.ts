@@ -13,9 +13,21 @@ export interface IUser extends Document {
   roles: string[]
   organizationId?: mongoose.Types.ObjectId
   emailVerified: boolean
+  subscriptionActive?: boolean
   needsOnboarding: boolean
   needsRoleSelection: boolean
   profileId?: mongoose.Types.ObjectId // Reference to Profile model
+  
+  // Team Member Information
+  isTeamMember?: boolean
+  teamMemberOf?: mongoose.Types.ObjectId // Organization they are team member of
+  teamMemberRole?: string // Custom role in the organization
+  teamMemberPermissions?: string[] // Array of permission strings
+  
+  // Organization Owner Information
+  isOrganizationOwner?: boolean
+  ownedOrganizations?: mongoose.Types.ObjectId[] // Organizations they own
+  
   preferences: {
     notifications: {
       email: boolean
@@ -72,6 +84,10 @@ const UserSchema = new Schema<IUser>({
     type: Boolean, 
     default: false 
   },
+  subscriptionActive: {
+    type: Boolean,
+    default: false
+  },
   needsOnboarding: { 
     type: Boolean, 
     default: true 
@@ -84,6 +100,35 @@ const UserSchema = new Schema<IUser>({
     type: Schema.Types.ObjectId, 
     ref: 'Profile' 
   },
+  
+  // Team Member Information
+  isTeamMember: { 
+    type: Boolean, 
+    default: false 
+  },
+  teamMemberOf: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'Organization' 
+  },
+  teamMemberRole: { 
+    type: String, 
+    trim: true 
+  },
+  teamMemberPermissions: [{ 
+    type: String, 
+    trim: true 
+  }],
+  
+  // Organization Owner Information
+  isOrganizationOwner: { 
+    type: Boolean, 
+    default: false 
+  },
+  ownedOrganizations: [{ 
+    type: Schema.Types.ObjectId, 
+    ref: 'Organization' 
+  }],
+  
   preferences: {
     notifications: {
       email: { type: Boolean, default: true },
@@ -152,6 +197,18 @@ UserSchema.methods.isBusiness = function(): boolean {
 
 UserSchema.methods.isInstitute = function(): boolean {
   return this.role === 'institute' || this.roles.includes('institute')
+}
+
+UserSchema.methods.hasPermission = function(permission: string): boolean {
+  return this.teamMemberPermissions?.includes(permission) || false
+}
+
+UserSchema.methods.isOwnerOf = function(organizationId: string): boolean {
+  return this.ownedOrganizations?.some((id: mongoose.Types.ObjectId) => id.toString() === organizationId) || false
+}
+
+UserSchema.methods.isTeamMemberOf = function(organizationId: string): boolean {
+  return this.teamMemberOf?.toString() === organizationId
 }
 
 // ============================================================================

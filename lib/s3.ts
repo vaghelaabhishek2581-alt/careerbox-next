@@ -24,15 +24,29 @@ export function generateS3Key(userId: string, type: 'profile' | 'cover'): string
 // Generate presigned URL for upload
 export async function generatePresignedUrl(key: string, contentType: string) {
   try {
+    console.log('🔍 Checking S3 configuration...')
+    console.log('🪣 Bucket name:', BUCKET_NAME ? 'SET' : 'NOT SET')
+    console.log('🌍 Region:', process.env.AWS_REGION || 'us-east-1')
+    console.log('🔑 Access Key ID:', process.env.AWS_ACCESS_KEY_ID ? 'SET' : 'NOT SET')
+    console.log('🔐 Secret Access Key:', process.env.AWS_SECRET_ACCESS_KEY ? 'SET' : 'NOT SET')
+
     if (!BUCKET_NAME) {
       throw new Error('AWS_S3_PROFILE_BUCKET environment variable is not set')
+    }
+
+    if (!process.env.AWS_ACCESS_KEY_ID) {
+      throw new Error('AWS_ACCESS_KEY_ID environment variable is not set')
+    }
+
+    if (!process.env.AWS_SECRET_ACCESS_KEY) {
+      throw new Error('AWS_SECRET_ACCESS_KEY environment variable is not set')
     }
 
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
       ContentType: contentType,
-      ACL: 'public-read', // Make the object publicly readable
+      // Removed ACL - bucket policy should handle public access
       Metadata: {
         'uploaded-at': new Date().toISOString()
       }
@@ -41,7 +55,7 @@ export async function generatePresignedUrl(key: string, contentType: string) {
     // Generate presigned URL (expires in 1 hour)
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 })
     console.log('✅ Presigned upload URL generated successfully', uploadUrl)
-    
+
     // Generate the file URL
     const fileUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
     console.log('✅ Presigned file URL generated successfully', fileUrl)
