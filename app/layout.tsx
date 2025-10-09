@@ -1,7 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Header from "@/components/header";
 import { Providers } from "@/components/providers";
 import ReduxProvider from "@/components/providers/redux-provider";
 
@@ -24,7 +23,8 @@ export default function RootLayout({
         <Providers>
           <ReduxProvider>
 
-            <main className="min-h-screen">{children}</main>
+            <main className="min-h-screen">
+              {children}</main>
           </ReduxProvider>
         </Providers>
       </body>

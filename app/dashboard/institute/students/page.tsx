@@ -25,7 +25,7 @@ export default function InstituteStudents() {
       progress: 75
     },
     {
-      id: "2", 
+      id: "2",
       name: "Emily Johnson",
       email: "emily.johnson@email.com",
       courses: ["Digital Marketing"],
@@ -37,7 +37,7 @@ export default function InstituteStudents() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session) router.push("/auth/login");
-    if (!session.user?.roles?.includes("institute")) router.push("/dashboard");
+    if (!session?.user?.roles?.includes("institute")) router.push("/dashboard");
   }, [session, status, router]);
 
   if (status === "loading") {
@@ -107,7 +107,7 @@ export default function InstituteStudents() {
                 <div>
                   <p className="text-sm font-medium mb-1">Progress: {student.progress}%</p>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="h-2 rounded-full bg-green-500"
                       style={{ width: `${student.progress}%` }}
                     ></div>

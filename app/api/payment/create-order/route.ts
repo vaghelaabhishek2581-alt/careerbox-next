@@ -5,8 +5,13 @@ import { getAuthenticatedUser } from '@/lib/auth/unified-auth';
 import { z } from 'zod';
 
 const createOrderSchema = z.object({
-  planType: z.enum(['BUSINESS', 'INSTITUTE', 'STUDENT_PREMIUM']),
-  billingCycle: z.enum(['MONTHLY', 'QUARTERLY', 'YEARLY'])
+  planType: z.enum(['BUSINESS', 'INSTITUTE', 'STUDENT_PREMIUM']).optional(),
+  billingCycle: z.enum(['MONTHLY', 'QUARTERLY', 'YEARLY']).optional(),
+  // For registration intent payments
+  amount: z.number().optional(),
+  currency: z.string().optional(),
+  registrationIntentId: z.string().optional(),
+  subscriptionPlan: z.string().optional()
 });
 
 export async function POST(request: NextRequest) {
@@ -23,9 +28,62 @@ export async function POST(request: NextRequest) {
     const { userId, user } = authResult;
 
     const body = await request.json();
-    const { planType, billingCycle } = createOrderSchema.parse(body);
+    const { planType, billingCycle, amount, currency, registrationIntentId, subscriptionPlan } = createOrderSchema.parse(body);
 
     const { db } = await connectToDatabase();
+
+    // Handle registration intent payment
+    if (registrationIntentId && amount) {
+      // Create payment order for registration intent
+      const orderResult = await createPaymentOrder(
+        planType || 'INSTITUTE',
+        billingCycle || 'YEARLY',
+        userId,
+        user?.email || '',
+        user?.name || '',
+        amount
+      );
+
+      if (!orderResult.success) {
+        return NextResponse.json(
+          { error: orderResult.error },
+          { status: 500 }
+        );
+      }
+
+      // Store order in database with registration intent details
+      await db.collection('payment_orders').insertOne({
+        orderId: orderResult.orderId,
+        userId: userId,
+        planType: planType || 'INSTITUTE',
+        billingCycle: billingCycle || 'YEARLY',
+        amount: orderResult.amount,
+        currency: orderResult.currency,
+        registrationIntentId,
+        subscriptionPlan,
+        status: 'created',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          orderId: orderResult.orderId,
+          amount: orderResult.amount,
+          currency: orderResult.currency,
+          key: process.env.RAZORPAY_KEY_ID
+        }
+      });
+    }
+
+    // Handle regular subscription payment
+    if (!planType || !billingCycle) {
+      return NextResponse.json(
+        { error: 'planType and billingCycle are required for regular subscriptions' },
+        { status: 400 }
+      );
+    }
 
     // Check if user already has an active subscription
     const existingSubscription = await db.collection('subscriptions').findOne({

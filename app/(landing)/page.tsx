@@ -11,7 +11,7 @@ import { ArrowRight, Briefcase, Users, TrendingUp, Award, Target, BookOpen, Buil
 export default function LandingPage() {
   useEffect(() => {
     // Animate hero content
-    gsap.fromTo('.hero-content', 
+    gsap.fromTo('.hero-content',
       { opacity: 0, y: 50 },
       { opacity: 1, y: 0, duration: 1, stagger: 0.2, ease: 'power2.out' }
     );
@@ -33,18 +33,18 @@ export default function LandingPage() {
             <Badge className="hero-content mb-6 px-6 py-3 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border-blue-200 text-base font-medium">
               🚀 Your Pathway to Professional Excellence
             </Badge>
-            
+
             <h1 className="hero-content text-7xl lg:text-8xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-8 leading-tight">
               Empowering Careers,
               <br />
               <span className="text-6xl lg:text-7xl">Transforming Lives</span>
             </h1>
-            
+
             <p className="hero-content text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
-              CareerBox is revolutionizing the way professionals, businesses, and educational institutions 
+              CareerBox is revolutionizing the way professionals, businesses, and educational institutions
               <span className="font-medium text-blue-600"> connect and grow together</span>.
             </p>
-            
+
             <div className="hero-content flex flex-col sm:flex-row gap-6 justify-center mb-16">
               <Link href="/auth/signup">
                 <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-6 text-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 rounded-xl">
@@ -85,10 +85,10 @@ export default function LandingPage() {
           <div className="container mx-auto px-6 text-center">
             <h2 className="text-5xl font-bold text-gray-900 mb-8">Our Mission</h2>
             <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed font-light">
-              To create a comprehensive ecosystem where 
-              <span className="font-semibold text-blue-600"> professionals discover their potential</span>, 
-              <span className="font-semibold text-purple-600"> businesses find exceptional talent</span>, and 
-              <span className="font-semibold text-green-600"> educational institutions bridge the skills gap</span> 
+              To create a comprehensive ecosystem where
+              <span className="font-semibold text-blue-600"> professionals discover their potential</span>,
+              <span className="font-semibold text-purple-600"> businesses find exceptional talent</span>, and
+              <span className="font-semibold text-green-600"> educational institutions bridge the skills gap</span>
               in today's dynamic marketplace.
             </p>
           </div>
@@ -190,7 +190,7 @@ export default function LandingPage() {
               Ready to Transform Your Future?
             </h2>
             <p className="text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Join thousands of professionals, businesses, and institutions who are already using CareerBox 
+              Join thousands of professionals, businesses, and institutions who are already using CareerBox
               to unlock their potential and achieve extraordinary results.
             </p>
             <Link href="/auth/signup">
@@ -217,7 +217,7 @@ export default function LandingPage() {
                   "Your Pathway to Professional Excellence"
                 </div>
               </div>
-              
+
               <div>
                 <h4 className="text-lg font-semibold mb-4">Platform</h4>
                 <ul className="space-y-2 text-gray-400">
@@ -227,7 +227,7 @@ export default function LandingPage() {
                   <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
                 </ul>
               </div>
-              
+
               <div>
                 <h4 className="text-lg font-semibold mb-4">Support</h4>
                 <ul className="space-y-2 text-gray-400">
@@ -238,7 +238,7 @@ export default function LandingPage() {
                 </ul>
               </div>
             </div>
-            
+
             <div className="border-t border-gray-800 pt-8">
               <div className="flex flex-col md:flex-row items-center justify-between">
                 <div className="text-gray-400 mb-4 md:mb-0">

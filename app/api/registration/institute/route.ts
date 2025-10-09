@@ -4,6 +4,7 @@ import RegistrationIntent from '@/src/models/RegistrationIntent'
 import User from '@/src/models/User'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { sendInstituteRegistrationConfirmation } from '@/lib/services/email-service'
+import NotificationService from '@/lib/services/notificationService'
 import { z } from 'zod'
 
 // Validation schema for institute registration
@@ -127,7 +128,75 @@ export async function POST(request: NextRequest) {
       // Don't fail the registration if email fails
     }
 
-    // TODO: Send notification email to admin
+    // Send notifications
+    try {
+      // Send notification to user
+      await NotificationService.createNotification({
+        userId: userId,
+        type: 'registration_submitted',
+        title: 'Registration Request Submitted',
+        message: `Your institute registration request for "${validatedData.organizationName}" has been submitted and is under review.`,
+        data: {
+          registrationIntentId: registrationIntent._id.toString(),
+          actionUrl: '/dashboard/notifications',
+          metadata: {
+            organizationName: validatedData.organizationName,
+            type: 'institute'
+          }
+        },
+        priority: 'medium',
+        sendEmail: true,
+        sendSocket: true,
+        emailTemplate: 'registration_submitted',
+        emailVariables: {
+          contactName: validatedData.contactName,
+          organizationName: validatedData.organizationName,
+          type: 'institute',
+          email: validatedData.email || user?.email,
+          contactPhone: validatedData.contactPhone,
+          city: validatedData.city,
+          state: validatedData.state,
+          country: validatedData.country,
+          description: validatedData.description
+        }
+      });
+
+      // Send notification to admins
+      await NotificationService.sendAdminNotification({
+        type: 'registration_submitted',
+        title: 'New Institute Registration Request',
+        message: `New institute registration request from ${validatedData.contactName} for "${validatedData.organizationName}" requires review.`,
+        data: {
+          registrationIntentId: registrationIntent._id.toString(),
+          actionUrl: '/dashboard/admin/registrations',
+          metadata: {
+            organizationName: validatedData.organizationName,
+            contactName: validatedData.contactName,
+            type: 'institute'
+          }
+        },
+        priority: 'high',
+        sendEmail: true,
+        sendSocket: true,
+        emailTemplate: 'admin_notification',
+        emailVariables: {
+          organizationName: validatedData.organizationName,
+          type: 'institute',
+          contactName: validatedData.contactName,
+          email: validatedData.email || user?.email,
+          contactPhone: validatedData.contactPhone,
+          city: validatedData.city,
+          state: validatedData.state,
+          country: validatedData.country,
+          description: validatedData.description
+        }
+      });
+
+      console.log('Notifications sent for institute registration:', registrationIntent._id);
+    } catch (notificationError) {
+      console.error('Failed to send notifications:', notificationError);
+      // Don't fail the registration if notifications fail
+    }
 
     return NextResponse.json({
       success: true,

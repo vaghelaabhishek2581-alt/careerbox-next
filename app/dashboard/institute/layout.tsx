@@ -7,6 +7,7 @@ import InstituteSidebar from "@/components/institute/InstituteSidebar";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+// import { withInstituteSelection } from "@/components/institute/withInstituteSelection";
 
 interface InstituteLayoutProps {
   children: React.ReactNode;
@@ -37,10 +38,11 @@ export default function InstituteLayout({ children }: InstituteLayoutProps) {
   }
 
   return (
+
     <div className="flex h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />

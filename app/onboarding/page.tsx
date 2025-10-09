@@ -9,16 +9,16 @@ import { useSessionRefresh } from '@/hooks/use-session-refresh'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  GraduationCap, 
-  Briefcase, 
-  Building2, 
+import {
+  GraduationCap,
+  Briefcase,
+  Building2,
   Users,
   CheckCircle,
   ArrowRight
 } from 'lucide-react'
 
-import { useToast } from '@/components/ui/use-toast'    
+import { useToast } from '@/components/ui/use-toast'
 type OnboardingRole = 'student' | 'professional' | 'institute_admin' | 'business_owner'
 
 const roleOptions = [
@@ -50,34 +50,6 @@ const roleOptions = [
     color: 'bg-green-500',
     badge: null
   },
-  {
-    id: 'institute_admin' as OnboardingRole,
-    title: 'Institute Administrator',
-    description: 'I manage an educational institute and want to offer courses',
-    icon: Building2,
-    features: [
-      'Course creation and management',
-      'Student enrollment tracking',
-      'Exam and assessment tools',
-      'Analytics and reporting'
-    ],
-    color: 'bg-purple-500',
-    badge: 'Premium'
-  },
-  {
-    id: 'business_owner' as OnboardingRole,
-    title: 'Business Owner',
-    description: 'I own a business and want to hire talent or offer services',
-    icon: Users,
-    features: [
-      'Job posting and recruitment',
-      'Candidate screening tools',
-      'Employee training programs',
-      'Business networking'
-    ],
-    color: 'bg-orange-500',
-    badge: 'Premium'
-  }
 ]
 
 export default function OnboardingPage() {
@@ -169,13 +141,12 @@ export default function OnboardingPage() {
             {roleOptions.map((role) => {
               const IconComponent = role.icon
               const isSelected = selectedRole === role.id
-              
+
               return (
-                <Card 
+                <Card
                   key={role.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                    isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
-                  }`}
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
+                    }`}
                   onClick={() => setSelectedRole(role.id)}
                 >
                   <CardHeader className="pb-4">

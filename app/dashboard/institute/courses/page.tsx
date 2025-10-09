@@ -1,8 +1,9 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { BookOpen, Plus, Search, Filter, Users, Clock, Star, Edit, Trash2, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,88 +16,60 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  instructor: string;
-  instructorImage?: string;
-  duration: string;
-  students: number;
-  rating: number;
-  status: 'active' | 'draft' | 'archived';
-  category: string;
-  price: number;
-  thumbnail?: string;
-  createdAt: string;
-}
+import { RootState, AppDispatch } from "@/lib/redux/store";
+import { fetchCourses, deleteCourse, clearError } from "@/lib/redux/slices/courseSlice";
+import { fetchUserInstitutes } from "@/lib/redux/slices/instituteSlice";
+import { useToast } from "@/components/ui/use-toast";
+import InstituteSelectionModal from "@/components/institute/InstituteSelectionModal";
+import { CourseForm } from "@/components/course/CourseForm";
 
 export default function InstituteCourses() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any>(null);
+  const [showInstituteModal, setShowInstituteModal] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Mock data - replace with actual API call
-  const [courses, setCourses] = useState<Course[]>([
-    {
-      id: "1",
-      title: "Advanced Web Development",
-      description: "Learn modern web development with React, Node.js, and MongoDB",
-      instructor: "Dr. Sarah Johnson",
-      duration: "12 weeks",
-      students: 156,
-      rating: 4.8,
-      status: "active",
-      category: "Technology",
-      price: 299,
-      createdAt: "2024-01-15"
-    },
-    {
-      id: "2",
-      title: "Data Science Fundamentals",
-      description: "Introduction to data science, machine learning, and analytics",
-      instructor: "Prof. Michael Chen",
-      duration: "10 weeks",
-      students: 134,
-      rating: 4.7,
-      status: "active",
-      category: "Data Science",
-      price: 399,
-      createdAt: "2024-02-01"
-    },
-    {
-      id: "3",
-      title: "Digital Marketing Strategy",
-      description: "Comprehensive digital marketing course covering SEO, SEM, and social media",
-      instructor: "Ms. Emily Davis",
-      duration: "8 weeks",
-      students: 98,
-      rating: 4.6,
-      status: "draft",
-      category: "Marketing",
-      price: 199,
-      createdAt: "2024-02-15"
-    },
-    {
-      id: "4",
-      title: "Mobile App Development",
-      description: "Build iOS and Android apps using React Native and Flutter",
-      instructor: "Mr. Alex Rodriguez",
-      duration: "14 weeks",
-      students: 87,
-      rating: 4.5,
-      status: "active",
-      category: "Technology",
-      price: 349,
-      createdAt: "2024-01-30"
+  // Redux state
+  const { courses, loading, error } = useSelector((state: RootState) => state.courses);
+  const { selectedInstitute, userInstitutes, loading: instituteLoading } = useSelector((state: RootState) => state.institute);
+
+
+  // Initialize and fetch user institutes if needed
+  useEffect(() => {
+    if (!hasInitialized && !instituteLoading) {
+      setHasInitialized(true);
+
+      if (userInstitutes.length === 0) {
+        // Fetch user institutes - this will auto-select if only one exists
+        dispatch(fetchUserInstitutes());
+      }
     }
-  ]);
+  }, [dispatch, hasInitialized, instituteLoading, userInstitutes.length]);
+
+  // Handle institute selection and course loading
+  useEffect(() => {
+    if (hasInitialized && !instituteLoading) {
+      if (selectedInstitute) {
+        // Fetch courses for the selected institute
+        dispatch(fetchCourses({ instituteId: selectedInstitute._id }));
+        setShowInstituteModal(false);
+      } else if (userInstitutes.length > 1) {
+        // Show modal only if multiple institutes exist but none selected
+        setShowInstituteModal(true);
+      }
+    }
+  }, [dispatch, selectedInstitute, userInstitutes.length, hasInitialized, instituteLoading]);
 
   useEffect(() => {
     if (status === "loading") return;
-    
+
     if (!session) {
       router.push("/auth/login");
       return;
@@ -108,37 +81,97 @@ export default function InstituteCourses() {
     }
   }, [session, status, router]);
 
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.category.toLowerCase().includes(searchTerm.toLowerCase());
+  // Clear error when component unmounts
+  useEffect(() => {
+    return () => {
+    };
+  }, [dispatch, searchTerm, filterStatus]);
+
+  const coursesArray = Array.isArray(courses) ? courses : [];
+  const filteredCourses = coursesArray.filter(course => {
+    const matchesSearch = (course.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (course.instructor?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (course.category?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (course.courseType?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     
-    const matchesFilter = filterStatus === "all" || course.status === filterStatus;
+    const matchesFilter = filterStatus === "all" || 
+                         (filterStatus === "active" && course.isPublished) ||
+                         (filterStatus === "draft" && !course.isPublished);
     
     return matchesSearch && matchesFilter;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-700';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'archived':
-        return 'bg-gray-100 text-gray-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
+  const getStatusColor = (isPublished: boolean) => {
+    return isPublished 
+      ? 'bg-green-100 text-green-700'
+      : 'bg-yellow-100 text-yellow-700';
+  };
+
+  const getStatusLabel = (isPublished: boolean) => {
+    return isPublished ? 'Published' : 'Draft';
+  };
+
+  const handleDeleteCourse = async (courseId: string) => {
+    if (confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+      try {
+        await dispatch(deleteCourse(courseId)).unwrap();
+        toast({
+          title: "Success",
+          description: "Course deleted successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete course",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleDeleteCourse = (courseId: string) => {
-    setCourses(prev => prev.filter(course => course.id !== courseId));
+  const handleEditCourse = (course: any) => {
+    setEditingCourse(course);
+    setShowCourseModal(true);
   };
 
-  if (status === "loading") {
+  const handleCreateCourse = () => {
+    setEditingCourse(null);
+    setShowCourseModal(true);
+  };
+
+  // Show loading state while checking for institutes or loading courses
+  if (status === "loading" || loading || instituteLoading || !hasInitialized) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">
+            {!hasInitialized ? "Initializing..." : "Loading courses..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no institute is selected and modal is not showing
+  if (!selectedInstitute && !showInstituteModal && hasInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="text-gray-400 mb-4">
+            <BookOpen className="h-12 w-12 mx-auto mb-2" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No Institute Selected</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Please select an institute to manage courses.
+          </p>
+          <Button 
+            onClick={() => setShowInstituteModal(true)}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            Select Institute
+          </Button>
+        </div>
       </div>
     );
   }
@@ -157,8 +190,8 @@ export default function InstituteCourses() {
             Create, manage, and monitor your institute's courses
           </p>
         </div>
-        <Button 
-          onClick={() => router.push("/dashboard/institute/courses/new")}
+        <Button
+          onClick={handleCreateCourse}
           className="bg-orange-600 hover:bg-orange-700"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -173,7 +206,7 @@ export default function InstituteCourses() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Courses</p>
-                <p className="text-2xl font-bold text-gray-900">{courses.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{coursesArray.length}</p>
               </div>
               <BookOpen className="w-8 h-8 text-blue-600" />
             </div>
@@ -183,9 +216,9 @@ export default function InstituteCourses() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Courses</p>
+                <p className="text-sm font-medium text-gray-600">Published Courses</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {courses.filter(c => c.status === 'active').length}
+                  {coursesArray.filter(c => c.isPublished).length}
                 </p>
               </div>
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -198,9 +231,9 @@ export default function InstituteCourses() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Students</p>
+                <p className="text-sm font-medium text-gray-600">Total Enrollments</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {courses.reduce((sum, course) => sum + course.students, 0)}
+                  {coursesArray.reduce((sum, course) => sum + (course.enrollmentCount || 0), 0)}
                 </p>
               </div>
               <Users className="w-8 h-8 text-purple-600" />
@@ -213,7 +246,7 @@ export default function InstituteCourses() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg. Rating</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {(courses.reduce((sum, course) => sum + course.rating, 0) / courses.length).toFixed(1)}
+                  {coursesArray.length > 0 ? (coursesArray.reduce((sum, course) => sum + (course.rating || 0), 0) / coursesArray.length).toFixed(1) : '0.0'}
                 </p>
               </div>
               <Star className="w-8 h-8 text-yellow-600" />
@@ -245,13 +278,10 @@ export default function InstituteCourses() {
               All Courses
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilterStatus("active")}>
-              Active
+              Published
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilterStatus("draft")}>
               Draft
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilterStatus("archived")}>
-              Archived
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -260,11 +290,11 @@ export default function InstituteCourses() {
       {/* Courses Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCourses.map((course) => (
-          <Card key={course.id} className="hover:shadow-lg transition-shadow">
+          <Card key={course._id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
-                <Badge className={getStatusColor(course.status)}>
-                  {course.status.charAt(0).toUpperCase() + course.status.slice(1)}
+                <Badge className={getStatusColor(course.isPublished)}>
+                  {getStatusLabel(course.isPublished)}
                 </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -273,16 +303,16 @@ export default function InstituteCourses() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => router.push(`/dashboard/institute/courses/${course.id}`)}>
+                    <DropdownMenuItem onClick={() => router.push(`/dashboard/institute/courses/${course._id}`)}>
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push(`/dashboard/institute/courses/${course.id}/edit`)}>
+                    <DropdownMenuItem onClick={() => handleEditCourse(course)}>
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Course
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleDeleteCourse(course.id)}
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteCourse(course._id)}
                       className="text-red-600"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
@@ -300,28 +330,27 @@ export default function InstituteCourses() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={course.instructorImage} />
                     <AvatarFallback className="bg-blue-600 text-white text-xs">
-                      {course.instructor.split(' ').map(n => n[0]).join('')}
+                      {course.instructor ? course.instructor.split(' ').map(n => n[0]).join('') : 'IN'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{course.instructor}</p>
+                    <p className="text-sm font-medium text-gray-900">{course.instructor || 'No Instructor Assigned'}</p>
                     <p className="text-xs text-gray-500">Instructor</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
-                    {course.duration}
+                    {course.duration} weeks
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    {course.students} students
+                    {course.enrollmentCount} enrolled
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 text-yellow-500 fill-current" />
@@ -331,7 +360,7 @@ export default function InstituteCourses() {
                     ${course.price}
                   </div>
                 </div>
-                
+
                 <Badge variant="secondary" className="w-fit">
                   {course.category}
                 </Badge>
@@ -346,14 +375,14 @@ export default function InstituteCourses() {
           <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm || filterStatus !== "all" 
+            {searchTerm || filterStatus !== "all"
               ? "Try adjusting your search or filter criteria"
               : "Get started by creating your first course"
             }
           </p>
           {!searchTerm && filterStatus === "all" && (
-            <Button 
-              onClick={() => router.push("/dashboard/institute/courses/new")}
+            <Button
+              onClick={handleCreateCourse}
               className="bg-orange-600 hover:bg-orange-700"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -362,6 +391,28 @@ export default function InstituteCourses() {
           )}
         </div>
       )}
+
+      {/* Institute Selection Modal */}
+      <InstituteSelectionModal
+        isOpen={showInstituteModal}
+        onClose={() => setShowInstituteModal(false)}
+        title="Select Institute for Course Management"
+        description="Please select an institute to manage courses"
+      />
+
+      {/* Course Form Modal */}
+      <CourseForm
+        open={showCourseModal}
+        onClose={() => {
+          setShowCourseModal(false);
+          setEditingCourse(null);
+        }}
+        course={editingCourse}
+        onSuccess={(course) => {
+          // Optionally refresh courses or handle success
+          console.log('Course saved:', course);
+        }}
+      />
     </div>
   );
 }

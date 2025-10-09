@@ -32,15 +32,21 @@ export function SocketProvider({ children }: SocketProviderProps) {
   useEffect(() => {
     // Don't initialize socket until session is fully loaded
     if (status === 'loading') return
-    if (!session) {
-      // If no session, disconnect existing socket
+    
+    // Check if we have an authentication token before attempting connection
+    const hasAuthToken = (typeof window !== 'undefined' && document.cookie.includes('auth-token=')) ||
+      (typeof window !== 'undefined' && document.cookie.includes('next-auth.session-token='))
+    
+    if (!session || !hasAuthToken) {
+      // If no session or no auth token, disconnect existing socket and don't attempt connection
       if (socketRef.current) {
-        console.log('🔌 No session, disconnecting socket')
+        console.log('🔌 No session or auth token, disconnecting socket')
         socketRef.current.disconnect()
         socketRef.current = null
         setIsConnected(false)
         setConnectionError(null)
       }
+      console.log('ℹ️ No authentication token available, skipping socket connection')
       return
     }
 
@@ -50,7 +56,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
       return
     }
 
-    console.log('🔌 Initializing top-level socket connection for user:', session.user?.email)
+    console.log('🔌 Initializing socket connection for authenticated user:', session.user?.email)
 
     // Mark as initializing to prevent duplicate initialization
     initializingRef.current = true

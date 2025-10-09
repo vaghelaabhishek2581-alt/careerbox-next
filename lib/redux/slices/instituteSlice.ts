@@ -1,7 +1,48 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { Institute, InstituteProfile, CreateInstituteRequest, UpdateInstituteRequest, InstituteSearchFilters, InstituteSearchResponse } from '@/lib/types/institute.types'
+import { Institute, InstituteProfile, InstituteAnalytics, CreateInstituteRequest, UpdateInstituteRequest, InstituteSearchFilters, InstituteSearchResponse } from '@/lib/types/institute.types'
 import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
 import { API } from '@/lib/api/services'
+
+// Create a simplified interface for Institute that works with Redux
+export interface InstituteData {
+  _id: string
+  userId: string
+  registrationIntentId: string
+  name: string
+  publicProfileId?: string
+  email: string
+  contactPerson: string
+  phone: string
+  address: {
+    street?: string
+    city: string
+    state: string
+    country: string
+    zipCode?: string
+  }
+  website?: string
+  establishmentYear?: number
+  description?: string
+  logo?: string
+  coverImage?: string
+  accreditation: string[]
+  socialMedia: {
+    linkedin?: string
+    twitter?: string
+    facebook?: string
+    instagram?: string
+  }
+  studentCount: number
+  facultyCount: number
+  courseCount: number
+  isVerified: boolean
+  subscriptionId?: string
+  status: 'active' | 'inactive' | 'suspended'
+  createdAt: Date | string
+  updatedAt: Date | string
+  city?: string // shortcut for address.city
+  state?: string // shortcut for address.state
+}
 
 // Enhanced interfaces for new features
 export interface RegistrationDetails {
@@ -101,9 +142,85 @@ export interface Scholarship {
   isFeatured: boolean
 }
 
+export interface FacultyMember {
+  _id: string
+  employeeId: string
+  personalInfo: {
+    firstName: string
+    lastName: string
+    middleName?: string
+    email: string
+    phone: string
+    alternatePhone?: string
+    dateOfBirth?: string
+    gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say'
+    address: {
+      street?: string
+      city: string
+      state: string
+      country: string
+      zipCode?: string
+    }
+  }
+  department: string
+  designation: string
+  employmentType: 'full-time' | 'part-time' | 'visiting' | 'adjunct' | 'emeritus'
+  joiningDate: string
+  qualifications: {
+    degree: string
+    field: string
+    institution: string
+    year: number
+    grade?: string
+  }[]
+  specialization: string[]
+  researchInterests: string[]
+  teachingExperience: number
+  totalExperience: number
+  industryExperience: number
+  profileImage?: string
+  status: 'active' | 'inactive' | 'on-leave' | 'retired'
+  subjectsTaught: string[]
+  publications: {
+    title: string
+    journal: string
+    year: number
+    authors: string[]
+    doi?: string
+    url?: string
+  }[]
+  researchProjects: {
+    title: string
+    fundingAgency?: string
+    amount?: number
+    startDate?: string
+    endDate?: string
+    status: 'ongoing' | 'completed' | 'submitted' | 'approved'
+  }[]
+  awards: {
+    title: string
+    organization: string
+    year: number
+    description?: string
+  }[]
+  bio?: string
+  socialMedia?: {
+    linkedin?: string
+    twitter?: string
+    researchGate?: string
+    googleScholar?: string
+    orcid?: string
+  }
+  isVerified: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 interface InstituteState {
   institutes: Institute[]
   currentInstitute: Institute | null
+  userInstitutes: InstituteData[]  // All institutes belonging to the user
+  selectedInstitute: InstituteData | null  // Currently selected institute for operations
   instituteProfile: InstituteProfile | null
   registrationDetails: RegistrationDetails | null
   documents: DocumentInfo[]
@@ -114,7 +231,9 @@ interface InstituteState {
   rankings: Ranking[]
   awards: Award[]
   scholarships: Scholarship[]
+  faculty: FacultyMember[]
   loading: boolean
+  isUploadingImage: boolean  // For image upload loading state
   error: string | null
   pagination: {
     page: number
@@ -128,6 +247,8 @@ interface InstituteState {
 const initialState: InstituteState = {
   institutes: [],
   currentInstitute: null,
+  userInstitutes: [],
+  selectedInstitute: null,
   instituteProfile: null,
   registrationDetails: null,
   documents: [],
@@ -138,7 +259,9 @@ const initialState: InstituteState = {
   rankings: [],
   awards: [],
   scholarships: [],
+  faculty: [],
   loading: false,
+  isUploadingImage: false,
   error: null,
   pagination: {
     page: 1,
@@ -152,209 +275,664 @@ const initialState: InstituteState = {
 // Async thunks
 export const fetchInstitutes = createAsyncThunk(
   'institute/fetchInstitutes',
-  async (params: { page?: number; limit?: number; status?: string } = {}) => {
-    // Mock implementation - replace with actual API call
-    return {
-      success: true,
-      data: {
-        data: [],
-        page: params.page || 1,
-        limit: params.limit || 10,
-        total: 0,
-        hasMore: false
-      }
+  async (
+    params: { page?: number; limit?: number; status?: string } = {},
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await API.institutes.getInstitutes(params.page, params.limit, params)
+      return response
+    } catch (error) {
+      console.error('Error fetching institutes:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch institutes')
     }
   }
 )
 
 export const searchInstitutes = createAsyncThunk(
   'institute/searchInstitutes',
-  async (filters: InstituteSearchFilters & { page?: number; limit?: number }) => {
-    // Mock implementation - replace with actual API call
-    return {
-      success: true,
-      data: {
-        institutes: [],
-        page: filters.page || 1,
-        limit: filters.limit || 10,
-        total: 0,
-        hasMore: false
+  async (
+    searchParams: { query?: string; filters?: InstituteSearchFilters; page?: number; limit?: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch('/api/institutes/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(searchParams),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to search institutes')
       }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error searching institutes:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to search institutes')
     }
   }
 )
 
 export const createInstitute = createAsyncThunk(
   'institute/createInstitute',
-  async (instituteData: CreateInstituteRequest) => {
-    // Mock implementation - replace with actual API call
-    return {
-      success: true,
-      data: {
-        id: Date.now().toString(),
-        ...instituteData
+  async (instituteData: CreateInstituteRequest, { rejectWithValue }) => {
+    try {
+      const response = await fetch('/api/institutes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(instituteData),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create institute')
       }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error creating institute:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to create institute')
     }
   }
 )
 
 export const updateInstitute = createAsyncThunk(
   'institute/updateInstitute',
-  async ({ instituteId, instituteData }: { instituteId: string; instituteData: UpdateInstituteRequest }) => {
-    // Mock implementation - replace with actual API call
-    return {
-      success: true,
-      data: {
-        id: instituteId,
-        ...instituteData
+  async ({ instituteId, instituteData }: { instituteId: string; instituteData: UpdateInstituteRequest }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/api/institutes/${instituteId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(instituteData),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update institute')
       }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error updating institute:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to update institute')
     }
   }
 )
 
 export const fetchInstituteById = createAsyncThunk(
   'institute/fetchInstituteById',
-  async (instituteId: string) => {
-    // Mock implementation - replace with actual API call
-    return {
-      success: true,
-      data: {
-        id: instituteId,
-        name: 'Sample Institute'
-      }
+  async (instituteId: string, { rejectWithValue }) => {
+    try {
+      const response = await API.institutes.getInstitute(instituteId)
+      return response
+    } catch (error) {
+      console.error('Error fetching institute by ID:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch institute')
     }
   }
 )
 
 export const fetchInstituteProfile = createAsyncThunk(
   'institute/fetchInstituteProfile',
-  async (instituteId: string) => {
-    // Mock implementation - replace with actual API call
-    return {
-      success: true,
-      data: {
-        id: instituteId,
-        name: 'Sample Institute Profile'
+  async (instituteId: string, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/api/institutes/${instituteId}/profile`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch institute profile')
       }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error fetching institute profile:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch institute profile')
     }
   }
 )
 
 export const fetchMyInstitute = createAsyncThunk(
   'institute/fetchMyInstitute',
-  async () => {
-    // Mock implementation - replace with actual API call
-    return {
-      success: true,
-      data: {
-        id: 'my-institute',
-        name: 'My Institute'
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log('Redux: Calling API.institutes.getActiveInstitute()');
+      const response = await API.institutes.getActiveInstitute();
+
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to fetch active institute');
       }
+
+      // Transform the API response to match Institute interface
+      const apiData = response.data;
+      const institute: Institute = {
+        id: apiData._id,
+        userId: apiData.userId,
+        instituteName: apiData.name,
+        type: 'University', // Default type, could be derived from other fields
+        accreditation: apiData.accreditation || [],
+        website: apiData.website,
+        description: apiData.description || '',
+        logo: apiData.logo,
+        address: {
+          street: apiData.address?.street || '',
+          city: apiData.address?.city || '',
+          state: apiData.address?.state || '',
+          country: apiData.address?.country || '',
+          zipCode: apiData.address?.zipCode || ''
+        },
+        contactInfo: {
+          email: apiData.email,
+          phone: apiData.phone,
+          linkedin: apiData.socialMedia?.linkedin,
+          twitter: apiData.socialMedia?.twitter
+        },
+        socialMedia: {
+          linkedin: apiData.socialMedia?.linkedin,
+          twitter: apiData.socialMedia?.twitter,
+          facebook: apiData.socialMedia?.facebook,
+          instagram: apiData.socialMedia?.instagram
+        },
+        establishedYear: apiData.establishmentYear,
+        studentCount: apiData.studentCount || 0,
+        facultyCount: apiData.facultyCount || 0,
+        isVerified: apiData.isVerified,
+        subscriptionId: apiData.subscriptionId,
+        status: apiData.status || 'active',
+        createdAt: new Date(apiData.createdAt),
+        updatedAt: new Date(apiData.updatedAt)
+      };
+
+      return {
+        success: true,
+        data: institute
+      };
+    } catch (error) {
+      console.error('Redux: Error fetching active institute:', error);
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to fetch active institute'
+      );
     }
+  }
+)
+
+// Fetch all institutes belonging to the current user
+export const fetchUserInstitutes = createAsyncThunk(
+  'institute/fetchUserInstitutes',
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log('Redux: Calling API.institutes.getUserInstitutes()');
+      const response = await API.institutes.getUserInstitutes();
+      console.log('Redux: API response received:', response);
+      return response;
+    } catch (error) {
+      console.error('Redux: API call failed:', error);
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch institutes');
+    }
+  }
+)
+
+// Fetch data for a specific institute by ID
+export const fetchInstituteData = createAsyncThunk(
+  'institute/fetchInstituteData',
+  async (instituteId: string) => {
+    const response = await API.institutes.getInstitute(instituteId);
+    return response;
   }
 )
 
 export const verifyInstitute = createAsyncThunk(
   'institute/verifyInstitute',
-  async ({ instituteId, isVerified }: { instituteId: string; isVerified: boolean }) => {
-    // Temporary mock implementation - replace with actual API call
-    return { success: true, data: { id: instituteId, isVerified } }
+  async ({ instituteId, isVerified }: { instituteId: string; isVerified: boolean }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/api/institutes/${instituteId}/verify`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isVerified }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to verify institute')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error verifying institute:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to verify institute')
+    }
   }
 )
 
 // New async thunks for enhanced features
 export const updateRegistrationDetails = createAsyncThunk(
   'institute/updateRegistrationDetails',
-  async (registrationData: RegistrationDetails) => {
-    // Mock implementation - replace with actual API call
-    return { success: true, data: registrationData }
+  async (registrationData: RegistrationDetails, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/registration-details`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registrationData),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update registration details')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error updating registration details:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to update registration details')
+    }
   }
 )
 
 export const uploadDocument = createAsyncThunk(
   'institute/uploadDocument',
-  async ({ type, file }: { type: string; file: File }) => {
-    // Mock implementation - replace with actual API call
-    const document: DocumentInfo = {
-      id: Date.now().toString(),
-      type,
-      name: file.name,
-      uploadedAt: new Date().toISOString(),
-      status: 'pending'
+  async ({ file, type, name, description }: { file: File; type: string; name: string; description?: string }, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', type)
+      formData.append('name', name)
+      if (description) formData.append('description', description)
+
+      const response = await fetch(`/api/institutes/${instituteId}/documents`, {
+        method: 'POST',
+        body: formData,
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to upload document')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error uploading document:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to upload document')
     }
-    return { success: true, data: document }
   }
 )
 
 export const addHighlight = createAsyncThunk(
   'institute/addHighlight',
-  async (highlight: Omit<Highlight, 'id'>) => {
-    // Mock implementation - replace with actual API call
-    const newHighlight: Highlight = {
-      ...highlight,
-      id: Date.now().toString()
+  async (highlight: Omit<Highlight, 'id'>, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/highlights`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(highlight),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to add highlight')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error adding highlight:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to add highlight')
     }
-    return { success: true, data: newHighlight }
   }
 )
 
 export const addLocation = createAsyncThunk(
   'institute/addLocation',
-  async (location: Omit<Location, 'id'>) => {
-    // Mock implementation - replace with actual API call
-    const newLocation: Location = {
-      ...location,
-      id: Date.now().toString()
+  async (location: Omit<Location, 'id'>, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/locations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(location),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to add location')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error adding location:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to add location')
     }
-    return { success: true, data: newLocation }
   }
 )
 
 export const addFacility = createAsyncThunk(
   'institute/addFacility',
-  async (facility: Omit<Facility, 'id'>) => {
-    // Mock implementation - replace with actual API call
-    const newFacility: Facility = {
-      ...facility,
-      id: Date.now().toString()
+  async (facility: Omit<Facility, 'id'>, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/facilities`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(facility),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to add facility')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error adding facility:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to add facility')
     }
-    return { success: true, data: newFacility }
   }
 )
 
 export const addRanking = createAsyncThunk(
   'institute/addRanking',
-  async (ranking: Omit<Ranking, 'id'>) => {
-    // Mock implementation - replace with actual API call
-    const newRanking: Ranking = {
-      ...ranking,
-      id: Date.now().toString()
+  async (ranking: Omit<Ranking, 'id'>, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/rankings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ranking),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to add ranking')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error adding ranking:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to add ranking')
     }
-    return { success: true, data: newRanking }
   }
 )
 
 export const addAward = createAsyncThunk(
   'institute/addAward',
-  async (award: Omit<Award, 'id'>) => {
-    // Mock implementation - replace with actual API call
-    const newAward: Award = {
-      ...award,
-      id: Date.now().toString()
+  async (award: Omit<Award, 'id'>, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/awards`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(award),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to add award')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error adding award:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to add award')
     }
-    return { success: true, data: newAward }
   }
 )
 
 export const addScholarship = createAsyncThunk(
   'institute/addScholarship',
-  async (scholarship: Omit<Scholarship, 'id'>) => {
-    // Mock implementation - replace with actual API call
-    const newScholarship: Scholarship = {
-      ...scholarship,
-      id: Date.now().toString()
+  async (scholarship: Omit<Scholarship, 'id'>, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/scholarships`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(scholarship),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to add scholarship')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error adding scholarship:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to add scholarship')
     }
-    return { success: true, data: newScholarship }
+  }
+)
+
+// Upload institute image (logo or cover)
+export const uploadInstituteImage = createAsyncThunk(
+  'institute/uploadInstituteImage',
+  async ({ instituteId, type, file }: { instituteId: string, type: 'logo' | 'cover', file: File }, { rejectWithValue }) => {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', type)
+      formData.append('instituteId', instituteId)
+
+      const response = await fetch(`/api/institutes/${instituteId}/upload-image`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to upload image')
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Upload institute image error:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to upload image')
+    }
+  }
+)
+
+// Faculty Management Async Thunks
+export const fetchFaculty = createAsyncThunk(
+  'institute/fetchFaculty',
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/faculty`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch faculty')
+      }
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Fetch faculty error:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch faculty')
+    }
+  }
+)
+
+export const createFaculty = createAsyncThunk(
+  'institute/createFaculty',
+  async (facultyData: Omit<FacultyMember, '_id' | 'createdAt' | 'updatedAt'>, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/faculty`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(facultyData),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create faculty')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Create faculty error:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to create faculty')
+    }
+  }
+)
+
+export const updateFaculty = createAsyncThunk(
+  'institute/updateFaculty',
+  async ({ facultyId, facultyData }: { facultyId: string, facultyData: Partial<FacultyMember> }, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/faculty/${facultyId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(facultyData),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update faculty')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Update faculty error:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to update faculty')
+    }
+  }
+)
+
+export const deleteFaculty = createAsyncThunk(
+  'institute/deleteFaculty',
+  async (facultyId: string, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { institute: InstituteState }
+      const instituteId = state.institute.selectedInstitute?._id
+      
+      if (!instituteId) {
+        throw new Error('No institute selected')
+      }
+
+      const response = await fetch(`/api/institutes/${instituteId}/faculty/${facultyId}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete faculty')
+      }
+      
+      const data = await response.json()
+      return { ...data, facultyId }
+    } catch (error) {
+      console.error('Delete faculty error:', error)
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete faculty')
+    }
   }
 )
 
@@ -367,6 +945,23 @@ const instituteSlice = createSlice({
     },
     setCurrentInstitute: (state, action: PayloadAction<Institute | null>) => {
       state.currentInstitute = action.payload
+    },
+    setSelectedInstitute: (state, action: PayloadAction<InstituteData | null>) => {
+      state.selectedInstitute = action.payload
+      // Also update the current institute if it matches
+      if (action.payload && state.currentInstitute?.id === action.payload._id.toString()) {
+        state.currentInstitute = {
+          ...state.currentInstitute,
+          id: action.payload._id
+        } as Institute
+      }
+    },
+    setUserInstitutes: (state, action: PayloadAction<InstituteData[]>) => {
+      state.userInstitutes = action.payload
+      // Auto-select if only one institute
+      if (action.payload.length === 1 && !state.selectedInstitute) {
+        state.selectedInstitute = action.payload[0]
+      }
     },
     setSearchFilters: (state, action: PayloadAction<InstituteSearchFilters>) => {
       state.searchFilters = action.payload
@@ -441,6 +1036,16 @@ const instituteSlice = createSlice({
         state.scholarships[index] = action.payload
       }
     },
+    // Faculty reducers
+    removeFacultyMember: (state, action: PayloadAction<string>) => {
+      state.faculty = state.faculty.filter(member => member._id !== action.payload)
+    },
+    updateFacultyMember: (state, action: PayloadAction<FacultyMember>) => {
+      const index = state.faculty.findIndex(member => member._id === action.payload._id)
+      if (index !== -1) {
+        state.faculty[index] = action.payload
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -451,13 +1056,17 @@ const instituteSlice = createSlice({
       })
       .addCase(fetchInstitutes.fulfilled, (state, action) => {
         state.loading = false
-        const response = action.payload as PaginatedResponse<Institute>
-        state.institutes = response.data
-        state.pagination = {
-          page: response.page,
-          limit: response.limit,
-          total: response.total,
-          hasMore: response.hasMore,
+        // Handle ApiResponse wrapping PaginatedResponse from API service
+        const apiResponse = action.payload as ApiResponse<PaginatedResponse<Institute>>
+        if (apiResponse.success && apiResponse.data) {
+          const paginatedResponse = apiResponse.data
+          state.institutes = paginatedResponse.data
+          state.pagination = {
+            page: paginatedResponse.page,
+            limit: paginatedResponse.limit,
+            total: paginatedResponse.total,
+            hasMore: paginatedResponse.hasMore,
+          }
         }
       })
       .addCase(fetchInstitutes.rejected, (state, action) => {
@@ -471,13 +1080,16 @@ const instituteSlice = createSlice({
       })
       .addCase(searchInstitutes.fulfilled, (state, action) => {
         state.loading = false
-        const response = action.payload as InstituteSearchResponse
-        state.institutes = response.institutes
-        state.pagination = {
-          page: response.page,
-          limit: response.limit,
-          total: response.total,
-          hasMore: response.hasMore,
+        const apiResponse = action.payload as ApiResponse<PaginatedResponse<Institute>>
+        if (apiResponse.success && apiResponse.data) {
+          const paginatedResponse = apiResponse.data
+          state.institutes = paginatedResponse.data
+          state.pagination = {
+            page: paginatedResponse.page,
+            limit: paginatedResponse.limit,
+            total: paginatedResponse.total,
+            hasMore: paginatedResponse.hasMore,
+          }
         }
       })
       .addCase(searchInstitutes.rejected, (state, action) => {
@@ -643,12 +1255,174 @@ const instituteSlice = createSlice({
       .addCase(addScholarship.fulfilled, (state, action) => {
         state.scholarships.push(action.payload.data)
       })
+      // Fetch User Institutes
+      .addCase(fetchUserInstitutes.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(fetchUserInstitutes.fulfilled, (state, action) => {
+        console.log('Redux: fetchUserInstitutes.fulfilled called with payload:', action.payload);
+        state.loading = false
+        
+        // Handle double-wrapped API response
+        const outerResponse = action.payload as ApiResponse<any>
+        console.log('Redux: Outer response:', outerResponse);
+        
+        if (outerResponse.success && outerResponse.data) {
+          // The actual API response is nested in outerResponse.data
+          const actualResponse = outerResponse.data
+          console.log('Redux: Actual API response:', actualResponse);
+          
+          if (actualResponse.success && actualResponse.data) {
+            console.log('Redux: Setting userInstitutes to:', actualResponse.data);
+            state.userInstitutes = actualResponse.data
+            console.log('Redux: State userInstitutes after setting:', state.userInstitutes);
+            
+            // Auto-select if only one institute
+            if (actualResponse.data.length === 1 && !state.selectedInstitute) {
+              console.log('Redux: Auto-selecting single institute:', actualResponse.data[0]);
+              state.selectedInstitute = actualResponse.data[0]
+              console.log('Redux: State selectedInstitute after setting:', state.selectedInstitute);
+            }
+          } else {
+            console.log('Redux: Actual response not successful or no data');
+          }
+        } else {
+          console.log('Redux: Outer response not successful or no data');
+        }
+      })
+      .addCase(fetchUserInstitutes.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message || 'Failed to fetch user institutes'
+      })
+      // Fetch Institute Data by ID
+      .addCase(fetchInstituteData.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(fetchInstituteData.fulfilled, (state, action) => {
+        state.loading = false
+        const response = action.payload as ApiResponse<InstituteData>
+        if (response.success && response.data) {
+          // Update the selected institute with fresh data
+          if (state.selectedInstitute?._id === response.data._id) {
+            state.selectedInstitute = response.data
+          }
+          // Also update in userInstitutes array
+          const index = state.userInstitutes.findIndex(inst => inst._id === response.data!._id)
+          if (index !== -1) {
+            state.userInstitutes[index] = response.data!
+          }
+        }
+      })
+      .addCase(fetchInstituteData.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message || 'Failed to fetch institute data'
+      })
+      // Upload Institute Image
+      .addCase(uploadInstituteImage.pending, (state) => {
+        state.isUploadingImage = true
+        state.error = null
+      })
+      .addCase(uploadInstituteImage.fulfilled, (state, action) => {
+        state.isUploadingImage = false
+        if (action.payload && action.payload.imageUrl) {
+          // Update the selected institute with new image
+          if (state.selectedInstitute && state.selectedInstitute._id === action.payload.instituteId) {
+            if (action.payload.type === 'logo') {
+              state.selectedInstitute.logo = action.payload.imageUrl
+            } else if (action.payload.type === 'cover') {
+              state.selectedInstitute.coverImage = action.payload.imageUrl
+            }
+          }
+          // Also update in userInstitutes array
+          const index = state.userInstitutes.findIndex(inst => inst._id === action.payload.instituteId)
+          if (index !== -1) {
+            if (action.payload.type === 'logo') {
+              state.userInstitutes[index].logo = action.payload.imageUrl
+            } else if (action.payload.type === 'cover') {
+              state.userInstitutes[index].coverImage = action.payload.imageUrl
+            }
+          }
+        }
+        state.error = null
+      })
+      .addCase(uploadInstituteImage.rejected, (state, action) => {
+        state.isUploadingImage = false
+        state.error = action.payload as string
+      })
+      // Faculty Management
+      .addCase(fetchFaculty.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(fetchFaculty.fulfilled, (state, action) => {
+        state.loading = false
+        if (action.payload.success) {
+          state.faculty = action.payload.faculty
+        }
+        state.error = null
+      })
+      .addCase(fetchFaculty.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+      .addCase(createFaculty.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(createFaculty.fulfilled, (state, action) => {
+        state.loading = false
+        if (action.payload.success) {
+          state.faculty.push(action.payload.faculty)
+        }
+        state.error = null
+      })
+      .addCase(createFaculty.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+      .addCase(updateFaculty.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(updateFaculty.fulfilled, (state, action) => {
+        state.loading = false
+        if (action.payload.success) {
+          const index = state.faculty.findIndex(member => member._id === action.payload.faculty._id)
+          if (index !== -1) {
+            state.faculty[index] = action.payload.faculty
+          }
+        }
+        state.error = null
+      })
+      .addCase(updateFaculty.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+      .addCase(deleteFaculty.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(deleteFaculty.fulfilled, (state, action) => {
+        state.loading = false
+        if (action.payload.success) {
+          state.faculty = state.faculty.filter(member => member._id !== action.payload.facultyId)
+        }
+        state.error = null
+      })
+      .addCase(deleteFaculty.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
   },
 })
 
 export const { 
   clearError, 
-  setCurrentInstitute, 
+  setCurrentInstitute,
+  setSelectedInstitute,
+  setUserInstitutes, 
   setSearchFilters, 
   updateInstituteInList,
   removeDocument,
@@ -664,6 +1438,8 @@ export const {
   removeAward,
   updateAward,
   removeScholarship,
-  updateScholarship
+  updateScholarship,
+  removeFacultyMember,
+  updateFacultyMember,
 } = instituteSlice.actions
 export default instituteSlice.reducer

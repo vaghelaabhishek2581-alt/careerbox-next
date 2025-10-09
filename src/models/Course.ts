@@ -6,8 +6,8 @@ const CourseLessonSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String },
   duration: { type: Number, required: true }, // in minutes
-  type: { 
-    type: String, 
+  type: {
+    type: String,
     enum: ['video', 'text', 'quiz', 'assignment'],
     required: true
   },
@@ -35,80 +35,118 @@ const InstructorSchema = new Schema({
 
 // Course Schema
 const CourseSchema = new Schema({
-  instituteId: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'Institute', 
-    required: true 
+  instituteId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Institute',
+    required: true
   },
-  title: { 
-    type: String, 
+  title: {
+    type: String,
     required: true,
     maxlength: 200
   },
-  description: { 
-    type: String, 
+  description: {
+    type: String,
     required: true,
     maxlength: 5000
   },
-  category: { 
-    type: String, 
-    required: true,
-    maxlength: 100
-  },
-  level: { 
-    type: String, 
-    enum: ['beginner', 'intermediate', 'advanced'],
+
+  // New required fields
+  courseType: {
+    type: String,
+    enum: ['degree', 'diploma', 'certificate', '10th', '10th+2', 'under_graduate', 'post_graduate'],
     required: true
   },
-  duration: { 
-    type: Number, 
-    required: true 
-  }, // in weeks
-  fee: { 
-    type: Number, 
-    required: true 
+  duration: {
+    type: Number,
+    required: true
+  }, // in years
+  fee: {
+    type: Number,
+    required: true
   },
-  currency: { 
-    type: String, 
-    required: true,
-    default: 'USD'
+  maxStudents: {
+    type: Number,
+    required: true
   },
-  startDate: { 
-    type: Date, 
-    required: true 
+  modeOfStudy: {
+    type: String,
+    enum: ['online', 'offline', 'hybrid'],
+    required: true
   },
-  endDate: { 
-    type: Date, 
-    required: true 
+  isPublished: {
+    type: Boolean,
+    default: false
   },
-  registrationDeadline: { 
-    type: Date, 
-    required: true 
+
+  // Optional new fields
+  specializations: [{ type: String }],
+  applicableStreams: [{ type: String }],
+  feesFrequency: { type: String },
+  feesAmount: { type: Number },
+  highestPackageAmount: { type: Number },
+  totalSeats: { type: Number },
+  managementQuota: { type: Number },
+  examsAccepted: [{ type: String }],
+  eligibilityRequirements: [{ type: String }],
+  assessmentMethods: [{ type: String }],
+  certificationType: { type: String },
+  tags: [{ type: String }],
+
+  // Legacy fields for backward compatibility (optional)
+  category: {
+    type: String,
+    maxlength: 100
   },
-  maxStudents: { 
-    type: Number, 
-    required: true 
+  level: {
+    type: String,
+    enum: ['beginner', 'intermediate', 'advanced']
   },
-  currentEnrollments: { 
-    type: Number, 
-    default: 0 
+  currency: {
+    type: String,
+    default: 'INR'
   },
-  prerequisites: [{ 
+  price: { type: Number }, // Mapped from fee
+  startDate: { type: Date, required: true },
+  endDate: { type: Date, required: true },
+  registrationDeadline: { type: Date, required: true },
+  currentEnrollments: {
+    type: Number,
+    default: 0
+  },
+  prerequisites: [{
     type: String,
     maxlength: 200
   }],
   curriculum: [CourseModuleSchema],
-  instructor: InstructorSchema,
-  status: { 
-    type: String, 
+  instructor: { type: String }, // Changed from InstructorSchema to simple string
+  status: {
+    type: String,
     enum: ['draft', 'active', 'completed', 'cancelled'],
     default: 'draft'
   },
-  applicationsCount: { 
-    type: Number, 
-    default: 0 
+  applicationsCount: {
+    type: Number,
+    default: 0
   },
-  
+  enrollmentCount: { type: Number, default: 0 },
+  rating: { type: Number, default: 0 },
+  language: { type: String, default: 'English' },
+  hasLiveClasses: { type: Boolean, default: false },
+  hasRecordedContent: { type: Boolean, default: true },
+  hasAssignments: { type: Boolean, default: true },
+  hasQuizzes: { type: Boolean, default: true },
+  hasCertificate: { type: Boolean, default: true },
+  learningOutcomes: [{ type: String }],
+  difficultyLevel: { type: Number, default: 3 },
+  enrollmentStartDate: { type: Date },
+  enrollmentEndDate: { type: Date },
+  courseStartDate: { type: Date },
+  courseEndDate: { type: Date },
+  supportEmail: { type: String },
+  supportPhone: { type: String },
+  thumbnail: { type: String },
+
   // Timestamps
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
@@ -119,7 +157,7 @@ const CourseSchema = new Schema({
 })
 
 // Virtual for public ID
-CourseSchema.virtual('id').get(function() {
+CourseSchema.virtual('id').get(function () {
   return this._id.toHexString()
 })
 
@@ -141,7 +179,7 @@ CourseSchema.index({
 })
 
 // Pre-save middleware
-CourseSchema.pre('save', function(next) {
+CourseSchema.pre('save', function (next) {
   this.updatedAt = new Date()
   next()
 })
@@ -152,18 +190,39 @@ export interface ICourse extends Document {
   instituteId: mongoose.Types.ObjectId
   title: string
   description: string
-  category: string
-  level: 'beginner' | 'intermediate' | 'advanced'
+  courseType: string
   duration: number
   fee: number
-  currency: string
-  startDate: Date
-  endDate: Date
-  registrationDeadline: Date
   maxStudents: number
-  currentEnrollments: number
-  prerequisites: string[]
-  curriculum: {
+  modeOfStudy: 'online' | 'offline' | 'hybrid'
+  isPublished: boolean
+
+  // Optional new fields
+  specializations?: string[]
+  applicableStreams?: string[]
+  feesFrequency?: string
+  feesAmount?: number
+  highestPackageAmount?: number
+  totalSeats?: number
+  managementQuota?: number
+  examsAccepted?: string[]
+  eligibilityRequirements?: string[]
+  syllabus?: string[]
+  assessmentMethods?: string[]
+  certificationType?: string
+  tags?: string[]
+
+  // Legacy fields for backward compatibility (optional)
+  category?: string
+  level?: 'beginner' | 'intermediate' | 'advanced'
+  currency?: string
+  price?: number
+  startDate?: Date
+  endDate?: Date
+  registrationDeadline?: Date
+  currentEnrollments?: number
+  prerequisites?: string[]
+  curriculum?: {
     id: string
     title: string
     description?: string
@@ -179,17 +238,38 @@ export interface ICourse extends Document {
       attachments?: string[]
     }[]
   }[]
-  instructor: {
-    name: string
-    bio: string
-    qualifications: string[]
-    experience: string
-  }
-  status: 'draft' | 'active' | 'completed' | 'cancelled'
-  applicationsCount: number
+  instructor?: string
+  status?: 'draft' | 'active' | 'completed' | 'cancelled'
+  applicationsCount?: number
+  enrollmentCount?: number
+  rating?: number
+
+  // Additional optional fields
+  estimatedHours?: number
+  language?: string
+  hasLiveClasses?: boolean
+  hasRecordedContent?: boolean
+  hasAssignments?: boolean
+  hasQuizzes?: boolean
+  hasCertificate?: boolean
+  learningOutcomes?: string[]
+  difficultyLevel?: number
+  enrollmentStartDate?: Date
+  enrollmentEndDate?: Date
+  courseStartDate?: Date
+  courseEndDate?: Date
+  supportEmail?: string
+  supportPhone?: string
+  thumbnail?: string
+
   createdAt: Date
   updatedAt: Date
 }
 
-export { ICourse }
-export default mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema)
+
+// Clear any existing model to ensure schema updates are applied
+if (mongoose.models.Course) {
+  delete mongoose.models.Course;
+}
+
+export default mongoose.model<ICourse>('Course', CourseSchema)

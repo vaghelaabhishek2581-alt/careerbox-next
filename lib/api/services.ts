@@ -112,9 +112,18 @@ export class CoursesAPI {
   static async getCourses(page: number = 1, limit: number = 10, filters?: any): Promise<ApiResponse<any>> {
     const params = new URLSearchParams({
       page: page.toString(),
-      limit: limit.toString(),
-      ...filters
+      limit: limit.toString()
     })
+    
+    // Only add filters that have actual values (not undefined/null)
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, value.toString())
+        }
+      })
+    }
+    
     return apiClient.get(`/api/courses?${params}`)
   }
 
@@ -168,6 +177,21 @@ export class InstitutesAPI {
 
   static async deleteInstitute(instituteId: string): Promise<ApiResponse<any>> {
     return apiClient.delete(`/api/institutes/${instituteId}`)
+  }
+
+  // Get all institutes belonging to the current user
+  static async getUserInstitutes(): Promise<ApiResponse<any>> {
+    return apiClient.get('/api/institutes/user')
+  }
+
+  // Select an institute as the active one
+  static async selectInstitute(instituteId: string): Promise<ApiResponse<any>> {
+    return apiClient.post('/api/institutes/user', { instituteId })
+  }
+
+  // Get the active institute for the current user
+  static async getActiveInstitute(): Promise<ApiResponse<any>> {
+    return apiClient.get('/api/institutes/active')
   }
 }
 

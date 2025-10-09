@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { Profile } from '@/src/models'
+import Institute from '@/src/models/Institute'
+import Business from '@/src/models/Business'
 import { z } from 'zod'
 
 // ============================================================================
@@ -69,13 +71,13 @@ export async function POST(request: NextRequest) {
     await connectToDatabase()
     console.log('✅ Connected to database')
 
-    // Check if profile ID is already taken
+    // Check if profile ID is already taken in Profile collection
     const existingProfile = await Profile.findOne({
       'personalDetails.publicProfileId': profileId
     }).lean()
 
     if (existingProfile) {
-      console.log('🔍 Profile ID exists, checking ownership:', profileId)
+      console.log('🔍 Profile ID exists in Profile collection, checking ownership:', profileId)
 
       // Check if the profile ID belongs to the current user
       if (existingProfile.userId.toString() === authCheck.userId) {
@@ -98,6 +100,72 @@ export async function POST(request: NextRequest) {
         success: false,
         isValid: false,
         message: 'This profile ID is already taken by another user',
+        suggestions
+      })
+    }
+
+    // Check if profile ID is already taken in Institute collection
+    const existingInstitute = await Institute.findOne({
+      publicProfileId: profileId
+    }).lean()
+
+    if (existingInstitute) {
+      console.log('🔍 Profile ID exists in Institute collection, checking ownership:', profileId)
+
+      // Check if the institute belongs to the current user
+      if (existingInstitute.userId.toString() === authCheck.userId) {
+        console.log('✅ Institute profile ID belongs to current user:', profileId)
+        return NextResponse.json({
+          success: true,
+          isValid: true,
+          message: 'This is your institute profile ID',
+          suggestions: [],
+          isOwnProfile: true
+        })
+      }
+
+      console.log('❌ Profile ID belongs to another institute:', profileId)
+
+      // Generate suggestions
+      const suggestions = generateSuggestions(profileId)
+
+      return NextResponse.json({
+        success: false,
+        isValid: false,
+        message: 'This profile ID is already taken by an institute',
+        suggestions
+      })
+    }
+
+    // Check if profile ID is already taken in Business collection
+    const existingBusiness = await Business.findOne({
+      publicProfileId: profileId
+    }).lean()
+
+    if (existingBusiness) {
+      console.log('🔍 Profile ID exists in Business collection, checking ownership:', profileId)
+
+      // Check if the business belongs to the current user
+      if (existingBusiness.userId.toString() === authCheck.userId) {
+        console.log('✅ Business profile ID belongs to current user:', profileId)
+        return NextResponse.json({
+          success: true,
+          isValid: true,
+          message: 'This is your business profile ID',
+          suggestions: [],
+          isOwnProfile: true
+        })
+      }
+
+      console.log('❌ Profile ID belongs to another business:', profileId)
+
+      // Generate suggestions
+      const suggestions = generateSuggestions(profileId)
+
+      return NextResponse.json({
+        success: false,
+        isValid: false,
+        message: 'This profile ID is already taken by a business',
         suggestions
       })
     }

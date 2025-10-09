@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/lib/redux/store";
 import { fetchProfile } from "@/lib/redux/slices/profileSlice";
@@ -15,10 +15,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Search, Bell, Settings, Home, Users, BookOpen, Target, BarChart2, MessageSquare, User, Building2, Briefcase, GraduationCap, LogOut, ChevronDown, UserCog, FileText, Plus, Activity, HeadphonesIcon, HelpCircle, CreditCard, Mail, Shield, Database } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search, Bell, Settings, Home, Users, BookOpen, Target, BarChart2, MessageSquare, User, Building2, Briefcase, GraduationCap, LogOut, ChevronDown, ChevronRight, UserCog, FileText, Plus, Activity, HeadphonesIcon, HelpCircle, CreditCard, Mail, Shield, Database } from "lucide-react";
 import AccountSwitcher from "@/components/ui/account-switcher";
+import InstituteSelector from "@/components/institute-selector";
 
 import { handleUserSignOut } from "@/src/services/auth/auth.service";
 import { usePathname } from "next/navigation";
@@ -42,6 +49,12 @@ export default function UserProfileMenu() {
   const pathname = usePathname();
   const dispatch = useDispatch<AppDispatch>();
   const { profile } = useSelector((state: RootState) => state.profile);
+  
+  // State for collapsible sections
+  const [isNavigationOpen, setIsNavigationOpen] = useState(true);
+  const [isAccountOpen, setIsAccountOpen] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Fetch profile data when component mounts
   useEffect(() => {
@@ -196,7 +209,9 @@ export default function UserProfileMenu() {
           <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-80">
+      <DropdownMenuContent align="start" className="w-80 max-h-[600px] p-0">
+        <ScrollArea className="h-full max-h-[600px]">
+          <div className="p-1">
         {/* Account Switcher Section */}
         <div className="p-3">
           <div className="flex items-center gap-3 mb-3">
@@ -278,79 +293,42 @@ export default function UserProfileMenu() {
             })}
           </div>
         </div>
-        <DropdownMenuSeparator />
-
-        {/* Main Navigation */}
-        <div className="px-2 py-1">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-            Quick Navigation
-          </p>
-          {userNavigation.map((item) => {
-            const IconComponent = item.icon;
-            const active = isActive(item.href);
-            return (
-              <DropdownMenuItem
-                key={item.name}
-                onClick={() => {
-                  // Switch to 'user' role when clicking on Profile navigation
-                  const targetRole = item.name === 'Profile' ? 'user' : undefined;
-                  handleNavigation(item.href, targetRole);
-                }}
-                className={`cursor-pointer ${active ? 'bg-blue-50 text-blue-700' : ''}`}
-              >
-                <IconComponent className="mr-2 h-4 w-4" />
-                {item.name}
-                {active && <span className="ml-auto text-xs">●</span>}
-              </DropdownMenuItem>
-            );
-          })}
-
-          {/* Quick access to other role dashboards */}
-          {session.user?.roles && session.user.roles.length > 1 && (
-            <>
-              <div className="my-2 border-t border-gray-200"></div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                Switch Dashboard
-              </p>
-              {session.user.roles.filter(role => role !== userRole).map((role) => {
-                const roleConfig = ROLE_CONFIGS[role as RoleType] || {
-                  icon: User,
-                  label: `${role.charAt(0).toUpperCase() + role.slice(1)}`,
-                  color: "bg-gray-500"
-                };
-                const IconComponent = roleConfig.icon;
-                const dashboardPath = role === 'user' ? '/dashboard' : `/dashboard/${role}`;
-
-                return (
-                  <DropdownMenuItem
-                    key={`nav-${role}`}
-                    onClick={() => handleNavigation(dashboardPath, role)}
-                    className="cursor-pointer"
-                  >
-                    <IconComponent className="mr-2 h-4 w-4" />
-                    {roleConfig.label} Dashboard
-                  </DropdownMenuItem>
-                );
-              })}
-            </>
-          )}
-        </div>
-
-        {/* Registration Navigation - Only show for user role */}
-        {userRole === 'user' && (
+        
+        {/* Institute Selector - Show when user has institute role */}
+        {userRole === 'institute' && (
           <>
             <DropdownMenuSeparator />
-            <div className="px-2 py-1">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                Registration
-              </p>
-              {registrationNavigation.map((item) => {
+            <div className="p-3">
+              <InstituteSelector variant="compact" />
+            </div>
+          </>
+        )}
+        
+        <DropdownMenuSeparator />
+
+        {/* Main Navigation - Collapsible */}
+        <div className="px-2 py-1">
+          <Collapsible open={isNavigationOpen} onOpenChange={setIsNavigationOpen}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide hover:text-gray-700 transition-colors rounded">
+              <span>Quick Navigation</span>
+              {isNavigationOpen ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-1 mt-2">
+              {userNavigation.map((item) => {
                 const IconComponent = item.icon;
                 const active = isActive(item.href);
                 return (
                   <DropdownMenuItem
                     key={item.name}
-                    onClick={() => handleNavigation(item.href)}
+                    onClick={() => {
+                      // Switch to 'user' role when clicking on Profile navigation
+                      const targetRole = item.name === 'Profile' ? 'user' : undefined;
+                      handleNavigation(item.href, targetRole);
+                    }}
                     className={`cursor-pointer ${active ? 'bg-blue-50 text-blue-700' : ''}`}
                   >
                     <IconComponent className="mr-2 h-4 w-4" />
@@ -359,6 +337,78 @@ export default function UserProfileMenu() {
                   </DropdownMenuItem>
                 );
               })}
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Dashboard Switching - Collapsible */}
+          {session.user?.roles && session.user.roles.length > 1 && (
+            <Collapsible open={isAccountOpen} onOpenChange={setIsAccountOpen} className="mt-4">
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide hover:text-gray-700 transition-colors rounded">
+                <span>Switch Dashboard</span>
+                {isAccountOpen ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-1 mt-2">
+                {session.user.roles.filter(role => role !== userRole).map((role) => {
+                  const roleConfig = ROLE_CONFIGS[role as RoleType] || {
+                    icon: User,
+                    label: `${role.charAt(0).toUpperCase() + role.slice(1)}`,
+                    color: "bg-gray-500"
+                  };
+                  const IconComponent = roleConfig.icon;
+                  const dashboardPath = role === 'user' ? '/dashboard' : `/dashboard/${role}`;
+
+                  return (
+                    <DropdownMenuItem
+                      key={`nav-${role}`}
+                      onClick={() => handleNavigation(dashboardPath, role)}
+                      className="cursor-pointer"
+                    >
+                      <IconComponent className="mr-2 h-4 w-4" />
+                      {roleConfig.label} Dashboard
+                    </DropdownMenuItem>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </div>
+
+        {/* Registration Navigation - Only show for user role */}
+        {userRole === 'user' && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1">
+              <Collapsible open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide hover:text-gray-700 transition-colors rounded">
+                  <span>Registration</span>
+                  {isSettingsOpen ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-1 mt-2">
+                  {registrationNavigation.map((item) => {
+                    const IconComponent = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <DropdownMenuItem
+                        key={item.name}
+                        onClick={() => handleNavigation(item.href)}
+                        className={`cursor-pointer ${active ? 'bg-blue-50 text-blue-700' : ''}`}
+                      >
+                        <IconComponent className="mr-2 h-4 w-4" />
+                        {item.name}
+                        {active && <span className="ml-auto text-xs">●</span>}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </>
         )}
@@ -368,34 +418,43 @@ export default function UserProfileMenu() {
           <>
             <DropdownMenuSeparator />
             <div className="px-2 py-1">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Tools
-              </p>
-              {roleNavigation.map((item) => {
-                const IconComponent = item.icon;
-                const active = isActive(item.href);
-                return (
-                  <DropdownMenuItem
-                    key={item.name}
-                    onClick={() => handleNavigation(item.href)}
-                    className={`cursor-pointer ${active ? 'bg-blue-50 text-blue-700' : ''}`}
-                  >
-                    <IconComponent className="mr-2 h-4 w-4" />
-                    {item.name}
-                    {active && <span className="ml-auto text-xs">●</span>}
-                  </DropdownMenuItem>
-                );
-              })}
+              <Collapsible open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide hover:text-gray-700 transition-colors rounded">
+                  <span>{userRole.charAt(0).toUpperCase() + userRole.slice(1)} Tools</span>
+                  {isHelpOpen ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-1 mt-2">
+                  {roleNavigation.map((item) => {
+                    const IconComponent = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <DropdownMenuItem
+                        key={item.name}
+                        onClick={() => handleNavigation(item.href)}
+                        className={`cursor-pointer ${active ? 'bg-blue-50 text-blue-700' : ''}`}
+                      >
+                        <IconComponent className="mr-2 h-4 w-4" />
+                        {item.name}
+                        {active && <span className="ml-auto text-xs">●</span>}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </>
         )}
 
         <DropdownMenuSeparator />
 
-        {/* Profile Navigation */}
+        {/* Profile Navigation - Always visible */}
         <div className="px-2 py-1">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-            Profile
+            Profile & Settings
           </p>
           {profileNavigation.map((item) => {
             const IconComponent = item.icon;
@@ -422,6 +481,8 @@ export default function UserProfileMenu() {
           <LogOut className="mr-2 h-4 w-4" />
           Sign out
         </DropdownMenuItem>
+          </div>
+        </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>
   );

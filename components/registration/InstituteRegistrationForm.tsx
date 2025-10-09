@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/lib/redux/store";
@@ -59,6 +59,7 @@ export default function InstituteRegistrationForm() {
   const [cities, setCities] = useState<string[]>([]);
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
+  const loadingCitiesRef = useRef(false);
 
   const [formData, setFormData] = useState({
     // Institute Information
@@ -114,8 +115,9 @@ export default function InstituteRegistrationForm() {
       return;
     }
 
-    if (loadingCities) return; // Prevent duplicate calls
+    if (loadingCitiesRef.current) return; // Prevent duplicate calls
     
+    loadingCitiesRef.current = true;
     setLoadingCities(true);
     console.log('Loading cities for state:', formData.state);
     
@@ -128,24 +130,29 @@ export default function InstituteRegistrationForm() {
         } else {
           setCities(["Other"]);
         }
-        setLoadingCities(false);
       })
       .catch((error) => {
         console.error('Error loading cities:', error);
         setCities(["Other"]);
+      })
+      .finally(() => {
         setLoadingCities(false);
+        loadingCitiesRef.current = false;
       });
-  }, [formData.state, loadingCities]);
-
-  // Clear city when state changes (separate effect to avoid loops)
-  useEffect(() => {
-    if (formData.city && formData.state) {
-      setFormData(prev => ({ ...prev, city: "" }));
-    }
-  }, [formData.state]); // Only depend on state, not city to avoid loops
+  }, [formData.state]);
 
   const handleInputChange = useCallback((field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // Clear city when state changes
+      if (field === 'state' && value !== prev.state) {
+        newData.city = "";
+      }
+      
+      return newData;
+    });
+    
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }

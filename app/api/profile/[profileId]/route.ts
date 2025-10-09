@@ -6,13 +6,13 @@ import { UserProfile, BusinessProfile, InstituteProfile } from '@/lib/types/unif
 // GET /api/profile/[profileId] - Fetch profile by public profile ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { profileId: string } }
+  { params }: { params: Promise<{ profileId: string }> }
 ) {
   try {
     const authCheck = await requireAuth(req)
     if (authCheck.error) return authCheck.response
 
-    const { profileId } = params
+    const { profileId } = await params
     const { db } = await connectToDatabase()
 
     // Try to find user profile first

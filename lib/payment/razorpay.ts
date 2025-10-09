@@ -17,9 +17,22 @@ export async function createPaymentOrder(
   billingCycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY',
   userId: string,
   userEmail: string,
-  userName: string
+  userName: string,
+  customAmount?: number
 ) {
-  const plan = PAYMENT_PLANS[planType][billingCycle];
+  let amount: number;
+  let currency: string;
+
+  if (customAmount) {
+    // Use custom amount for registration intent payments
+    amount = customAmount;
+    currency = 'INR';
+  } else {
+    // Use plan amount for regular subscriptions
+    const plan = PAYMENT_PLANS[planType][billingCycle];
+    amount = plan.amount;
+    currency = plan.currency;
+  }
   
   // Generate a short receipt (max 40 chars for Razorpay)
   // Use last 8 chars of userId + timestamp in base36 for brevity
@@ -30,15 +43,16 @@ export async function createPaymentOrder(
   console.log(`Generated receipt: ${receipt} (length: ${receipt.length})`);
   
   const options = {
-    amount: plan.amount,
-    currency: plan.currency,
+    amount,
+    currency,
     receipt: receipt,
     notes: {
       userId,
       planType,
       billingCycle,
       userName,
-      userEmail
+      userEmail,
+      ...(customAmount && { customAmount: customAmount.toString() })
     }
   };
 

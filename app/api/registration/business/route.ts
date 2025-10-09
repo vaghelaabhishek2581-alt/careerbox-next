@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import RegistrationIntent from '@/src/models/RegistrationIntent'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { sendBusinessRegistrationConfirmation } from '@/lib/services/email-service'
+import NotificationService from '@/lib/services/notificationService'
 import { z } from 'zod'
 
 // Validation schema for business registration
@@ -126,14 +127,82 @@ export async function POST(request: NextRequest) {
           validatedData.contactName,
           registrationIntent._id.toString()
         );
-        console.log('Business registration confirmation email sent to:', userEmail);
+        console.log('Business registration confirmation email sent to:', validatedData.email || user?.email);
       }
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
       // Don't fail the registration if email fails
     }
 
-    // TODO: Send notification email to admin
+    // Send notifications
+    try {
+      // Send notification to user
+      await NotificationService.createNotification({
+        userId: userId,
+        type: 'registration_submitted',
+        title: 'Registration Request Submitted',
+        message: `Your business registration request for "${validatedData.organizationName}" has been submitted and is under review.`,
+        data: {
+          registrationIntentId: registrationIntent._id.toString(),
+          actionUrl: '/dashboard/notifications',
+          metadata: {
+            organizationName: validatedData.organizationName,
+            type: 'business'
+          }
+        },
+        priority: 'medium',
+        sendEmail: true,
+        sendSocket: true,
+        emailTemplate: 'registration_submitted',
+        emailVariables: {
+          contactName: validatedData.contactName,
+          organizationName: validatedData.organizationName,
+          type: 'business',
+          email: validatedData.email || user?.email,
+          contactPhone: validatedData.contactPhone,
+          city: validatedData.city,
+          state: validatedData.state,
+          country: validatedData.country,
+          description: validatedData.description
+        }
+      });
+
+      // Send notification to admins
+      await NotificationService.sendAdminNotification({
+        type: 'registration_submitted',
+        title: 'New Business Registration Request',
+        message: `New business registration request from ${validatedData.contactName} for "${validatedData.organizationName}" requires review.`,
+        data: {
+          registrationIntentId: registrationIntent._id.toString(),
+          actionUrl: '/dashboard/admin/registrations',
+          metadata: {
+            organizationName: validatedData.organizationName,
+            contactName: validatedData.contactName,
+            type: 'business'
+          }
+        },
+        priority: 'high',
+        sendEmail: true,
+        sendSocket: true,
+        emailTemplate: 'admin_notification',
+        emailVariables: {
+          organizationName: validatedData.organizationName,
+          type: 'business',
+          contactName: validatedData.contactName,
+          email: validatedData.email || user?.email,
+          contactPhone: validatedData.contactPhone,
+          city: validatedData.city,
+          state: validatedData.state,
+          country: validatedData.country,
+          description: validatedData.description
+        }
+      });
+
+      console.log('Notifications sent for business registration:', registrationIntent._id);
+    } catch (notificationError) {
+      console.error('Failed to send notifications:', notificationError);
+      // Don't fail the registration if notifications fail
+    }
 
     return NextResponse.json({
       success: true,
