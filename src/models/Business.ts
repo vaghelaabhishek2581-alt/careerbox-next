@@ -1,6 +1,46 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// Social Media Schema (moved up to be used, removing duplicate)
+// Interface for Business document (MOVED UP - must be before schema)
+export interface IBusiness extends Document {
+  _id: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  registrationIntentId: mongoose.Types.ObjectId;
+  name: string;
+  publicProfileId?: string;
+  email: string;
+  contactPerson: string;
+  phone: string;
+  address: {
+    street?: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode?: string;
+  };
+  website?: string;
+  establishmentYear?: number;
+  description?: string;
+  logo?: string;
+  coverImage?: string;
+  industry?: string;
+  size?: string;
+  socialMedia: {
+    linkedin?: string;
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+  };
+  employeeCount: number;
+  revenue?: string;
+  jobPostings: number;
+  isVerified: boolean;
+  subscriptionId?: mongoose.Types.ObjectId;
+  status: "active" | "inactive" | "suspended";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Social Media Schema
 const SocialMediaSchema = new Schema(
   {
     linkedin: { type: String },
@@ -11,7 +51,7 @@ const SocialMediaSchema = new Schema(
   { _id: false }
 );
 
-// Business Schema
+// Business Schema - with explicit type
 const BusinessSchema = new Schema<IBusiness>(
   {
     userId: {
@@ -89,10 +129,6 @@ const BusinessSchema = new Schema<IBusiness>(
       enum: ["active", "inactive", "suspended"],
       default: "active",
     },
-
-    // Timestamps
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
   },
   {
     timestamps: true,
@@ -102,12 +138,11 @@ const BusinessSchema = new Schema<IBusiness>(
 );
 
 // Virtual for public ID
-BusinessSchema.virtual("id").get(function () {
+BusinessSchema.virtual("id").get(function (this: IBusiness) {
   return this._id.toHexString();
 });
 
 // Indexes
-// publicProfileId index is automatically created by unique: true
 BusinessSchema.index({ userId: 1 });
 BusinessSchema.index({ name: 1 });
 BusinessSchema.index({ industry: 1 });
@@ -133,46 +168,6 @@ BusinessSchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
 });
-
-// Interface for Business document
-export interface IBusiness extends Document {
-  _id: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
-  registrationIntentId: mongoose.Types.ObjectId;
-  name: string;
-  publicProfileId?: string;
-  email: string;
-  contactPerson: string;
-  phone: string;
-  address: {
-    street?: string;
-    city: string;
-    state: string;
-    country: string;
-    zipCode?: string;
-  };
-  website?: string;
-  establishmentYear?: number;
-  description?: string;
-  logo?: string;
-  coverImage?: string;
-  industry?: string;
-  size?: string;
-  socialMedia: {
-    linkedin?: string;
-    twitter?: string;
-    facebook?: string;
-    instagram?: string;
-  };
-  employeeCount: number;
-  revenue?: string;
-  jobPostings: number;
-  isVerified: boolean;
-  subscriptionId?: mongoose.Types.ObjectId;
-  status: "active" | "inactive" | "suspended";
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 // Use existing model if available (prevents re-compilation errors)
 const Business =
