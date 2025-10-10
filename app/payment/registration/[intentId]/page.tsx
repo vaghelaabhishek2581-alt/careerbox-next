@@ -83,7 +83,9 @@ const subscriptionPlans: SubscriptionPlan[] = [
 export default function RegistrationPaymentPage() {
   const params = useParams()
   const router = useRouter()
-  const intentId = params.intentId as string
+  
+  // Handle null params case
+  const intentId = params?.intentId as string | undefined
 
   const [registrationIntent, setRegistrationIntent] = useState<RegistrationIntent | null>(null)
   const [selectedPlan, setSelectedPlan] = useState<string>('')
@@ -92,10 +94,21 @@ export default function RegistrationPaymentPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchRegistrationIntent()
+    if (intentId) {
+      fetchRegistrationIntent()
+    } else {
+      setError('Invalid registration intent ID')
+      setLoading(false)
+    }
   }, [intentId])
 
   const fetchRegistrationIntent = async () => {
+    if (!intentId) {
+      setError('Invalid registration intent ID')
+      setLoading(false)
+      return
+    }
+
     try {
       const response = await fetch(`/api/registration-intents/${intentId}`)
       if (response.ok) {
@@ -118,7 +131,7 @@ export default function RegistrationPaymentPage() {
   }
 
   const handlePayment = async () => {
-    if (!selectedPlan || !registrationIntent) return
+    if (!selectedPlan || !registrationIntent || !intentId) return
 
     setPaymentLoading(true)
     setError(null)

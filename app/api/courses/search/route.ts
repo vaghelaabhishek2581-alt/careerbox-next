@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
+import { connectToDatabase } from '@/lib/db/mongodb'
 import { CourseSearchFilters, CourseSearchResponse } from '@/lib/types/course.types'
+import { Course } from '@/src/models'
 
 // GET /api/courses/search - Search courses with filters
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const authResult = await getAuthenticatedUser(req)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -16,8 +16,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    const db = await connectDB()
-    const coursesCollection = db.collection('courses')
+    await connectToDatabase()
 
     // Build query from search parameters
     const query: any = { status: 'active' }
@@ -63,13 +62,17 @@ export async function GET(req: NextRequest) {
 
     // Calculate pagination
     const skip = (page - 1) * limit
-    const total = await coursesCollection.countDocuments(query)
-    const courses = await coursesCollection
+    const total = await Course.countDocuments(query)
+    const coursesDoc = await Course
       .find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .toArray()
+      .lean()
+      .exec()
+    
+    // Type assertion for lean documents
+    const courses = coursesDoc as unknown as any[]
 
     const response: CourseSearchResponse = {
       courses,

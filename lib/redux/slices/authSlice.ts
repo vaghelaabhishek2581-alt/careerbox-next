@@ -6,7 +6,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role?: 'user' | 'admin' | 'organization' | 'business';
+  role?: 'user' | 'admin' | 'organization' | 'business' | 'institute';
   roles?: string[];
   activeRole?: string;
   userType?: 'student' | 'professional';
@@ -61,13 +61,14 @@ export const registerUser = createAsyncThunk(
   async (userData: {
     name: string;
     email: string;
+    phone?: string;
     password: string;
     role: string;
     userType?: string;
     organizationCode?: string;
   }, { rejectWithValue }) => {
     try {
-      const response = await API.auth.register(userData.name, userData.email, userData.password);
+      const response = await API.auth.register(userData.name, userData.email, userData.password, userData.phone);
       
       if (!response.success) {
         return rejectWithValue(response.error || 'Registration failed');

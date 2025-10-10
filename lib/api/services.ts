@@ -7,8 +7,8 @@ export class AuthAPI {
     return apiClient.post('/api/auth/login', { email, password })
   }
 
-  static async register(name: string, email: string, password: string): Promise<ApiResponse<any>> {
-    return apiClient.post('/api/auth/register', { name, email, password })
+  static async register(name: string, email: string, password: string, phone?: string): Promise<ApiResponse<any>> {
+    return apiClient.post('/api/auth/register', { name, email, password, phone })
   }
 
   static async logout(): Promise<ApiResponse<any>> {

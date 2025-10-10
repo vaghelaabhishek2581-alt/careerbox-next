@@ -1,97 +1,97 @@
 // lib/auth.ts
-import jwt from 'jsonwebtoken'
-import { NextRequest } from 'next/server'
-import { connectToDatabase } from '@/lib/db/mongoose'
-import { User, BlacklistedToken } from '@/src/models'
+import jwt from "jsonwebtoken";
+import { NextRequest } from "next/server";
+import { connectToDatabase } from "@/lib/db/mongoose";
+import { User, BlacklistedToken } from "@/src/models";
 
 export interface JWTPayload {
-  sub: string // user id
-  email: string
-  name: string
-  roles?: string[]
-  activeRole?: string
-  iat: number
-  exp: number
-  jti?: string
+  sub: string; // user id
+  email: string;
+  name: string;
+  roles?: string[];
+  activeRole?: string;
+  iat: number;
+  exp: number;
+  jti?: string;
 }
 
 export interface AuthUser {
-  id: string
-  email: string
-  name: string
-  roles: string[]
-  activeRole: string | null
-  needsOnboarding?: boolean
-  needsRoleSelection?: boolean
+  id: string;
+  email: string;
+  name: string;
+  roles: string[];
+  activeRole: string | null;
+  needsOnboarding?: boolean;
+  needsRoleSelection?: boolean;
 }
 
 /**
  * Extract JWT token from request headers
  */
-export function getTokenFromRequest (request: NextRequest): string | null {
-  const authHeader = request.headers.get('authorization')
+export function getTokenFromRequest(request: NextRequest): string | null {
+  const authHeader = request.headers.get("authorization");
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7)
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.substring(7);
   }
 
-  return null
+  return null;
 }
 
 /**
  * Verify and decode JWT token
  */
-export function verifyJWT (token: string): JWTPayload | null {
+export function verifyJWT(token: string): JWTPayload | null {
   try {
-    const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET
+    const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
     if (!secret) {
-      throw new Error('JWT_SECRET or NEXTAUTH_SECRET not configured')
+      throw new Error("JWT_SECRET or NEXTAUTH_SECRET not configured");
     }
 
-    const decoded = jwt.verify(token, secret) as JWTPayload
-    return decoded
+    const decoded = jwt.verify(token, secret) as JWTPayload;
+    return decoded;
   } catch (error) {
-    console.error('JWT verification error:', error)
-    return null
+    console.error("JWT verification error:", error);
+    return null;
   }
 }
 
 /**
  * Check if token is blacklisted
  */
-export async function isTokenBlacklisted (tokenId: string): Promise<boolean> {
+export async function isTokenBlacklisted(tokenId: string): Promise<boolean> {
   try {
-    await connectToDatabase()
+    await connectToDatabase();
     const blacklistedToken = await BlacklistedToken.findOne({
       $or: [{ tokenId }, { token: tokenId }],
-      expiresAt: { $gt: new Date() }
-    })
+      expiresAt: { $gt: new Date() },
+    });
 
-    return !!blacklistedToken
+    return !!blacklistedToken;
   } catch (error) {
-    console.error('Error checking token blacklist:', error)
-    return false
+    console.error("Error checking token blacklist:", error);
+    return false;
   }
 }
 
 /**
  * Get user from database by ID
  */
-export async function getUserById (userId: string): Promise<any | null> {
+export async function getUserById(userId: string): Promise<any | null> {
   try {
-    await connectToDatabase()
-    
+    await connectToDatabase();
+
     // Try to find user by ObjectId first
-    const user = await User.findById(userId)
-    if (user) return user
-    
+    const user = await User.findById(userId);
+    if (user) return user;
+
     // If ObjectId lookup fails, try as string ID
-    const userByString = await User.findOne({ _id: userId })
-    
-    return userByString
+    const userByString = await User.findOne({ _id: userId });
+
+    return userByString;
   } catch (error) {
-    console.error('Error fetching user:', error)
-    return null
+    console.error("Error fetching user:", error);
+    return null;
   }
 }
 
@@ -99,16 +99,16 @@ export async function getUserById (userId: string): Promise<any | null> {
  * Authenticate request and return user data
  * Works for both NextAuth sessions (web) and JWT tokens (native)
  */
-export async function authenticateRequest (
+export async function authenticateRequest(
   request: NextRequest
 ): Promise<AuthUser | null> {
   try {
     // Try NextAuth session first (for web app)
-    const { getServerSession } = await import('next-auth')
-    const { authOptions } = await import('../app/api/auth/[...nextauth]/route')
+    const { getServerSession } = await import("next-auth");
+    const { authOptions } = await import("../app/api/auth/[...nextauth]/route");
 
     try {
-      const session = await getServerSession(authOptions)
+      const session = await getServerSession(authOptions);
       if (session?.user) {
         return {
           id: session.user.id,
@@ -117,37 +117,37 @@ export async function authenticateRequest (
           roles: session.user.roles || [],
           activeRole: session.user.activeRole || null,
           needsOnboarding: session.user.needsOnboarding,
-          needsRoleSelection: session.user.needsRoleSelection
-        }
+          needsRoleSelection: session.user.needsRoleSelection,
+        };
       }
     } catch (sessionError) {
       // NextAuth session failed, continue to JWT check
-      console.log('NextAuth session not available, checking JWT token')
+      console.log("NextAuth session not available, checking JWT token");
     }
 
     // Try JWT token (for native app or API access)
-    const token = getTokenFromRequest(request)
+    const token = getTokenFromRequest(request);
     if (!token) {
-      return null
+      return null;
     }
 
-    const payload = verifyJWT(token)
+    const payload = verifyJWT(token);
     if (!payload) {
-      return null
+      return null;
     }
 
     // Check if token is blacklisted
-    const tokenId = payload.jti || `${payload.sub}-${payload.iat}`
-    const isBlacklisted = await isTokenBlacklisted(tokenId)
+    const tokenId = payload.jti || `${payload.sub}-${payload.iat}`;
+    const isBlacklisted = await isTokenBlacklisted(tokenId);
     if (isBlacklisted) {
-      console.log('Token is blacklisted')
-      return null
+      console.log("Token is blacklisted");
+      return null;
     }
 
     // Get fresh user data from database
-    const user = await getUserById(payload.sub)
+    const user = await getUserById(payload.sub);
     if (!user) {
-      return null
+      return null;
     }
 
     return {
@@ -157,34 +157,34 @@ export async function authenticateRequest (
       roles: user.roles || [user.role],
       activeRole: user.activeRole || user.role || null,
       needsOnboarding: user.needsOnboarding || false,
-      needsRoleSelection: user.needsRoleSelection || false
-    }
+      needsRoleSelection: user.needsRoleSelection || false,
+    };
   } catch (error) {
-    console.error('Authentication error:', error)
-    return null
+    console.error("Authentication error:", error);
+    return null;
   }
 }
 
 /**
  * Generate JWT token for user (for native app login)
  */
-export function generateJWT (user: any): string {
-  const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET
+export function generateJWT(user: any): string {
+  const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
   if (!secret) {
-    throw new Error('JWT_SECRET or NEXTAUTH_SECRET not configured')
+    throw new Error("JWT_SECRET or NEXTAUTH_SECRET not configured");
   }
 
-  const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
+  const payload: Omit<JWTPayload, "iat" | "exp"> = {
     sub: user._id.toString(),
     email: user.email,
     name: user.name,
     roles: user.roles || [user.role],
     activeRole: user.activeRole || user.role,
-    jti: `${user._id}-${Date.now()}`
-  }
+    jti: `${user._id}-${Date.now()}`,
+  };
 
   return jwt.sign(payload, secret, {
-    expiresIn: '7d', // Token expires in 7 days
-    issuer: 'your-app-name'
-  })
+    expiresIn: "7d", // Token expires in 7 days
+    issuer: "your-app-name",
+  });
 }

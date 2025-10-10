@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, Filter, SortAsc, SortDesc, MapPin, Star, Users, Building2, GraduationCap, Briefcase, BookOpen, FileText, Clock, DollarSign } from 'lucide-react'
@@ -21,7 +23,7 @@ export default function SearchResults() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filters, setFilters] = useState<SearchFilters>(() => parseSearchQuery(searchParams))
+  const [filters, setFilters] = useState<SearchFilters>(() => parseSearchQuery(searchParams || new URLSearchParams()))
   const [showFilters, setShowFilters] = useState(false)
   const [facets, setFacets] = useState<any>({})
 
@@ -36,8 +38,9 @@ export default function SearchResults() {
         const response = await apiClient.get(`/api/search?${queryString}`)
         
         if (response.success) {
-          setResults(response.data.results)
-          setFacets(response.data.facets || {})
+          const data = response.data as SearchResponse
+          setResults(data.results)
+          setFacets(data.facets || {})
         } else {
           throw new Error(response.error || 'Failed to fetch search results')
         }

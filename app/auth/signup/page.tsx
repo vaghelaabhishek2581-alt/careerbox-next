@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -23,6 +23,7 @@ import {
   EyeOff,
   User,
   Mail,
+  Phone,
   Lock,
   AlertCircle,
 } from "lucide-react";
@@ -30,10 +31,11 @@ import Logo from "@/components/logo";
 
 type AuthMode = "signup" | "signin";
 
-export default function AuthPage() {
+function AuthPageContent() {
   const [mode, setMode] = useState<AuthMode>("signup");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -107,6 +109,7 @@ export default function AuthPage() {
         const result = await dispatch(registerUser({
           name,
           email,
+          phone,
           password,
           role: 'user'
         })).unwrap();
@@ -118,6 +121,7 @@ export default function AuthPage() {
           // Clear form
           setName("");
           setEmail("");
+          setPhone("");
           setPassword("");
           setConfirmPassword("");
         }
@@ -221,6 +225,7 @@ export default function AuthPage() {
     setSuccessMessage("");
     setIsVerificationSent(false);
     setName("");
+    setPhone("");
     setPassword("");
     setConfirmPassword("");
 
@@ -480,6 +485,30 @@ export default function AuthPage() {
                     </div>
                   </div>
 
+                  {mode === "signup" && (
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="phone"
+                        className="text-gray-700 font-medium"
+                      >
+                        Phone Number
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          required
+                          className="pl-10 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label
                       htmlFor="password"
@@ -634,5 +663,20 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <AuthPageContent />
+    </Suspense>
   );
 }

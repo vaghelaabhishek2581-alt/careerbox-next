@@ -1,26 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
+import { connectToDatabase } from '@/lib/db/mongodb'
 import { Subscription, CreateSubscriptionRequest } from '@/lib/types/subscription.types'
 import { ApiResponse } from '@/lib/types/api.types'
 
 // POST /api/subscriptions - Create a new subscription
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const authResult = await getAuthenticatedUser(req)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { userId, user } = authResult
     const subscriptionData: CreateSubscriptionRequest = await req.json()
-    const db = await connectDB()
+    await connectToDatabase()
+    
+    // TODO: This needs to be refactored to use the new payment system with Mongoose models
+    return NextResponse.json({ 
+      error: 'Please use the new payment system at /payment/registration for subscriptions.' 
+    }, { status: 503 })
+    
+    /*
     const subscriptionsCollection = db.collection('subscriptions')
     const usersCollection = db.collection('users')
 
     // Check if user already has an active subscription
     const existingSubscription = await subscriptionsCollection.findOne({
-      userId: session.user.id,
+      userId: userId,
       status: 'active'
     })
 
@@ -42,7 +49,7 @@ export async function POST(req: NextRequest) {
     // Create subscription
     const subscription: Subscription = {
       id: crypto.randomUUID(),
-      userId: session.user.id,
+      userId: userId,
       plan: subscriptionData.plan,
       status: 'active',
       startDate: new Date(),
@@ -65,7 +72,7 @@ export async function POST(req: NextRequest) {
     // Update user role
     const newRole = getRoleFromPlan(subscriptionData.plan)
     await usersCollection.updateOne(
-      { id: session.user.id },
+      { id: userId },
       { $set: { role: newRole, subscriptionId: subscription.id } }
     )
 
@@ -81,6 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(response)
+    */
   } catch (error) {
     console.error('Error creating subscription:', error)
     return NextResponse.json(
@@ -134,18 +142,9 @@ function getRoleFromPlan(plan: string): string {
 
 async function convertLeadToActiveSubscription(leadId: string, subscriptionId: string) {
   try {
-    const db = await connectDB()
-    const leadsCollection = db.collection('leads')
-
-    await leadsCollection.updateOne(
-      { id: leadId },
-      { 
-        $set: { 
-          status: 'converted',
-          updatedAt: new Date()
-        }
-      }
-    )
+    await connectToDatabase()
+    // TODO: This needs to be refactored to use Mongoose models
+    console.log('Lead conversion functionality temporarily disabled')
   } catch (error) {
     console.error('Error converting lead:', error)
   }

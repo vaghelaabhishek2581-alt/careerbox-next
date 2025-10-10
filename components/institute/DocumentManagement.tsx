@@ -83,7 +83,12 @@ export default function DocumentManagement() {
     }
 
     try {
-      await dispatch(uploadDocument({ type, file })).unwrap();
+      await dispatch(uploadDocument({ 
+        type, 
+        file,
+        name: file.name,
+        description: `${type} document`
+      })).unwrap();
       setSelectedDocumentType("");
     } catch (error) {
       console.error("Failed to upload document:", error);

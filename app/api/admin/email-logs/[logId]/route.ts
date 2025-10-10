@@ -1,31 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
-import { connectToDatabase } from '@/lib/db/mongodb'
-import { EmailLog } from '@/src/models/EmailLog'
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth/unified-auth";
+import { connectToDatabase } from "@/lib/db/mongodb";
+import { EmailLog } from "@/src/models/EmailLog";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { logId: string } }
+  { params }: { params: Promise<{ logId: string }> }
 ) {
   try {
     // Authentication check with admin role requirement
-    const authResult = await getAuthenticatedUser(request)
+    const authResult = await getAuthenticatedUser(request);
     if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { user } = authResult
-    if (!user?.roles?.includes('admin')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    const { user } = authResult;
+    if (!user?.roles?.includes("admin")) {
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      );
     }
 
-    await connectToDatabase()
+    await connectToDatabase();
+
+    // Await params before using
+    const { logId } = await params;
 
     // Find the email log with full content
-    const emailLog = await EmailLog.findById(params.logId).lean()
-    
+    const emailLog = (await EmailLog.findById(logId).lean()) as any;
+
     if (!emailLog) {
-      return NextResponse.json({ error: 'Email log not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: "Email log not found" },
+        { status: 404 }
+      );
     }
 
     // Transform for response
@@ -54,20 +63,19 @@ export async function GET(
       openedAt: emailLog.openedAt,
       clickedAt: emailLog.clickedAt,
       createdAt: emailLog.createdAt,
-      updatedAt: emailLog.updatedAt
-    }
+      updatedAt: emailLog.updatedAt,
+    };
 
     return NextResponse.json({
       success: true,
-      data: responseEmailLog
-    })
-
+      data: responseEmailLog,
+    });
   } catch (error) {
-    console.error('Error fetching email log:', error)
-    
+    console.error("Error fetching email log:", error);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
-    )
+    );
   }
 }

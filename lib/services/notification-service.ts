@@ -1,6 +1,8 @@
-import { connectToDatabase } from '@/lib/db/mongodb';
-import { sendEmail } from './email-service';
-import { ObjectId } from 'mongodb';
+import { connectToDatabase } from "@/lib/db/mongodb";
+import { sendEmail } from "./email-service";
+import { ObjectId } from "mongodb";
+import { User } from "@/src/models";
+import { Notification } from "@/src/models/Notification";
 
 export interface Notification {
   _id?: string;
@@ -27,10 +29,10 @@ export interface NotificationTemplate {
 
 const templates: Record<string, (data: any) => NotificationTemplate> = {
   welcome: (data: { name: string }) => ({
-    title: 'Welcome to CareerBox',
+    title: "Welcome to CareerBox",
     message: `Welcome ${data.name}! We're excited to have you on board.`,
     email: {
-      subject: 'Welcome to CareerBox',
+      subject: "Welcome to CareerBox",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Welcome to CareerBox!</h2>
@@ -48,11 +50,11 @@ const templates: Record<string, (data: any) => NotificationTemplate> = {
     },
   }),
 
-  profile_update: (data: { name: string, field: string }) => ({
-    title: 'Profile Updated',
+  profile_update: (data: { name: string; field: string }) => ({
+    title: "Profile Updated",
     message: `Your ${data.field} has been updated successfully.`,
     email: {
-      subject: 'Profile Update Confirmation',
+      subject: "Profile Update Confirmation",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Profile Update</h2>
@@ -70,11 +72,11 @@ const templates: Record<string, (data: any) => NotificationTemplate> = {
     },
   }),
 
-  new_message: (data: { name: string, sender: string, message: string }) => ({
-    title: 'New Message',
+  new_message: (data: { name: string; sender: string; message: string }) => ({
+    title: "New Message",
     message: `You have a new message from ${data.sender}`,
     email: {
-      subject: 'New Message on CareerBox',
+      subject: "New Message on CareerBox",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>New Message</h2>
@@ -95,7 +97,7 @@ const templates: Record<string, (data: any) => NotificationTemplate> = {
     },
   }),
 
-  admin_alert: (data: { title: string, message: string }) => ({
+  admin_alert: (data: { title: string; message: string }) => ({
     title: data.title,
     message: data.message,
     email: {
@@ -131,10 +133,10 @@ export async function sendNotification(
 ) {
   try {
     const db = await connectToDatabase();
-    const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
-    
+    const user = await User.findOne({ _id: new ObjectId(userId) });
+
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Get notification template
@@ -156,7 +158,7 @@ export async function sendNotification(
 
     // Save notification to database if in-app notification is enabled
     if (options.inApp) {
-      await db.collection('notifications').insertOne(notification);
+      await Notification.insertOne(notification);
     }
 
     // Send email if enabled
@@ -175,32 +177,33 @@ export async function sendNotification(
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to send notification:', error);
+    console.error("Failed to send notification:", error);
     return { success: false, error };
   }
 }
 
-export async function getNotifications(userId: string, options: {
-  unreadOnly?: boolean;
-  limit?: number;
-  offset?: number;
-} = {}) {
+export async function getNotifications(
+  userId: string,
+  options: {
+    unreadOnly?: boolean;
+    limit?: number;
+    offset?: number;
+  } = {}
+) {
   try {
     const db = await connectToDatabase();
-    
+
     const query = {
       userId,
       ...(options.unreadOnly ? { read: false } : {}),
     };
 
-    const notifications = await db.collection('notifications')
-      .find(query)
+    const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
       .skip(options.offset || 0)
-      .limit(options.limit || 10)
-      .toArray();
+      .limit(options.limit || 10);
 
-    const total = await db.collection('notifications').countDocuments(query);
+    const total = await Notification.countDocuments(query);
 
     return {
       success: true,
@@ -208,7 +211,7 @@ export async function getNotifications(userId: string, options: {
       total,
     };
   } catch (error) {
-    console.error('Failed to get notifications:', error);
+    console.error("Failed to get notifications:", error);
     return { success: false, error };
   }
 }
@@ -216,77 +219,75 @@ export async function getNotifications(userId: string, options: {
 export async function markNotificationAsRead(notificationId: string) {
   try {
     const db = await connectToDatabase();
-    
-    await db.collection('notifications').updateOne(
+
+    await Notification.updateOne(
       { _id: new ObjectId(notificationId) },
       { $set: { read: true } }
     );
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to mark notification as read:', error);
+    console.error("Failed to mark notification as read:", error);
     return { success: false, error };
   }
 }
 
 export async function markAllNotificationsAsRead(userId: string) {
   try {
-    const db = await connectToDatabase();
-    
-    await db.collection('notifications').updateMany(
+    await Notification.updateMany(
       { userId, read: false },
       { $set: { read: true } }
     );
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to mark all notifications as read:', error);
+    console.error("Failed to mark all notifications as read:", error);
     return { success: false, error };
   }
 }
 
 export async function deleteNotification(notificationId: string) {
   try {
-    const db = await connectToDatabase();
-    
-    await db.collection('notifications').deleteOne({
+    await Notification.deleteOne({
       _id: new ObjectId(notificationId),
     });
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to delete notification:', error);
+    console.error("Failed to delete notification:", error);
     return { success: false, error };
   }
 }
 
 export async function deleteAllNotifications(userId: string) {
   try {
-    const db = await connectToDatabase();
-    
-    await db.collection('notifications').deleteMany({ userId });
+    await Notification.deleteMany({ userId });
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to delete all notifications:', error);
+    console.error("Failed to delete all notifications:", error);
     return { success: false, error };
   }
 }
 
-export async function updateNotificationPreferences(userId: string, preferences: {
-  email?: boolean;
-  push?: boolean;
-  inApp?: boolean;
-  types?: Record<string, {
+export async function updateNotificationPreferences(
+  userId: string,
+  preferences: {
     email?: boolean;
     push?: boolean;
     inApp?: boolean;
-  }>;
-}) {
+    types?: Record<
+      string,
+      {
+        email?: boolean;
+        push?: boolean;
+        inApp?: boolean;
+      }
+    >;
+  }
+) {
   try {
-    const db = await connectToDatabase();
-    
-    await db.collection('users').updateOne(
+    await User.updateOne(
       { _id: new ObjectId(userId) },
       {
         $set: {
@@ -297,7 +298,7 @@ export async function updateNotificationPreferences(userId: string, preferences:
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to update notification preferences:', error);
+    console.error("Failed to update notification preferences:", error);
     return { success: false, error };
   }
 }
@@ -305,8 +306,8 @@ export async function updateNotificationPreferences(userId: string, preferences:
 export async function getNotificationPreferences(userId: string) {
   try {
     const db = await connectToDatabase();
-    
-    const user = await db.collection('users').findOne(
+
+    const user = await User.findOne(
       { _id: new ObjectId(userId) },
       { projection: { notificationPreferences: 1 } }
     );
@@ -320,7 +321,7 @@ export async function getNotificationPreferences(userId: string) {
       },
     };
   } catch (error) {
-    console.error('Failed to get notification preferences:', error);
+    console.error("Failed to get notification preferences:", error);
     return { success: false, error };
   }
 }

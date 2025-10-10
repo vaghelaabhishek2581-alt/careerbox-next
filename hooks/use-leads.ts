@@ -20,14 +20,14 @@ export const useLeads = () => {
   } = useSelector((state: RootState) => state.leads)
 
   const getLeads = useCallback((params?: { page?: number; limit?: number; type?: string; status?: string }) => {
-    dispatch(fetchLeads(params))
+    dispatch(fetchLeads(params || {}))
   }, [dispatch])
 
   const createNewLead = useCallback((leadData: any) => {
     return dispatch(createLead(leadData))
   }, [dispatch])
 
-  const updateLeadStatusAction = useCallback((leadId: string, status: string, notes?: string) => {
+  const updateLeadStatusAction = useCallback((leadId: string, status: 'rejected' | 'contacted' | 'converted', notes?: string) => {
     return dispatch(updateLeadStatus({ leadId, status, notes }))
   }, [dispatch])
 

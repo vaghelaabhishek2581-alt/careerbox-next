@@ -97,7 +97,11 @@ export async function getSystemHealth(): Promise<SystemHealth> {
   }
 }
 
-async function checkPaymentGatewayStatus() {
+async function checkPaymentGatewayStatus(): Promise<{
+  razorpay: 'healthy' | 'degraded' | 'down'
+  payu: 'healthy' | 'degraded' | 'down'
+  successRate: number
+}> {
   try {
     // Test Razorpay connection
     const razorpayStatus = await testRazorpayConnection();
@@ -112,7 +116,7 @@ async function checkPaymentGatewayStatus() {
     const successRate = totalPayments > 0 ? (successfulPayments / totalPayments) * 100 : 100;
     
     return {
-      razorpay: razorpayStatus,
+      razorpay: razorpayStatus as 'healthy' | 'degraded' | 'down',
       payu: payuStatus as 'healthy' | 'degraded' | 'down',
       successRate: Math.round(successRate * 100) / 100
     };

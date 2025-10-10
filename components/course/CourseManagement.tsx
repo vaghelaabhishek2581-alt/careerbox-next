@@ -30,9 +30,10 @@ import {
   BarChart3
 } from "lucide-react";
 import { useCourses } from "@/hooks/use-courses";
+import CourseCreationForm from "@/components/forms/CourseCreationForm";
 
 export default function CourseManagement() {
-  const { courses, isLoading, createCourse, updateCourse, deleteCourse } = useCourses();
+  const { courses, loading, createCourse, updateCourse, deleteCourse } = useCourses();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -46,7 +47,7 @@ export default function CourseManagement() {
   const filteredCourses = courses?.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          course.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory || course.courseType === selectedCategory;
     return matchesSearch && matchesCategory;
   }) || [];
 
@@ -237,7 +238,7 @@ export default function CourseManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredCourses.map((course) => (
-                    <TableRow key={course.id}>
+                    <TableRow key={course._id}>
                       <TableCell>
                         <div>
                           <div className="font-medium">{course.title}</div>
@@ -247,7 +248,7 @@ export default function CourseManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{course.category}</Badge>
+                        <Badge variant="outline">{course.category || course.courseType || 'N/A'}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -258,7 +259,7 @@ export default function CourseManagement() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4 text-muted-foreground" />
-                          {course.enrolledStudents || 0}
+                          {course.enrollmentCount || 0}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -268,8 +269,8 @@ export default function CourseManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={course.status === 'active' ? 'default' : 'secondary'}>
-                          {course.status}
+                        <Badge variant={course.isPublished ? 'default' : 'secondary'}>
+                          {course.isPublished ? 'Published' : 'Draft'}
                         </Badge>
                       </TableCell>
                       <TableCell>

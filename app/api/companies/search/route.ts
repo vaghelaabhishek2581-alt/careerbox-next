@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import clientPromise from '../../../db'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
+import { connectToDatabase } from '@/lib/db/mongodb'
 
 /**
  * @swagger
@@ -29,8 +29,8 @@ import clientPromise from '../../../db'
  */
 export async function GET (request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser(request)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -42,8 +42,7 @@ export async function GET (request: NextRequest) {
       return NextResponse.json({ companies: [] })
     }
 
-    const client = await clientPromise
-    const db = client.db()
+    const { db } = await connectToDatabase()
 
     const companies = await db
       .collection('companies')

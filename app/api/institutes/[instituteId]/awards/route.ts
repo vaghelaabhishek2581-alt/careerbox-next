@@ -77,21 +77,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inst
       return NextResponse.json({ error: 'Access denied. Only admins and institute owners can access this resource.' }, { status: 403 })
     }
 
-    let awards = institute.awards || []
+    let awards = (institute.awards || []) as any[]
 
     // Apply filters
     if (category) {
-      awards = awards.filter(award => award.category === category)
+      awards = awards.filter((award: any) => award.category === category)
     }
     if (year) {
-      awards = awards.filter(award => award.year === parseInt(year))
+      awards = awards.filter((award: any) => award.year === parseInt(year))
     }
     if (featured === 'true') {
-      awards = awards.filter(award => award.isFeatured)
+      awards = awards.filter((award: any) => award.isFeatured)
     }
 
     // Sort by featured first, then by year (newest first), then by creation date
-    awards.sort((a, b) => {
+    awards.sort((a: any, b: any) => {
       if (a.isFeatured && !b.isFeatured) return -1
       if (!a.isFeatured && b.isFeatured) return 1
       if (a.year !== b.year) return b.year - a.year

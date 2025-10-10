@@ -51,6 +51,10 @@ const courseFormSchema = z.object({
 
 type CourseFormValues = z.infer<typeof courseFormSchema>
 
+interface CourseCreationFormProps {
+  onSuccess?: () => void;
+}
+
 const categories = [
   'Computer Science',
   'Business Administration',
@@ -83,7 +87,7 @@ const lessonTypes = [
   { value: 'assignment', label: 'Assignment' },
 ]
 
-export default function CourseCreationForm() {
+export default function CourseCreationForm({ onSuccess }: CourseCreationFormProps) {
   const dispatch = useDispatch<AppDispatch>()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -187,7 +191,13 @@ export default function CourseCreationForm() {
         registrationDeadline: new Date(data.registrationDeadline).toISOString(),
       }
       await dispatch(createCourse(courseData)).unwrap()
-      router.push('/dashboard/institute/courses')
+      
+      // Call onSuccess callback if provided, otherwise navigate to courses page
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        router.push('/dashboard/institute/courses')
+      }
     } catch (error) {
       console.error('Failed to create course:', error)
     } finally {

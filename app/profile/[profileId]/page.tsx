@@ -2,40 +2,41 @@ import { Suspense } from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ProfileView from '@/components/profile/ProfileView'
-import { connectDB } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { Profile, Institute, Business } from '@/src/models'
 
 interface ProfilePageProps {
-  params: {
+  params: Promise<{
     profileId: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
-  const { profileId } = params
+  const { profileId } = await params
   
   try {
-    const db = await connectDB()
+    await connectToDatabase()
     
     // Try to find user profile
-    let profile = await db.collection('users').findOne({
+    let profile: any = await Profile.findOne({
       'personalDetails.publicProfileId': profileId,
       status: 'active'
-    })
+    }).lean().exec()
 
     if (!profile) {
       // Try business profile
-      profile = await db.collection('businesses').findOne({
+      profile = await Business.findOne({
         publicProfileId: profileId,
         status: 'active'
-      })
+      }).lean().exec()
     }
 
     if (!profile) {
       // Try institute profile
-      profile = await db.collection('institutes').findOne({
+      profile = await Institute.findOne({
         publicProfileId: profileId,
         status: 'active'
-      })
+      }).lean().exec()
     }
 
     if (!profile) {
@@ -45,8 +46,8 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       }
     }
 
-    const name = profile.name || profile.companyName || profile.instituteName
-    const description = profile.bio || profile.description || `View ${name}'s profile on CareerBox`
+    const name = profile?.name || profile?.companyName || profile?.instituteName || 'Unknown'
+    const description = profile?.bio || profile?.description || `View ${name}'s profile on CareerBox`
 
     return {
       title: `${name} | CareerBox`,
@@ -54,13 +55,13 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       openGraph: {
         title: `${name} | CareerBox`,
         description,
-        images: profile.profileImage || profile.logo ? [profile.profileImage || profile.logo] : undefined,
+        images: profile?.profileImage || profile?.logo ? [profile.profileImage || profile.logo] : undefined,
       },
       twitter: {
         card: 'summary_large_image',
         title: `${name} | CareerBox`,
         description,
-        images: profile.profileImage || profile.logo ? [profile.profileImage || profile.logo] : undefined,
+        images: profile?.profileImage || profile?.logo ? [profile.profileImage || profile.logo] : undefined,
       }
     }
   } catch (error) {
@@ -72,8 +73,8 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
   }
 }
 
-export default function ProfilePage({ params }: ProfilePageProps) {
-  const { profileId } = params
+export default async function ProfilePage({ params }: ProfilePageProps) {
+  const { profileId } = await params
 
   return (
     <div className="min-h-screen bg-background">

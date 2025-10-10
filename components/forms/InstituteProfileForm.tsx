@@ -129,7 +129,13 @@ export default function InstituteProfileForm() {
   const onSubmit = async (data: InstituteFormValues) => {
     setIsSubmitting(true)
     try {
-      await dispatch(createInstitute(data)).unwrap()
+      const instituteData = {
+        ...data,
+        establishedYear: data.establishedYear ? Number(data.establishedYear) : undefined,
+        studentCount: data.studentCount ? Number(data.studentCount) : undefined,
+        facultyCount: data.facultyCount ? Number(data.facultyCount) : undefined,
+      }
+      await dispatch(createInstitute(instituteData)).unwrap()
       router.push('/dashboard/institute')
     } catch (error) {
       console.error('Failed to create institute profile:', error)

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { Institute as InstituteModel } from '@/src/models'
 import { Institute, CreateInstituteRequest } from '@/lib/types/institute.types'
@@ -9,10 +8,12 @@ import { ApiResponse, PaginatedResponse } from '@/lib/types/api.types'
 // GET /api/institutes - Fetch institutes
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const authResult = await getAuthenticatedUser(req)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    const { userId } = authResult
 
     const { searchParams } = new URL(req.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
       .lean()
 
     const response: PaginatedResponse<Institute> = {
-      data: institutes,
+      data: institutes as unknown as Institute[],
       total,
       page,
       limit,
@@ -56,23 +57,25 @@ export async function GET(req: NextRequest) {
 // POST /api/institutes - Create a new institute
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const authResult = await getAuthenticatedUser(req)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    const { userId } = authResult
 
     const instituteData: CreateInstituteRequest = await req.json()
     await connectToDatabase()
 
     // Check if user already has an institute
-    const existingInstitute = await InstituteModel.findOne({ userId: session.user.id })
+    const existingInstitute = await InstituteModel.findOne({ userId })
     if (existingInstitute) {
       return NextResponse.json({ error: 'User already has an institute profile' }, { status: 400 })
     }
 
     // Create institute
     const institute = new InstituteModel({
-      userId: session.user.id,
+      userId,
       instituteName: instituteData.instituteName,
       type: instituteData.type,
       accreditation: instituteData.accreditation,

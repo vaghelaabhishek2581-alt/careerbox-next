@@ -5,7 +5,7 @@ import { fetchJobs } from '@/lib/redux/slices/jobSlice'
 import { fetchCourses } from '@/lib/redux/slices/courseSlice'
 import { fetchExams } from '@/lib/redux/slices/examSlice'
 import { fetchInstitutes } from '@/lib/redux/slices/instituteSlice'
-import { fetchMyApplications } from '@/lib/redux/slices/applicationSlice'
+import { fetchApplications } from '@/lib/redux/slices/applicationSlice'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,11 +27,11 @@ export default function PublicDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    dispatch(fetchJobs())
-    dispatch(fetchCourses())
-    dispatch(fetchExams())
-    dispatch(fetchInstitutes())
-    dispatch(fetchMyApplications())
+    dispatch(fetchJobs({}))
+    dispatch(fetchCourses({}))
+    dispatch(fetchExams({}))
+    dispatch(fetchInstitutes({}))
+    dispatch(fetchApplications({}))
   }, [dispatch])
 
   const filteredJobs = jobs.filter(job => 
@@ -43,7 +43,7 @@ export default function PublicDashboard() {
   const filteredCourses = courses.filter(course => 
     course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.category.toLowerCase().includes(searchQuery.toLowerCase())
+    course.category?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const filteredExams = exams.filter(exam => 
@@ -176,10 +176,12 @@ export default function PublicDashboard() {
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">
-                        <DollarSign className="h-3 w-3 mr-1" />
-                        {job.salaryRange.min} - {job.salaryRange.max} {job.salaryRange.currency}
-                      </Badge>
+                      {job.salaryRange && (
+                        <Badge variant="outline">
+                          <DollarSign className="h-3 w-3 mr-1" />
+                          {job.salaryRange.min} - {job.salaryRange.max} {job.salaryRange.currency}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -189,33 +191,35 @@ export default function PublicDashboard() {
                   </p>
                   <div className="flex items-center justify-between">
                     <div className="flex flex-wrap gap-1">
-                      {job.skills.slice(0, 3).map((skill) => (
+                      {job.skills?.slice(0, 3).map((skill: string) => (
                         <Badge key={skill} variant="secondary" className="text-xs">
                           {skill}
                         </Badge>
                       ))}
-                      {job.skills.length > 3 && (
+                      {job.skills && job.skills.length > 3 && (
                         <Badge variant="secondary" className="text-xs">
                           +{job.skills.length - 3} more
                         </Badge>
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Link href={`/dashboard/user/jobs/${job.id}`}>
+                      <Link href={`/dashboard/user/jobs/${job.id || job._id}`}>
                         <Button variant="outline" size="sm">
                           View Details
                         </Button>
                       </Link>
-                      <Link href={`/dashboard/user/jobs/${job.id}/apply`}>
+                      <Link href={`/dashboard/user/jobs/${job.id || job._id}/apply`}>
                         <Button size="sm">
                           Apply Now
                         </Button>
                       </Link>
                     </div>
                   </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Application deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
-                  </div>
+                  {job.applicationDeadline && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Application deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -271,26 +275,28 @@ export default function PublicDashboard() {
                   </p>
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
-                      <span>Instructor: {course.instructor.name}</span>
+                      <span>Instructor: {typeof course.instructor === 'string' ? course.instructor : course.instructor?.name || 'N/A'}</span>
                       <span className="mx-2">•</span>
-                      <span>{course.currentEnrollments}/{course.maxStudents} enrolled</span>
+                      <span>{course.currentEnrollments || 0}/{course.maxStudents} enrolled</span>
                     </div>
                     <div className="flex gap-2">
-                      <Link href={`/dashboard/user/courses/${course.id}`}>
+                      <Link href={`/dashboard/user/courses/${course.id || course._id}`}>
                         <Button variant="outline" size="sm">
                           View Details
                         </Button>
                       </Link>
-                      <Link href={`/dashboard/user/courses/${course.id}/apply`}>
+                      <Link href={`/dashboard/user/courses/${course.id || course._id}/apply`}>
                         <Button size="sm">
                           Apply Now
                         </Button>
                       </Link>
                     </div>
                   </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Registration deadline: {new Date(course.registrationDeadline).toLocaleDateString()}
-                  </div>
+                  {course.registrationDeadline && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Registration deadline: {new Date(course.registrationDeadline).toLocaleDateString()}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -428,13 +434,13 @@ export default function PublicDashboard() {
           </div>
           <div className="grid gap-4">
             {recentApplications.map((application) => (
-              <Card key={application.id}>
+              <Card key={application.id || application._id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-lg capitalize">{application.type} Application</CardTitle>
                       <CardDescription>
-                        Applied on {new Date(application.appliedAt).toLocaleDateString()}
+                        Applied on {new Date(application.appliedAt || application.submittedAt).toLocaleDateString()}
                       </CardDescription>
                     </div>
                     <Badge variant={
@@ -451,7 +457,7 @@ export default function PublicDashboard() {
                     <div className="text-sm text-muted-foreground">
                       Target ID: {application.targetId}
                     </div>
-                    <Link href={`/dashboard/user/applications/${application.id}`}>
+                    <Link href={`/dashboard/user/applications/${application.id || application._id}`}>
                       <Button variant="outline" size="sm">
                         View Details
                       </Button>

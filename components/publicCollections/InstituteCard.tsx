@@ -63,12 +63,19 @@ export function InstituteCard({
   }
 
   const getPlacementData = () => {
-    const latestYear = Object.keys(institute.placements).find(key => key !== 'sectors')
-    if (latestYear && institute.placements[latestYear]) {
-      const data = institute.placements[latestYear]
-      // Type guard to ensure we get PlacementData, not string[]
-      if (typeof data === 'object' && !Array.isArray(data) && 'averageSalary' in data) {
-        return data
+    // Check if placements data exists and has the expected structure
+    if (institute.placements) {
+      // Handle both old and new placement data structures
+      if ('averageSalary' in institute.placements) {
+        return institute.placements
+      }
+      // Legacy structure - get latest year
+      const latestYear = Object.keys(institute.placements).find(key => key !== 'sectors')
+      if (latestYear && institute.placements[latestYear]) {
+        const data = institute.placements[latestYear]
+        if (typeof data === 'object' && !Array.isArray(data) && 'averageSalary' in data) {
+          return data
+        }
       }
     }
     return null
@@ -100,7 +107,7 @@ export function InstituteCard({
             <div className="text-right">
               <div className="text-sm text-gray-600">Est. {institute.establishedYear}</div>
               <div className="text-sm font-medium text-green-600">
-                {getPlacementData()?.averageSalary || 'N/A'} Avg Package
+                {getPlacementData()?.averageSalary ? `₹${getPlacementData()?.averageSalary.toLocaleString()}` : 'N/A'} Avg Package
               </div>
             </div>
           </div>
@@ -167,15 +174,21 @@ export function InstituteCard({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Users className="h-4 w-4" />
-                <span>{institute.academics.totalStudents.toLocaleString()} Students</span>
+                <span>
+                  {institute.academics?.totalStudents 
+                    ? typeof institute.academics.totalStudents === 'number' 
+                      ? institute.academics.totalStudents.toLocaleString() 
+                      : institute.academics.totalStudents
+                    : 'N/A'} Students
+                </span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <GraduationCap className="h-4 w-4" />
-                <span>{institute.academics.totalPrograms} Programs</span>
+                <span>{institute.academics?.totalPrograms || 'N/A'} Programs</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <BookOpen className="h-4 w-4" />
-                <span>Ratio {institute.academics.studentFacultyRatio}</span>
+                <span>Ratio {institute.academics?.studentFacultyRatio || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -189,19 +202,41 @@ export function InstituteCard({
               </h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <div className="font-medium text-green-600">{placementData.averageSalary}</div>
+                  <div className="font-medium text-green-600">
+                    {typeof placementData.averageSalary === 'number' 
+                      ? `₹${placementData.averageSalary.toLocaleString()}` 
+                      : typeof placementData.averageSalary === 'string' 
+                        ? placementData.averageSalary 
+                        : 'N/A'}
+                  </div>
                   <div className="text-gray-600">Average Package</div>
                 </div>
                 <div>
-                  <div className="font-medium text-blue-600">{placementData.highestSalary}</div>
+                  <div className="font-medium text-blue-600">
+                    {typeof placementData.highestSalary === 'number' 
+                      ? `₹${placementData.highestSalary.toLocaleString()}` 
+                      : typeof placementData.highestSalary === 'string' 
+                        ? placementData.highestSalary 
+                        : 'N/A'}
+                  </div>
                   <div className="text-gray-600">Highest Package</div>
                 </div>
                 <div>
-                  <div className="font-medium text-purple-600">{placementData.overallPlacementRate}</div>
+                  <div className="font-medium text-purple-600">
+                    {typeof placementData.overallPlacementRate === 'string' 
+                      ? placementData.overallPlacementRate 
+                      : typeof placementData.overallPlacementRate === 'number' 
+                        ? `${placementData.overallPlacementRate}%` 
+                        : 'N/A'}
+                  </div>
                   <div className="text-gray-600">Placement Rate</div>
                 </div>
                 <div>
-                  <div className="font-medium text-orange-600">{placementData.companiesVisited}</div>
+                  <div className="font-medium text-orange-600">
+                    {typeof placementData.companiesVisited === 'number' 
+                      ? placementData.companiesVisited.toString() 
+                      : placementData.companiesVisited || 'N/A'}
+                  </div>
                   <div className="text-gray-600">Companies</div>
                 </div>
               </div>
@@ -209,11 +244,11 @@ export function InstituteCard({
           )}
 
           {/* Top Recruiters */}
-          {placementData?.topRecruiters && (
+          {placementData?.topRecruiters && Array.isArray(placementData.topRecruiters) && (
             <div className="mb-4">
               <h4 className="font-semibold text-gray-900 mb-2 text-sm">Top Recruiters</h4>
               <div className="flex flex-wrap gap-2">
-                {placementData.topRecruiters.slice(0, 6).map((recruiter, index) => (
+                {placementData.topRecruiters.slice(0, 6).map((recruiter: string, index: number) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {recruiter}
                   </Badge>
@@ -311,11 +346,17 @@ export function InstituteCard({
         <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
           <div className="flex items-center gap-2 text-gray-600">
             <Users className="h-4 w-4" />
-            <span>{institute.academics.totalStudents.toLocaleString()} Students</span>
+            <span>
+              {institute.academics?.totalStudents 
+                ? typeof institute.academics.totalStudents === 'number' 
+                  ? institute.academics.totalStudents.toLocaleString() 
+                  : institute.academics.totalStudents
+                : 'N/A'} Students
+            </span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
             <GraduationCap className="h-4 w-4" />
-            <span>{institute.academics.totalPrograms} Programs</span>
+            <span>{institute.academics?.totalPrograms || 'N/A'} Programs</span>
           </div>
         </div>
 
@@ -323,11 +364,23 @@ export function InstituteCard({
           <div className="bg-gray-50 rounded-lg p-3 mb-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <div className="font-medium text-green-600">{placementData.averageSalary}</div>
+                <div className="font-medium text-green-600">
+                  {typeof placementData.averageSalary === 'number' 
+                    ? `₹${placementData.averageSalary.toLocaleString()}` 
+                    : typeof placementData.averageSalary === 'string' 
+                      ? placementData.averageSalary 
+                      : 'N/A'}
+                </div>
                 <div className="text-gray-600">Average Package</div>
               </div>
               <div>
-                <div className="font-medium text-blue-600">{placementData.overallPlacementRate}</div>
+                <div className="font-medium text-blue-600">
+                  {typeof placementData.overallPlacementRate === 'string' 
+                    ? placementData.overallPlacementRate 
+                    : typeof placementData.overallPlacementRate === 'number' 
+                      ? `${placementData.overallPlacementRate}%` 
+                      : 'N/A'}
+                </div>
                 <div className="text-gray-600">Placement Rate</div>
               </div>
             </div>

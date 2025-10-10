@@ -6,7 +6,7 @@ import apiClient from '@/lib/api/client'
 
 export default function DebugSessionPage() {
   const { data: session, status } = useSession()
-  const [debugData, setDebugData] = useState(null)
+  const [debugData, setDebugData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
   const fetchDebugData = async () => {

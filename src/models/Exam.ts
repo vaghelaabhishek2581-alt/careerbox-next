@@ -1,5 +1,15 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
+// Exam Question interface
+interface IExamQuestion {
+  id: string
+  type: 'multiple-choice' | 'true-false' | 'short-answer' | 'essay'
+  question: string
+  options?: string[]
+  correctAnswer?: string | number
+  marks: number
+}
+
 // Exam Question Schema
 const ExamQuestionSchema = new Schema({
   id: { type: String, required: true },
@@ -17,18 +27,41 @@ const ExamQuestionSchema = new Schema({
     type: String,
     maxlength: 500
   }],
-  correctAnswer: { type: Schema.Types.Mixed },
+  correctAnswer: Schema.Types.Mixed,
   marks: { 
     type: Number, 
     required: true 
   }
 }, { _id: false })
 
+// Interface for Exam document
+export interface IExam extends Document {
+  _id: mongoose.Types.ObjectId
+  createdBy: mongoose.Types.ObjectId
+  createdByType: 'business' | 'institute'
+  title: string
+  description: string
+  type: 'admission' | 'recruitment' | 'certification'
+  duration: number
+  totalMarks: number
+  passingMarks: number
+  instructions: string[]
+  eligibilityCriteria: string[]
+  examDate: Date
+  registrationDeadline: Date
+  fee: number
+  status: 'draft' | 'active' | 'completed'
+  questions?: IExamQuestion[]
+  registrationsCount: number
+  createdAt: Date
+  updatedAt: Date
+}
+
 // Exam Schema
-const ExamSchema = new Schema({
+const ExamSchema = new Schema<IExam>({
   createdBy: { 
-    type: String, 
-    required: true 
+    type: Schema.Types.ObjectId, 
+    required: true
   }, // businessId or instituteId
   createdByType: { 
     type: String, 
@@ -129,35 +162,4 @@ ExamSchema.pre('save', function(next) {
   next()
 })
 
-// Interface for Exam document
-export interface IExam extends Document {
-  _id: mongoose.Types.ObjectId
-  createdBy: string
-  createdByType: 'business' | 'institute'
-  title: string
-  description: string
-  type: 'admission' | 'recruitment' | 'certification'
-  duration: number
-  totalMarks: number
-  passingMarks: number
-  instructions: string[]
-  eligibilityCriteria: string[]
-  examDate: Date
-  registrationDeadline: Date
-  fee: number
-  status: 'draft' | 'active' | 'completed'
-  questions?: {
-    id: string
-    type: 'multiple-choice' | 'true-false' | 'short-answer' | 'essay'
-    question: string
-    options?: string[]
-    correctAnswer?: string | number
-    marks: number
-  }[]
-  registrationsCount: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-export { IExam }
 export default mongoose.models.Exam || mongoose.model<IExam>('Exam', ExamSchema)

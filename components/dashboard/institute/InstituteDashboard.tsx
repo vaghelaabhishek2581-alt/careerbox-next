@@ -101,7 +101,7 @@ export default function InstituteDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {courses.reduce((sum, course) => sum + course.currentEnrollments, 0)}
+              {courses.reduce((sum, course) => sum + (course.currentEnrollments || 0), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Across all courses
@@ -150,7 +150,7 @@ export default function InstituteDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {courses.slice(0, 3).map((course) => (
-                    <div key={course.id} className="flex items-center justify-between">
+                    <div key={course.id || course._id} className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{course.title}</p>
                         <p className="text-sm text-muted-foreground">{course.category}</p>
@@ -213,7 +213,7 @@ export default function InstituteDashboard() {
           </div>
           <div className="grid gap-4">
             {courses.map((course) => (
-              <Card key={course.id}>
+              <Card key={course.id || course._id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -224,7 +224,7 @@ export default function InstituteDashboard() {
                       <Badge variant={course.status === 'active' ? 'default' : 'secondary'}>
                         {course.status}
                       </Badge>
-                      <Link href={`/dashboard/institute/courses/edit/${course.id}`}>
+                      <Link href={`/dashboard/institute/courses/edit/${course.id || course._id}`}>
                         <Button variant="outline" size="sm">
                           Edit
                         </Button>
@@ -235,9 +235,9 @@ export default function InstituteDashboard() {
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-2">{course.description}</p>
                   <div className="flex items-center gap-4 text-sm">
-                    <span>{course.currentEnrollments}/{course.maxStudents} enrolled</span>
-                    <span>Fee: {course.fee} {course.currency}</span>
-                    <span>Start: {new Date(course.startDate).toLocaleDateString()}</span>
+                    <span>{course.currentEnrollments || 0}/{course.maxStudents} enrolled</span>
+                    <span>Fee: {course.fee} {course.currency || 'INR'}</span>
+                    {course.startDate && <span>Start: {new Date(course.startDate).toLocaleDateString()}</span>}
                   </div>
                 </CardContent>
               </Card>

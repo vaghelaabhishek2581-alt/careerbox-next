@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/lib/redux/store'
 import { fetchAvailablePlans, createSubscription } from '@/lib/redux/slices/subscriptionSlice'
+import { SubscriptionPlan } from '@/lib/types/subscription.types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +16,7 @@ export default function SubscriptionUpgrade() {
   const dispatch = useDispatch<AppDispatch>()
   const router = useRouter()
   const { availablePlans, loading } = useSelector((state: RootState) => state.subscription)
-  const [selectedPlan, setSelectedPlan] = useState('')
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | ''>('')
   const [selectedInterval, setSelectedInterval] = useState<'monthly' | 'yearly'>('monthly')
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,7 +31,7 @@ export default function SubscriptionUpgrade() {
     setIsSubmitting(true)
     try {
       await dispatch(createSubscription({
-        plan: selectedPlan,
+        plan: selectedPlan as SubscriptionPlan,
         interval: selectedInterval,
         paymentMethodId: 'mock_payment_method' // In real implementation, this would come from payment form
       })).unwrap()

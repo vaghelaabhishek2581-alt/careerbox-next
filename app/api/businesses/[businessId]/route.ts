@@ -1,96 +1,116 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
-import { Business, UpdateBusinessRequest } from '@/lib/types/business.types'
-import { ApiResponse } from '@/lib/types/api.types'
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth/unified-auth";
+import { connectToDatabase } from "@/lib/db/mongodb";
+import { IBusiness, UpdateBusinessRequest } from "@/lib/types/business.types";
+import { ApiResponse } from "@/lib/types/api.types";
+import { Business } from "@/src/models";
 
 // GET /api/businesses/[businessId] - Fetch business by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { businessId: string } }
+  context: { params: Promise<{ businessId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await getAuthenticatedUser(req);
+    if (!authResult) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { businessId } = params
-    const db = await connectDB()
-    const businessesCollection = db.collection('businesses')
+    const { businessId } = await context.params;
+    await connectToDatabase();
 
-    const business = await businessesCollection.findOne({ id: businessId })
+    const businessDoc = await Business.findById(businessId).lean().exec();
 
-    if (!business) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    if (!businessDoc) {
+      return NextResponse.json(
+        { error: "Business not found" },
+        { status: 404 }
+      );
     }
 
-    const response: ApiResponse<Business> = {
+    // Type assertion for lean document
+    const business = businessDoc as unknown as IBusiness;
+
+    const response: ApiResponse<IBusiness> = {
       success: true,
-      data: business
-    }
+      data: business,
+    };
 
-    return NextResponse.json(response)
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Error fetching business:', error)
+    console.error("Error fetching business:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch business' },
+      { error: "Failed to fetch business" },
       { status: 500 }
-    )
+    );
   }
 }
 
 // PUT /api/businesses/[businessId] - Update business
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { businessId: string } }
+  context: { params: Promise<{ businessId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await getAuthenticatedUser(req);
+
+    if (!authResult) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { businessId } = params
-    const updateData: UpdateBusinessRequest = await req.json()
-    const db = await connectDB()
-    const businessesCollection = db.collection('businesses')
+    const { businessId } = await context.params;
+    const updateData: UpdateBusinessRequest = await req.json();
+    await connectToDatabase();
 
-    const business = await businessesCollection.findOne({ id: businessId })
+    const business = await Business.findById(businessId);
 
     if (!business) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: "Business not found" },
+        { status: 404 }
+      );
     }
 
     // Check if user can update this business
-    if (session.user.role !== 'admin' && business.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const { userId, user } = authResult;
+    if (
+      !user?.roles?.includes("admin") &&
+      business.userId.toString() !== userId
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updatedBusiness = {
-      ...business,
-      ...updateData,
-      updatedAt: new Date()
+    const updatedBusinessDoc = await Business.findByIdAndUpdate(
+      businessId,
+      {
+        ...updateData,
+        updatedAt: new Date(),
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedBusinessDoc) {
+      return NextResponse.json(
+        { error: "Failed to update business" },
+        { status: 500 }
+      );
     }
 
-    await businessesCollection.updateOne(
-      { id: businessId },
-      { $set: updatedBusiness }
-    )
+    // Type assertion for updated document
+    const updatedBusiness = updatedBusinessDoc as unknown as IBusiness;
 
-    const response: ApiResponse<Business> = {
+    const response: ApiResponse<IBusiness> = {
       success: true,
       data: updatedBusiness,
-      message: 'Business updated successfully'
-    }
+      message: "Business updated successfully",
+    };
 
-    return NextResponse.json(response)
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Error updating business:', error)
+    console.error("Error updating business:", error);
     return NextResponse.json(
-      { error: 'Failed to update business' },
+      { error: "Failed to update business" },
       { status: 500 }
-    )
+    );
   }
 }

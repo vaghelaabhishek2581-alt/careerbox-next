@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node --import tsx server.mts",
     "build": "next build",
-    "start": "NODE_ENV=production node --import tsx server.mts",
+    "start": "set NODE_ENV=production&& node --import tsx server.mts",
     "lint": "next lint"
   },
   "dependencies": {

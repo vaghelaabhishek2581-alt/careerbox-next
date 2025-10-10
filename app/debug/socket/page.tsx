@@ -1,5 +1,11 @@
-import { Suspense } from 'react'
-import SocketDebugger from '@/components/debug/SocketDebugger'
+'use client'
+
+import dynamic from 'next/dynamic'
+
+const SocketDebugger = dynamic(() => import('@/components/debug/SocketDebugger'), {
+  ssr: false,
+  loading: () => <div className="p-4">Loading debugger...</div>
+})
 
 export default function SocketDebugPage() {
   return (
@@ -12,9 +18,7 @@ export default function SocketDebugPage() {
           </p>
         </div>
         
-        <Suspense fallback={<div>Loading debugger...</div>}>
-          <SocketDebugger />
-        </Suspense>
+        <SocketDebugger />
       </div>
     </div>
   )

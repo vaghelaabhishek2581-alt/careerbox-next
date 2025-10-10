@@ -59,15 +59,17 @@ export default function AdminLogsPage() {
     setError(null);
 
     try {
-      const response = await API.admin.getActivities({
-        page: pagination.page,
-        limit: pagination.limit,
-        type: filters.type,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        search: filters.search,
-        userId: filters.userId
-      });
+      const response = await API.activity.getActivities(
+        pagination.page,
+        pagination.limit,
+        {
+          type: filters.type,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          search: filters.search,
+          userId: filters.userId
+        }
+      );
 
       if (response.success) {
         setLogs(response.data.activities);

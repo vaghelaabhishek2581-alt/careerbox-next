@@ -4,6 +4,7 @@ import { API } from '@/lib/api/services'
 // Types
 export interface Course {
   _id: string
+  id?: string // Alias for _id for compatibility
   title: string
   description: string
   courseType: string
@@ -21,14 +22,18 @@ export interface Course {
   examsAccepted?: string[]
   eligibilityRequirements?: string[]
   isPublished: boolean
+  status?: 'draft' | 'active' | 'archived' | 'completed'
   syllabus?: string[]
   assessmentMethods?: string[]
   certificationType?: string
   tags?: string[]
   instituteId: string
+  currentEnrollments?: number
+  startDate?: string | Date
+  registrationDeadline?: string | Date
   
   // Optional legacy fields for backward compatibility
-  instructor?: string
+  instructor?: string | { name: string; _id?: string }
   category?: string
   level?: 'beginner' | 'intermediate' | 'advanced'
   price?: number
@@ -106,6 +111,27 @@ export const fetchCourses = createAsyncThunk(
   }
 )
 
+export const searchCourses = createAsyncThunk(
+  'course/searchCourses',
+  async (filters: any, { rejectWithValue }) => {
+    try {
+      const response = await API.courses.getCourses(
+        filters.page || 1,
+        filters.limit || 10,
+        filters
+      )
+
+      if (!response.success) {
+        return rejectWithValue(response.error || 'Failed to search courses')
+      }
+
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to search courses')
+    }
+  }
+)
+
 export const fetchCourseById = createAsyncThunk(
   'course/fetchCourseById',
   async (courseId: string, { rejectWithValue }) => {
@@ -179,13 +205,23 @@ export const applyToCourse = createAsyncThunk(
   async ({ courseId, applicationData }: { courseId: string; applicationData: any }, { rejectWithValue }) => {
     try {
       // TODO: Implement applyToCourse API method
-      const response = { success: true, data: { courseId, applicationData } }
+      const response: { success: boolean; data?: CourseApplication; error?: string } = {
+        success: true,
+        data: {
+          _id: `temp_${Date.now()}`,
+          courseId,
+          userId: 'temp_user',
+          status: 'pending',
+          applicationData,
+          submittedAt: new Date().toISOString()
+        }
+      }
 
       if (!response.success) {
         return rejectWithValue(response.error || 'Failed to apply to course')
       }
 
-      return response.data
+      return response.data!
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to apply to course')
     }
@@ -197,13 +233,16 @@ export const fetchCourseApplications = createAsyncThunk(
   async (courseId: string | undefined, { rejectWithValue }) => {
     try {
       // TODO: Implement getCourseApplications API method
-      const response = { success: true, data: [] }
+      const response: { success: boolean; data?: CourseApplication[]; error?: string } = {
+        success: true,
+        data: []
+      }
 
       if (!response.success) {
         return rejectWithValue(response.error || 'Failed to fetch course applications')
       }
 
-      return response.data
+      return response.data!
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch course applications')
     }
@@ -253,6 +292,32 @@ const courseSlice = createSlice({
       }
     })
     builder.addCase(fetchCourses.rejected, (state, action) => {
+      state.loading = false
+      state.error = action.payload as string
+    })
+
+    // Search courses
+    builder.addCase(searchCourses.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    builder.addCase(searchCourses.fulfilled, (state, action) => {
+      state.loading = false
+      // Handle PaginatedResponse format from API
+      if (action.payload.data) {
+        state.courses = action.payload.data
+        state.pagination = {
+          page: action.payload.page || 1,
+          limit: action.payload.limit || 10,
+          total: action.payload.total || 0,
+          hasMore: action.payload.hasMore || false
+        }
+      } else {
+        // Fallback for direct array response
+        state.courses = Array.isArray(action.payload) ? action.payload : action.payload.courses || []
+      }
+    })
+    builder.addCase(searchCourses.rejected, (state, action) => {
       state.loading = false
       state.error = action.payload as string
     })
@@ -329,7 +394,9 @@ const courseSlice = createSlice({
     })
     builder.addCase(applyToCourse.fulfilled, (state, action) => {
       state.loading = false
-      state.applications.push(action.payload)
+      if (action.payload) {
+        state.applications.push(action.payload)
+      }
     })
     builder.addCase(applyToCourse.rejected, (state, action) => {
       state.loading = false

@@ -4,13 +4,14 @@ import { getInstituteDetails } from "@/lib/actions/institute-recommendations";
 import { InstituteDetailPage } from "@/components/publicCollections/InstituteDetailPage";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const institute = await getInstituteDetails(params.slug);
+  const { slug } = await params;
+  const institute = await getInstituteDetails(slug);
   
   if (!institute) {
     return {
@@ -19,8 +20,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const placementData = Object.keys(institute.placements).find(key => key !== 'sectors');
-  const latestPlacement = placementData ? institute.placements[placementData] : null;
+  // Find the latest placement year or use direct placement data
+  const placementYears = Object.keys(institute.placements).filter(key => 
+    key !== 'sectors' && key !== 'topRecruiters' && !isNaN(Number(key))
+  );
+  const latestYear = placementYears.length > 0 ? 
+    placementYears.sort((a, b) => Number(b) - Number(a))[0] : null;
+  
+  const latestPlacement = latestYear ? 
+    (institute.placements as any)[latestYear] : 
+    // Fallback to direct placement properties if no year-based data
+    {
+      overallPlacementRate: (institute.placements as any).overallPlacementRate || 'N/A',
+      averageSalary: (institute.placements as any).averageSalary || 'N/A',
+      highestSalary: (institute.placements as any).highestSalary || 'N/A',
+      medianSalary: (institute.placements as any).medianSalary || 'N/A',
+      companiesVisited: (institute.placements as any).companiesVisited || 0,
+      totalOffers: (institute.placements as any).totalOffers || 0,
+    };
 
   return {
     title: `${institute.name} - ${institute.location.city} | CareerBox`,
@@ -65,7 +82,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function InstitutePage({ params }: PageProps) {
-  const institute = await getInstituteDetails(params.slug);
+  const { slug } = await params;
+  const institute = await getInstituteDetails(slug);
 
   if (!institute) {
     notFound();
@@ -105,7 +123,7 @@ export default async function InstitutePage({ params }: PageProps) {
     "faculty": institute.academics.totalFaculty,
     "accreditingBody": [
       ...(institute.accreditation.naac ? ["NAAC"] : []),
-      ...(institute.accreditation.aicte?.approved ? ["AICTE"] : []),
+      ...((institute.accreditation as any).aicte?.approved ? ["AICTE"] : []),
       ...(institute.accreditation.ugc ? ["UGC"] : [])
     ],
     "hasCredential": institute.courses.map(course => ({
@@ -124,7 +142,7 @@ export default async function InstitutePage({ params }: PageProps) {
           __html: JSON.stringify(structuredData),
         }}
       />
-      <InstituteDetailPage institute={institute} />
+      <InstituteDetailPage institute={institute as any} />
     </>
   );
 }

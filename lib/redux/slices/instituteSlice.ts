@@ -8,11 +8,33 @@ export interface InstituteData {
   _id: string
   userId: string
   registrationIntentId: string
+  
+  // Basic Information
+  id?: string
   name: string
+  shortName?: string
+  slug?: string
   publicProfileId?: string
+  establishmentYear?: number
+  establishedYear?: number // Alias for establishmentYear
+  type?: 'Public/Government' | 'Private' | 'Deemed' | 'Autonomous' | 'Central University' | 'State University'
+  status: 'Active' | 'Inactive' | 'Suspended' | 'Under Review' | 'active' | 'inactive' | 'suspended' // Support both formats
+  logo?: string
+  coverImage?: string
+  website?: string
+  
+  // Contact Information
   email: string
   contactPerson: string
   phone: string
+  contact?: {
+    phone?: string[]
+    email?: string
+    website?: string
+    admissionsEmail?: string
+  }
+  
+  // Location
   address: {
     street?: string
     city: string
@@ -20,24 +42,223 @@ export interface InstituteData {
     country: string
     zipCode?: string
   }
-  website?: string
-  establishmentYear?: number
+  location?: {
+    address?: string
+    city?: string
+    state?: string
+    pincode?: string
+    country?: string
+    coordinates?: {
+      latitude: number
+      longitude: number
+    }
+    nearbyLandmarks?: string[]
+  }
+  
+  // Overview
   description?: string
-  logo?: string
-  coverImage?: string
-  accreditation: string[]
+  overview?: {
+    description?: string
+    vision?: string
+    mission?: string
+    motto?: string
+    founder?: string
+    chancellor?: string
+    viceChancellor?: string
+  }
+  
+  // Enhanced Accreditation
+  accreditation?: {
+    naac?: {
+      grade?: string
+      category?: string
+      cgpa?: number
+      validUntil?: string
+      cycleNumber?: number
+    }
+    nirf?: {
+      overallRank?: string
+      universityRank?: string
+      managementRank?: string
+      year?: number
+    }
+    ugc?: {
+      recognition?: string
+    }
+  } | string[] // Support both formats
+  
   socialMedia: {
     linkedin?: string
     twitter?: string
     facebook?: string
     instagram?: string
   }
+  
+  // Academic Statistics
   studentCount: number
   facultyCount: number
   courseCount: number
+  totalStudents?: number
+  totalFaculty?: number
+  totalPrograms?: number
+  studentFacultyRatio?: string
+  internationalStudents?: number
   isVerified: boolean
+  
+  // Campus Details
+  campusDetails?: {
+    campusType?: 'Urban' | 'Rural' | 'Suburban'
+    environment?: string
+    facilities?: {
+      academic?: string[]
+      residential?: string[]
+      recreational?: string[]
+      support?: string[]
+    }
+  }
+  
+  // Schools/Departments
+  schools?: {
+    name: string
+    established?: number
+    programs?: string[]
+  }[]
+  
+  // Enhanced Rankings
+  rankings?: {
+    national?: {
+      agency?: string
+      category?: string
+      rank?: string | number
+      year?: number
+    }[]
+    rankingsDescription?: string
+  }
+  
+  // Admissions
+  admissions?: {
+    courseWiseAdmissions?: {
+      name?: string
+      duration?: string
+      courseRating?: number
+      ratingCount?: number
+      totalSeats?: number
+      courseCount?: number
+      fees?: {
+        min?: number
+        max?: number
+      }
+      medianSalary?: {
+        min?: number
+        max?: number
+      }
+      eligibility?: {
+        minXII?: number
+        maxXII?: number
+        minGraduation?: number
+        maxGraduation?: number
+      }
+      courseLevel?: 'UG' | 'PG' | 'Diploma' | 'Certificate'
+      url?: string
+    }[]
+    admissionProcess?: string[]
+    reservationPolicy?: {
+      sc?: string
+      st?: string
+      obc?: string
+      ews?: string
+      pwd?: string
+    }
+  }
+  
+  // Placements
+  placements?: {
+    latestYear?: {
+      overallPlacementRate?: string
+      averageSalary?: string
+      highestSalary?: string
+      medianSalary?: string
+      companiesVisited?: number
+      totalOffers?: number
+    }
+    topRecruiters?: string[]
+    sectors?: string[]
+  }
+  
+  // Research and Innovation
+  researchAndInnovation?: {
+    researchCenters?: number
+    patentsFiled?: number
+    publicationsPerYear?: number
+    researchFunding?: string
+    phdScholars?: number
+    incubationCenter?: {
+      name?: string
+      startupsFunded?: number
+      totalFunding?: string
+    }
+    collaborations?: string[]
+  }
+  
+  // Alumni Network
+  alumniNetwork?: {
+    totalAlumni?: number
+    notableAlumni?: string[]
+    alumniInFortune500?: number
+    entrepreneursCreated?: number
+  }
+  
+  // Media Gallery
+  mediaGallery?: {
+    photos?: any // Object with category keys
+    videos?: {
+      url?: string
+      title?: string
+      thumbnail?: string
+    }[]
+  }
+  
+  // Enhanced Courses
+  courses?: {
+    id?: string
+    name?: string
+    degree?: string
+    school?: string
+    duration?: string
+    level?: string
+    category?: string
+    totalSeats?: number
+    reviewCount?: number
+    questionsCount?: number
+    fees?: {
+      tuitionFee?: number
+      totalFee?: number
+      currency?: string
+    }
+    brochure?: {
+      url?: string
+      year?: number
+    }
+    seoUrl?: string
+    location?: {
+      state?: string
+      city?: string
+      locality?: string
+    }
+    educationType?: string
+    deliveryMethod?: string
+    courseLevel?: string
+    placements?: {
+      averagePackage?: number
+      highestPackage?: number
+      placementRate?: number
+      topRecruiters?: string[]
+    }
+    recognition?: string[]
+    affiliatedUniversity?: string
+  }[]
+  
   subscriptionId?: string
-  status: 'active' | 'inactive' | 'suspended'
   createdAt: Date | string
   updatedAt: Date | string
   city?: string // shortcut for address.city

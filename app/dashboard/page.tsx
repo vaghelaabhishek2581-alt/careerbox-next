@@ -24,6 +24,7 @@ import Link from "next/link";
 import UniversalSearch from "@/components/search/UniversalSearch";
 import RoleDashboard from "@/components/dashboard/RoleDashboard";
 import { SocketDebug } from "@/components/debug/SocketDebug";
+import { ProfileGuard } from "@/components/guards/ProfileGuard";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -63,9 +64,10 @@ export default function DashboardPage() {
 
   // Show enhanced public dashboard with search
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-8">
+    <ProfileGuard>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="space-y-8">
           {/* Welcome Header */}
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold">
@@ -309,6 +311,7 @@ export default function DashboardPage() {
 
       {/* Temporary Socket Debug Component */}
       <SocketDebug />
-    </div>
+      </div>
+    </ProfileGuard>
   );
 }

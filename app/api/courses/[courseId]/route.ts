@@ -7,7 +7,7 @@ import { ApiResponse } from '@/lib/types/api.types'
 // GET /api/courses/[courseId] - Get a specific course
 export async function GET(
   req: NextRequest,
-  { params }: { params: { courseId: string } }
+  context: { params: Promise<{ courseId: string }> }
 ) {
   try {
     const authResult = await getAuthenticatedUser(req)
@@ -15,14 +15,17 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { courseId } = params
+    const { courseId } = await context.params
     await connectToDatabase()
 
-    const course = await CourseModel.findById(courseId).lean()
+    const courseDoc = await CourseModel.findById(courseId).lean().exec()
     
-    if (!course) {
+    if (!courseDoc) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
+
+    // Type assertion for lean document
+    const course = courseDoc as unknown as any
 
     const response: ApiResponse<any> = {
       success: true,
@@ -43,7 +46,7 @@ export async function GET(
 // PUT /api/courses/[courseId] - Update a specific course
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { courseId: string } }
+  context: { params: Promise<{ courseId: string }> }
 ) {
   try {
     const authResult = await getAuthenticatedUser(req)
@@ -58,7 +61,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Institute role required' }, { status: 403 })
     }
 
-    const { courseId } = params
+    const { courseId } = await context.params
     const courseData = await req.json()
     await connectToDatabase()
 
@@ -92,8 +95,8 @@ export async function PUT(
     console.error('Error updating course:', error)
     
     // Handle Mongoose validation errors
-    if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map((err: any) => err.message)
+    if ((error as any)?.name === 'ValidationError') {
+      const validationErrors = Object.values((error as any).errors).map((err: any) => err.message)
       return NextResponse.json(
         {
           error: 'Course validation failed',
@@ -113,7 +116,7 @@ export async function PUT(
 // DELETE /api/courses/[courseId] - Delete a specific course
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { courseId: string } }
+  context: { params: Promise<{ courseId: string }> }
 ) {
   try {
     const authResult = await getAuthenticatedUser(req)
@@ -128,7 +131,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Institute role required' }, { status: 403 })
     }
 
-    const { courseId } = params
+    const { courseId } = await context.params
     await connectToDatabase()
 
     // Find the course and verify ownership

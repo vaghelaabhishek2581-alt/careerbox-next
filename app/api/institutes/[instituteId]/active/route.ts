@@ -5,7 +5,7 @@ import Institute, { IInstitute } from '@/src/models/Institute';
 import { ApiResponse } from '@/lib/types/api.types';
 
 // GET /api/institutes/[instituteId]/active - Get specific institute by ID with authorization
-export async function GET(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     // Get authenticated user
     const authResult = await getAuthenticatedUser(req);
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { instituteId:
     }
 
     const { userId, user } = authResult;
-    const { instituteId } = params;
+    const { instituteId } = await context.params;
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 });

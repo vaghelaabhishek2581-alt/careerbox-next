@@ -56,7 +56,7 @@ const scholarshipSchema = z.object({
 const updateScholarshipSchema = scholarshipSchema.partial()
 
 // GET /api/institutes/[instituteId]/scholarships - Get all scholarships for specific institute
-export async function GET(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const auth = await getAuthenticatedUser(req)
     if (!auth?.userId) {
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest, { params }: { params: { instituteId:
     }
 
     const { userId, user } = auth
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest, { params }: { params: { instituteId:
 }
 
 // POST /api/institutes/[instituteId]/scholarships - Create a new scholarship
-export async function POST(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function POST(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const auth = await getAuthenticatedUser(req)
     if (!auth?.userId) {
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest, { params }: { params: { instituteId
     }
 
     const { userId, user } = auth
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest, { params }: { params: { instituteId
 }
 
 // PATCH /api/institutes/[instituteId]/scholarships - Update a scholarship
-export async function PATCH(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const auth = await getAuthenticatedUser(req)
     if (!auth?.userId) {
@@ -225,7 +225,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { instituteI
     }
 
     const { userId, user } = auth
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
@@ -311,7 +311,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { instituteI
 }
 
 // DELETE /api/institutes/[instituteId]/scholarships - Delete a scholarship
-export async function DELETE(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const auth = await getAuthenticatedUser(req)
     if (!auth?.userId) {
@@ -319,7 +319,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { institute
     }
 
     const { userId, user } = auth
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })

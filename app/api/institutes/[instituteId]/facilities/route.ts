@@ -64,7 +64,7 @@ const facilitySchema = z.object({
 })
 
 // GET - Fetch facilities for specific institute
-export async function GET(request: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const authResult = await getAuthenticatedUser(request)
     if (!authResult) {
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest, { params }: { params: { institut
     }
 
     const { userId, user } = authResult
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest, { params }: { params: { institut
 }
 
 // POST - Create a new facility
-export async function POST(request: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const authResult = await getAuthenticatedUser(request)
     if (!authResult) {
@@ -128,19 +128,24 @@ export async function POST(request: NextRequest, { params }: { params: { institu
     }
 
     const { userId, user } = authResult
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
     }
 
-    const body = await request.json()
+    // Check if user has institute role
+    if (!user?.roles?.includes('institute')) {
+      return NextResponse.json({ error: 'Institute role required' }, { status: 403 })
+    }
 
+    const body = await request.json()
+    
     // Validate input
     const validatedData = facilitySchema.parse(body)
 
     await connectToDatabase()
-
+    
     // Find institute by ID
     const instituteRaw = await Institute.findById(instituteId).lean()
     if (!instituteRaw) {

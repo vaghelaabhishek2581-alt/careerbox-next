@@ -68,16 +68,17 @@ export default function HighlightsManagement() {
     
     try {
       if (editingHighlight) {
-        await dispatch(updateHighlight({
+        dispatch(updateHighlight({
           ...editingHighlight,
           ...formData
-        })).unwrap();
+        }));
+        setIsDialogOpen(false);
+        resetForm();
       } else {
         await dispatch(addHighlight(formData)).unwrap();
+        setIsDialogOpen(false);
+        resetForm();
       }
-      
-      setIsDialogOpen(false);
-      resetForm();
     } catch (error) {
       console.error("Failed to save highlight:", error);
     }

@@ -45,7 +45,7 @@ export const SessionDebug: React.FC = () => {
               <strong>Name:</strong> {session.user.name}
             </div>
             <div>
-              <strong>Role:</strong> {session.user.role || 'user'}
+              <strong>Roles:</strong> {session.user.roles?.join(', ') || 'none'}
             </div>
             <div>
               <strong>Active Role:</strong> {session.user.activeRole || 'none'}
@@ -64,8 +64,8 @@ export const SessionDebug: React.FC = () => {
             </div>
             <div>
               <strong>Email Verified:</strong> 
-              <Badge variant={session.user.emailVerified ? 'default' : 'secondary'} className="ml-1">
-                {session.user.emailVerified ? 'Yes' : 'No'}
+              <Badge variant={(session.user as any).emailVerified ? 'default' : 'secondary'} className="ml-1">
+                {(session.user as any).emailVerified ? 'Yes' : 'No'}
               </Badge>
             </div>
           </>

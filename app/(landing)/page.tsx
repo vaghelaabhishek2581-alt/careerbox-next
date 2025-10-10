@@ -26,7 +26,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {/* Add top padding to account for fixed header */}
-      <div className="pt-20">
+      <div>
         {/* Hero Section */}
         <section className="container mx-auto px-6 py-20">
           <div className="text-center max-w-5xl mx-auto">

@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { cleanupBlacklistedTokens } from '@/lib/utils/cleanup-blacklisted-tokens'
 
 export async function POST(request: NextRequest) {
   try {
     // Check if user is admin
-    const session = await getServerSession(authOptions)
+    const authResult = await getAuthenticatedUser(request)
     
-    if (!session?.user || session.user.role !== 'admin') {
+    if (!authResult) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { user } = authResult
+    if (!user?.roles?.includes('admin')) {
       return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
+        { error: 'Admin access required' },
+        { status: 403 }
       )
     }
 
-    // Clean up blacklisted tokens
+    // Perform cleanup
     const result = await cleanupBlacklistedTokens()
-
+    
     if (!result.success) {
       return NextResponse.json(
         { success: false, message: result.error },

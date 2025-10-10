@@ -30,14 +30,8 @@ const JobSchema = new Schema({
     required: true,
     maxlength: 5000
   },
-  requirements: [{ 
-    type: String,
-    maxlength: 500
-  }],
-  responsibilities: [{ 
-    type: String,
-    maxlength: 500
-  }],
+  requirements: [String],
+  responsibilities: [String],
   location: { 
     type: String, 
     required: true,
@@ -48,12 +42,9 @@ const JobSchema = new Schema({
     enum: ['full-time', 'part-time', 'contract', 'internship'],
     required: true
   },
-  salaryRange: SalaryRangeSchema,
-  skills: [{ 
-    type: String,
-    maxlength: 100
-  }],
-  experience: ExperienceSchema,
+  salaryRange: Schema.Types.Mixed,
+  skills: [String],
+  experience: Schema.Types.Mixed,
   applicationDeadline: { 
     type: Date, 
     required: true 

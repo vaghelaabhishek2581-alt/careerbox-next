@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { Application } from '@/src/models'
 import { ApiResponse } from '@/lib/types/api.types'
@@ -119,10 +118,12 @@ import { ApiResponse } from '@/lib/types/api.types'
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser(request)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    const { userId: currentUserId, user } = authResult
 
     await connectToDatabase()
 
@@ -131,17 +132,17 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const type = searchParams.get('type')
     const status = searchParams.get('status')
-    const userId = searchParams.get('userId')
+    const filterUserId = searchParams.get('userId')
 
     // Build filter object
     const filter: any = {}
 
     // Regular users can only see their own applications
     // Admins can see all applications or filter by userId
-    if (session.user.role !== 'admin') {
-      filter.userId = session.user.id
-    } else if (userId) {
-      filter.userId = userId
+    if (!user?.roles?.includes('admin')) {
+      filter.userId = currentUserId
+    } else if (filterUserId) {
+      filter.userId = filterUserId
     }
 
     if (type) {
@@ -191,10 +192,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser(request)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    const { userId, user } = authResult
 
     await connectToDatabase()
 
@@ -211,7 +214,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already applied to this target
     const existingApplication = await Application.findOne({
-      userId: session.user.id,
+      userId: userId,
       type,
       targetId
     })
@@ -225,7 +228,7 @@ export async function POST(request: NextRequest) {
 
     // Create new application
     const applicationData: any = {
-      userId: session.user.id,
+      userId: userId,
       type,
       targetId,
       status: 'pending',

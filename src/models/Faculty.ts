@@ -50,26 +50,7 @@ const FacultySchema = new Schema({
     required: true,
     maxlength: 50
   },
-  personalInfo: {
-    firstName: { type: String, required: true, maxlength: 50 },
-    lastName: { type: String, required: true, maxlength: 50 },
-    middleName: { type: String, maxlength: 50 },
-    email: { type: String, required: true },
-    phone: { type: String, required: true },
-    alternatePhone: { type: String },
-    dateOfBirth: { type: Date },
-    gender: { 
-      type: String, 
-      enum: ['male', 'female', 'other', 'prefer-not-to-say']
-    },
-    address: {
-      street: { type: String },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      country: { type: String, required: true },
-      zipCode: { type: String }
-    }
-  },
+  personalInfo: Schema.Types.Mixed,
   
   // Professional Information
   department: { 
@@ -90,61 +71,34 @@ const FacultySchema = new Schema({
   joiningDate: { type: Date, required: true },
   
   // Academic Information
-  qualifications: [EducationSchema],
-  specialization: [{ type: String, maxlength: 100 }],
-  researchInterests: [{ type: String, maxlength: 100 }],
+  qualifications: [Schema.Types.Mixed],
+  specialization: [String],
+  researchInterests: [String],
   
   // Experience
   totalExperience: { type: Number, default: 0 }, // in years
   teachingExperience: { type: Number, default: 0 }, // in years
   industryExperience: { type: Number, default: 0 }, // in years
-  previousExperience: [ExperienceSchema],
+  previousExperience: [Schema.Types.Mixed],
   
   // Research & Publications
-  publications: [PublicationSchema],
-  researchProjects: [{
-    title: { type: String, required: true },
-    fundingAgency: { type: String },
-    amount: { type: Number },
-    startDate: { type: Date },
-    endDate: { type: Date },
-    status: { 
-      type: String, 
-      enum: ['ongoing', 'completed', 'submitted', 'approved'],
-      default: 'ongoing'
-    }
-  }],
+  publications: [Schema.Types.Mixed],
+  researchProjects: [Schema.Types.Mixed],
   
   // Teaching
-  subjectsTaught: [{ type: String }],
-  coursesHandled: [{
-    courseId: { type: Schema.Types.ObjectId, ref: 'Course' },
-    courseName: { type: String, required: true },
-    semester: { type: String },
-    academicYear: { type: String }
-  }],
+  subjectsTaught: [String],
+  coursesHandled: [Schema.Types.Mixed],
   
   // Profile & Media
-  profileImage: { type: String },
+  profileImage: String,
   bio: { type: String, maxlength: 1000 },
-  socialMedia: SocialMediaSchema,
+  socialMedia: Schema.Types.Mixed,
   
   // Awards & Recognition
-  awards: [{
-    title: { type: String, required: true },
-    organization: { type: String, required: true },
-    year: { type: Number, required: true },
-    description: { type: String }
-  }],
+  awards: [Schema.Types.Mixed],
   
   // Administrative Roles
-  administrativeRoles: [{
-    position: { type: String, required: true },
-    department: { type: String },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date },
-    isCurrent: { type: Boolean, default: false }
-  }],
+  administrativeRoles: [Schema.Types.Mixed],
   
   // Status
   status: { 
@@ -165,6 +119,8 @@ const FacultySchema = new Schema({
 
 // Virtual for full name
 FacultySchema.virtual('fullName').get(function() {
+  if (!this.personalInfo) return 'N/A'
+  
   const { firstName, middleName, lastName } = this.personalInfo
   return `${firstName}${middleName ? ` ${middleName}` : ''} ${lastName}`
 })
@@ -176,7 +132,8 @@ FacultySchema.virtual('id').get(function() {
 
 // Virtual for current age
 FacultySchema.virtual('age').get(function() {
-  if (!this.personalInfo.dateOfBirth) return null
+  if (!this.personalInfo || !this.personalInfo.dateOfBirth) return null
+  
   const today = new Date()
   const birthDate = new Date(this.personalInfo.dateOfBirth)
   let age = today.getFullYear() - birthDate.getFullYear()
@@ -322,5 +279,4 @@ export interface IFaculty extends Document {
   updatedAt: Date
 }
 
-export { IFaculty }
 export default mongoose.models.Faculty || mongoose.model<IFaculty>('Faculty', FacultySchema)

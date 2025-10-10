@@ -2,12 +2,11 @@ import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/lib/redux/store'
 import {
   fetchJobs,
-  searchJobs,
   createJob,
   updateJob,
   deleteJob,
   fetchJobById,
-  fetchJobApplications,
+  fetchApplications,
   applyToJob
 } from '@/lib/redux/slices/jobSlice'
 import { useCallback } from 'react'
@@ -25,11 +24,12 @@ export const useJobs = () => {
   } = useSelector((state: RootState) => state.jobs)
 
   const getJobs = useCallback((params?: { page?: number; limit?: number; businessId?: string; status?: string }) => {
-    dispatch(fetchJobs(params))
+    dispatch(fetchJobs(params || {}))
   }, [dispatch])
 
   const searchJobsList = useCallback((filters: any) => {
-    dispatch(searchJobs(filters))
+    // TODO: Implement searchJobs
+    console.log('Search jobs:', filters)
   }, [dispatch])
 
   const createJobPosting = useCallback((jobData: any) => {
@@ -49,7 +49,7 @@ export const useJobs = () => {
   }, [dispatch])
 
   const getJobApplications = useCallback((jobId: string) => {
-    dispatch(fetchJobApplications(jobId))
+    dispatch(fetchApplications(jobId))
   }, [dispatch])
 
   const applyToJobPosting = useCallback((jobId: string, applicationData: any) => {

@@ -15,7 +15,7 @@ const documentSchema = z.object({
 })
 
 // GET /api/institutes/[instituteId]/documents - Get all documents for specific institute
-export async function GET(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const auth = await getAuthenticatedUser(req)
     if (!auth?.userId) {
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: { instituteId:
     }
 
     const { userId, user } = auth
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest, { params }: { params: { instituteId:
 }
 
 // POST /api/institutes/[instituteId]/documents - Upload a new document
-export async function POST(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function POST(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const auth = await getAuthenticatedUser(req)
     if (!auth?.userId) {
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest, { params }: { params: { instituteId
     }
 
     const { userId, user } = auth
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest, { params }: { params: { instituteId
 }
 
 // DELETE /api/institutes/[instituteId]/documents - Delete a document
-export async function DELETE(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
   try {
     const auth = await getAuthenticatedUser(req)
     if (!auth?.userId) {
@@ -196,7 +196,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { institute
     }
 
     const { userId, user } = auth
-    const { instituteId } = params
+    const { instituteId } = await context.params
 
     if (!instituteId) {
       return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })

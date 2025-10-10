@@ -1,28 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
-import { Business } from '@/lib/types/business.types'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { IBusiness } from '@/lib/types/business.types'
 import { ApiResponse } from '@/lib/types/api.types'
+import { Business } from '@/src/models'
 
 // GET /api/businesses/my-business - Fetch current user's business
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const authResult = await getAuthenticatedUser(req)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const db = await connectDB()
-    const businessesCollection = db.collection('businesses')
+    const { userId } = authResult
+    await connectToDatabase()
 
-    const business = await businessesCollection.findOne({ userId: session.user.id })
+    const businessDoc = await Business.findOne({ userId }).lean().exec()
 
-    if (!business) {
+    if (!businessDoc) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
-    const response: ApiResponse<Business> = {
+    // Type assertion for lean document
+    const business = businessDoc as unknown as IBusiness
+
+    const response: ApiResponse<IBusiness> = {
       success: true,
       data: business
     }

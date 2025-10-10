@@ -25,6 +25,26 @@ export interface Course {
   applicationsCount: number
   createdAt: Date
   updatedAt: Date
+  
+  // Optional properties used in InstituteDetailPage
+  educationType?: string
+  brochure?: {
+    url: string
+    name?: string
+  }
+  recognition?: Array<{
+    name: string
+    type?: string
+  }>
+  fees?: {
+    tuitionFee: number
+    totalFee?: number
+    currency?: string
+  }
+  name?: string // Alternative name field
+  degree?: string // Degree type
+  school?: string // School/department
+  totalSeats?: number // Total available seats
 }
 
 export interface CourseModule {

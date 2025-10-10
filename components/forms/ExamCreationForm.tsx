@@ -140,8 +140,8 @@ export default function ExamCreationForm() {
     try {
       const examData = {
         ...data,
-        examDate: new Date(data.examDate).toISOString(),
-        registrationDeadline: new Date(data.registrationDeadline).toISOString(),
+        examDate: new Date(data.examDate),
+        registrationDeadline: new Date(data.registrationDeadline),
       }
       await dispatch(createExam(examData)).unwrap()
       router.push('/dashboard/institute/exams')

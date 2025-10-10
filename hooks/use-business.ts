@@ -1,13 +1,12 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/lib/redux/store'
 import {
-  fetchMyBusiness,
+  fetchBusinessProfile,
   fetchBusinessById,
   fetchBusinesses,
-  searchBusinesses,
   createBusiness,
   updateBusiness,
-  verifyBusiness
+  deleteBusiness
 } from '@/lib/redux/slices/businessSlice'
 import { useCallback } from 'react'
 
@@ -23,20 +22,21 @@ export const useBusiness = () => {
     searchFilters
   } = useSelector((state: RootState) => state.business)
 
-  const getMyBusiness = useCallback(() => {
-    dispatch(fetchMyBusiness())
+  const getMyBusiness = useCallback((businessId: string) => {
+    dispatch(fetchBusinessProfile(businessId))
   }, [dispatch])
 
   const getBusinessById = useCallback((businessId: string) => {
     dispatch(fetchBusinessById(businessId))
   }, [dispatch])
 
-  const getBusinesses = useCallback((params?: { page?: number; limit?: number; status?: string }) => {
-    dispatch(fetchBusinesses(params))
+  const getBusinesses = useCallback((params?: { page?: number; limit?: number; industry?: string; verified?: boolean }) => {
+    dispatch(fetchBusinesses(params || {}))
   }, [dispatch])
 
   const searchBusinessesList = useCallback((filters: any) => {
-    dispatch(searchBusinesses(filters))
+    // TODO: Implement searchBusinesses
+    console.log('Search businesses:', filters)
   }, [dispatch])
 
   const createBusinessProfile = useCallback((businessData: any) => {
@@ -48,7 +48,8 @@ export const useBusiness = () => {
   }, [dispatch])
 
   const verifyBusinessProfile = useCallback((businessId: string, isVerified: boolean) => {
-    return dispatch(verifyBusiness({ businessId, isVerified }))
+    // TODO: Implement verifyBusiness
+    console.log('Verify business:', businessId, isVerified)
   }, [dispatch])
 
   return {

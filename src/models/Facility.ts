@@ -2,13 +2,13 @@ import mongoose, { Schema, Document } from 'mongoose'
 
 // Facility Hours Schema
 const FacilityHoursSchema = new Schema({
-  monday: { open: { type: String }, close: { type: String }, closed: { type: Boolean, default: false } },
-  tuesday: { open: { type: String }, close: { type: String }, closed: { type: Boolean, default: false } },
-  wednesday: { open: { type: String }, close: { type: String }, closed: { type: Boolean, default: false } },
-  thursday: { open: { type: String }, close: { type: String }, closed: { type: Boolean, default: false } },
-  friday: { open: { type: String }, close: { type: String }, closed: { type: Boolean, default: false } },
-  saturday: { open: { type: String }, close: { type: String }, closed: { type: Boolean, default: false } },
-  sunday: { open: { type: String }, close: { type: String }, closed: { type: Boolean, default: true } }
+  monday: { open: String, close: String, closed: { type: Boolean, default: false } },
+  tuesday: { open: String, close: String, closed: { type: Boolean, default: false } },
+  wednesday: { open: String, close: String, closed: { type: Boolean, default: false } },
+  thursday: { open: String, close: String, closed: { type: Boolean, default: false } },
+  friday: { open: String, close: String, closed: { type: Boolean, default: false } },
+  saturday: { open: String, close: String, closed: { type: Boolean, default: false } },
+  sunday: { open: String, close: String, closed: { type: Boolean, default: true } }
 }, { _id: false })
 
 // Equipment Schema
@@ -59,20 +59,11 @@ const FacilitySchema = new Schema({
   },
   
   // Location Information
-  location: {
-    building: { type: String },
-    floor: { type: String },
-    roomNumber: { type: String },
-    area: { type: String }, // e.g., "Main Campus", "Hostel Block A"
-    coordinates: {
-      latitude: { type: Number },
-      longitude: { type: Number }
-    }
-  },
+  location: Schema.Types.Mixed,
   
   // Capacity and Size
-  capacity: { type: Number }, // number of people it can accommodate
-  area: { type: Number }, // in square feet/meters
+  capacity: Number, // number of people it can accommodate
+  area: Number, // in square feet/meters
   areaUnit: { 
     type: String, 
     enum: ['sqft', 'sqm'],
@@ -80,35 +71,26 @@ const FacilitySchema = new Schema({
   },
   
   // Equipment and Resources
-  equipment: [EquipmentSchema],
-  features: [{ type: String }], // e.g., "Air Conditioned", "Wi-Fi", "Projector"
+  equipment: [Schema.Types.Mixed],
+  features: [String], // e.g., "Air Conditioned", "Wi-Fi", "Projector"
   
   // Operational Information
-  operatingHours: FacilityHoursSchema,
+  operatingHours: Schema.Types.Mixed,
   isAccessible: { type: Boolean, default: true }, // wheelchair accessible
   requiresBooking: { type: Boolean, default: false },
-  bookingContact: {
-    name: { type: String },
-    phone: { type: String },
-    email: { type: String }
-  },
+  bookingContact: Schema.Types.Mixed,
   
   // Staff Information
-  inchargeStaff: [{
-    name: { type: String, required: true },
-    designation: { type: String },
-    phone: { type: String },
-    email: { type: String }
-  }],
+  inchargeStaff: [Schema.Types.Mixed],
   
   // Media
-  images: [{ type: String }],
-  virtualTourUrl: { type: String },
+  images: [String],
+  virtualTourUrl: String,
   
   // Maintenance
-  lastMaintenance: { type: Date },
-  nextMaintenance: { type: Date },
-  maintenanceNotes: { type: String },
+  lastMaintenance: Date,
+  nextMaintenance: Date,
+  maintenanceNotes: String,
   
   // Usage Statistics
   utilizationRate: { type: Number, default: 0 }, // percentage
@@ -142,6 +124,8 @@ FacilitySchema.virtual('id').get(function() {
 
 // Virtual for full location
 FacilitySchema.virtual('fullLocation').get(function() {
+  if (!this.location) return 'Location not specified'
+  
   const { building, floor, roomNumber, area } = this.location
   let location = ''
   if (roomNumber) location += roomNumber
@@ -156,13 +140,14 @@ FacilitySchema.virtual('isCurrentlyOpen').get(function() {
   if (this.status !== 'active') return false
   
   const now = new Date()
-  const currentDay = now.toLocaleLowerCase().substring(0, 3) // mon, tue, etc.
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+  const currentDay = days[now.getDay()] as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
   const currentTime = now.toTimeString().substring(0, 5) // HH:MM format
   
   const daySchedule = this.operatingHours?.[currentDay]
   if (!daySchedule || daySchedule.closed) return false
   
-  return currentTime >= daySchedule.open && currentTime <= daySchedule.close
+  return currentTime >= (daySchedule.open || '') && currentTime <= (daySchedule.close || '')
 })
 
 // Indexes
@@ -263,5 +248,4 @@ export interface IFacility extends Document {
   updatedAt: Date
 }
 
-export { IFacility }
 export default mongoose.models.Facility || mongoose.model<IFacility>('Facility', FacilitySchema)

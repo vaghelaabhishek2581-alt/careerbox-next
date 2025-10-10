@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import { notFound } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -62,6 +64,11 @@ interface ProfileViewProps {
 
 type ProfileData = UserProfile | BusinessProfile | InstituteProfile
 
+interface ProfileApiResponse {
+  profile: ProfileData
+  type: 'user' | 'business' | 'institute'
+}
+
 export default function ProfileView({ profileId }: ProfileViewProps) {
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -71,9 +78,9 @@ export default function ProfileView({ profileId }: ProfileViewProps) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await apiClient.get(`/api/profile/${profileId}`)
+        const response = await apiClient.get<ProfileApiResponse>(`/api/profile/${profileId}`)
         
-        if (response.success) {
+        if (response.success && response.data) {
           setProfile(response.data.profile)
           setProfileType(response.data.type)
         } else {
@@ -224,13 +231,13 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
               {isBusiness && (
                 <div className="flex items-center gap-1">
                   <Briefcase className="h-4 w-4" />
-                  <span>{(profile as BusinessProfile).stats?.jobPostings || 0} job postings</span>
+                  <span>{(profile as BusinessProfile).jobPostings || 0} job postings</span>
                 </div>
               )}
               {isInstitute && (
                 <div className="flex items-center gap-1">
                   <GraduationCap className="h-4 w-4" />
-                  <span>{(profile as InstituteProfile).stats?.courses || 0} courses</span>
+                  <span>{(profile as InstituteProfile).studentCount || 0} students</span>
                 </div>
               )}
             </div>
@@ -865,27 +872,27 @@ function ProfileSidebar({ profile, profileType }: { profile: ProfileData; profil
           )}
 
           {/* Social Links */}
-          {profile.socialLinks && (
+          {isUser && (profile as UserProfile).socialLinks && (
             <div className="space-y-2">
               <h4 className="font-medium text-sm">Social Links</h4>
               <div className="flex gap-2">
-                {profile.socialLinks.linkedin && (
+                {(profile as UserProfile).socialLinks?.linkedin && (
                   <Button variant="outline" size="sm" asChild>
-                    <a href={profile.socialLinks.linkedin} target="_blank" rel="noopener noreferrer">
+                    <a href={(profile as UserProfile).socialLinks!.linkedin!} target="_blank" rel="noopener noreferrer">
                       <Linkedin className="h-4 w-4" />
                     </a>
                   </Button>
                 )}
-                {profile.socialLinks.twitter && (
+                {(profile as UserProfile).socialLinks?.twitter && (
                   <Button variant="outline" size="sm" asChild>
-                    <a href={profile.socialLinks.twitter} target="_blank" rel="noopener noreferrer">
+                    <a href={(profile as UserProfile).socialLinks!.twitter!} target="_blank" rel="noopener noreferrer">
                       <Twitter className="h-4 w-4" />
                     </a>
                   </Button>
                 )}
-                {profile.socialLinks.github && (
+                {(profile as UserProfile).socialLinks?.github && (
                   <Button variant="outline" size="sm" asChild>
-                    <a href={profile.socialLinks.github} target="_blank" rel="noopener noreferrer">
+                    <a href={(profile as UserProfile).socialLinks!.github!} target="_blank" rel="noopener noreferrer">
                       <Github className="h-4 w-4" />
                     </a>
                   </Button>
@@ -922,12 +929,12 @@ function ProfileSidebar({ profile, profileType }: { profile: ProfileData; profil
           {isBusiness && (
             <>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Job Postings</span>
-                <span className="font-medium">{(profile as BusinessProfile).stats?.jobPostings || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Employees</span>
                 <span className="font-medium">{(profile as BusinessProfile).employeeCount || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Industry</span>
+                <span className="font-medium">{(profile as BusinessProfile).industry || 'N/A'}</span>
               </div>
             </>
           )}
@@ -935,16 +942,16 @@ function ProfileSidebar({ profile, profileType }: { profile: ProfileData; profil
           {isInstitute && (
             <>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Courses</span>
-                <span className="font-medium">{(profile as InstituteProfile).stats?.courses || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Students</span>
                 <span className="font-medium">{(profile as InstituteProfile).studentCount || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Faculty</span>
                 <span className="font-medium">{(profile as InstituteProfile).facultyCount || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Programs</span>
+                <span className="font-medium">{(profile as InstituteProfile).programs?.length || 0}</span>
               </div>
             </>
           )}

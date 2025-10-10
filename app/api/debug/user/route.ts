@@ -1,56 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongodb'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await getAuthenticatedUser(request)
     
-    if (!session?.user) {
+    if (!authResult) {
       return NextResponse.json(
         { success: false, message: 'Not authenticated' },
         { status: 401 }
       )
     }
-
-    const { db } = await connectToDatabase()
     
-    // Find user in database
-    const user = await db.collection('users').findOne({
-      email: session.user.email
-    })
+    const { userId, user } = authResult
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'User not found in database' },
-        { status: 404 }
-      )
-    }
+    await connectToDatabase()
 
     return NextResponse.json({
       success: true,
-      session: {
-        user: session.user,
-        expires: session.expires
+      authResult: {
+        userId,
+        authType: authResult.authType
       },
-      database: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        activeRole: user.activeRole,
-        needsOnboarding: user.needsOnboarding,
-        needsRoleSelection: user.needsRoleSelection,
-        provider: user.provider,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+      user: {
+        _id: user?._id,
+        name: user?.name,
+        email: user?.email,
+        roles: user?.roles,
+        activeRole: user?.activeRole,
+        needsOnboarding: user?.needsOnboarding,
+        needsRoleSelection: user?.needsRoleSelection,
+        provider: user?.provider,
+        createdAt: user?.createdAt,
+        updatedAt: user?.updatedAt
       }
     })
   } catch (error) {
     console.error('Debug user error:', error)
     return NextResponse.json(
-      { success: false, message: 'Internal server error', error: error.message },
+      { success: false, message: 'Internal server error', error: (error as Error).message },
       { status: 500 }
     )
   }

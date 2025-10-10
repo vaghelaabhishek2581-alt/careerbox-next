@@ -19,7 +19,7 @@ export function useEmailVerification() {
       setIsLoading(true);
       setError(null);
 
-      const response = await API.auth.sendVerificationCode({ email });
+      const response = await API.auth.resendVerification();
 
       if (response.success) {
         return {
@@ -46,7 +46,7 @@ export function useEmailVerification() {
       setIsLoading(true);
       setError(null);
 
-      const response = await API.auth.verifyEmail({ email, code });
+      const response = await API.auth.verifyEmail(code);
 
       if (response.success) {
         return {

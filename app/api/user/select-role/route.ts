@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { connectToDatabase } from '@/lib/db';
-import { ObjectId } from 'mongodb';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { User } from '@/src/models';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const authResult = await getAuthenticatedUser(request);
     
-    if (!session?.user?.id) {
+    if (!authResult) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
       );
     }
-
+    
+    const { userId } = authResult;
+    
     const { activeRole } = await request.json();
-
+    
     if (!activeRole) {
       return NextResponse.json(
         { success: false, message: 'Active role is required' },
@@ -24,12 +25,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { db } = await connectToDatabase();
+    await connectToDatabase();
     
     // Get user to verify they have this role
-    const user = await db.collection('users').findOne({ 
-      _id: new ObjectId(session.user.id) 
-    });
+    const user = await User.findById(userId);
 
     if (!user) {
       return NextResponse.json(
@@ -46,18 +45,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user's active role
-    const result = await db.collection('users').updateOne(
-      { _id: new ObjectId(session.user.id) },
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
       {
-        $set: {
-          activeRole,
-          needsRoleSelection: false,
-          updatedAt: new Date()
-        }
-      }
+        activeRole,
+        needsRoleSelection: false,
+        updatedAt: new Date()
+      },
+      { new: true }
     );
 
-    if (result.matchedCount === 0) {
+    if (!updatedUser) {
       return NextResponse.json(
         { success: false, message: 'Failed to update role' },
         { status: 500 }

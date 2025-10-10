@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { ObjectId } from 'mongodb'
 import { z } from 'zod'
 import clientPromise from '../../../db'
 
@@ -54,9 +55,17 @@ export async function POST (request: NextRequest) {
     const client = await clientPromise
     const db = client.db()
 
+    // Validate ObjectId format
+    if (!ObjectId.isValid(session.user.id)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      )
+    }
+
     // Check if publicId exists for any other user
     const existingUser = await db.collection('users').findOne({
-      _id: { $ne: session.user.id },
+      _id: { $ne: new ObjectId(session.user.id) },
       'personalDetails.publicProfileId': publicId
     })
 

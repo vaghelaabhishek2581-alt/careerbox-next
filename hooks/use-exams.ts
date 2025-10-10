@@ -26,7 +26,7 @@ export const useExams = () => {
   } = useSelector((state: RootState) => state.exams)
 
   const getExams = useCallback((params?: { page?: number; limit?: number; createdBy?: string; createdByType?: string; status?: string }) => {
-    dispatch(fetchExams(params))
+    dispatch(fetchExams(params || {}))
   }, [dispatch])
 
   const searchExamsList = useCallback((filters: any) => {

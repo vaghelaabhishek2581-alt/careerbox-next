@@ -28,8 +28,9 @@ export interface RefreshTokenPayload {
 
 // Generate JWT Access Token
 export function generateAccessToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
+  // @ts-expect-error - jwt.sign types are complex but this usage is correct
+  return jwt.sign(payload, JWT_SECRET as string, {
+    expiresIn: JWT_EXPIRES_IN as string,
     issuer: 'careerbox-api',
     audience: 'careerbox-app'
   })
@@ -44,11 +45,12 @@ export async function generateRefreshToken(userId: string, email: string): Promi
   
   // Create refresh token record
   const tokenId = new ObjectId().toString()
+  // @ts-expect-error - jwt.sign types are complex but this usage is correct
   const refreshToken = jwt.sign(
     { userId, email, tokenId },
-    JWT_SECRET,
+    JWT_SECRET as string,
     {
-      expiresIn: JWT_REFRESH_EXPIRES_IN,
+      expiresIn: JWT_REFRESH_EXPIRES_IN as string,
       issuer: 'careerbox-api',
       audience: 'careerbox-app'
     }

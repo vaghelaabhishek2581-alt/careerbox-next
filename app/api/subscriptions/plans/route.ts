@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SubscriptionPlanDetails } from '@/lib/types/subscription.types'
+import { SubscriptionPlanDetails, SubscriptionPlan } from '@/lib/types/subscription.types'
 import { ApiResponse } from '@/lib/types/api.types'
 
 // GET /api/subscriptions/plans - Fetch available subscription plans
@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const plans: SubscriptionPlanDetails[] = [
       {
-        id: 'business_basic',
+        id: SubscriptionPlan.BUSINESS_BASIC,
         name: 'Business Basic',
         description: 'Perfect for small businesses starting their hiring journey',
         price: { monthly: 29.99, yearly: 299.99 },
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         }
       },
       {
-        id: 'business_pro',
+        id: SubscriptionPlan.BUSINESS_PRO,
         name: 'Business Pro',
         description: 'Advanced features for growing businesses',
         price: { monthly: 99.99, yearly: 999.99 },
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
         popular: true
       },
       {
-        id: 'institute_basic',
+        id: SubscriptionPlan.INSTITUTE_BASIC,
         name: 'Institute Basic',
         description: 'Essential tools for educational institutions',
         price: { monthly: 39.99, yearly: 399.99 },
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         }
       },
       {
-        id: 'institute_pro',
+        id: SubscriptionPlan.INSTITUTE_PRO,
         name: 'Institute Pro',
         description: 'Comprehensive solution for large institutions',
         price: { monthly: 129.99, yearly: 1299.99 },

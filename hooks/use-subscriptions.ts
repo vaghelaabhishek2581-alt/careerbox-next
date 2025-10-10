@@ -44,7 +44,7 @@ export const useSubscriptions = () => {
   }, [dispatch])
 
   const getBillingHistory = useCallback((params?: { page?: number; limit?: number }) => {
-    dispatch(fetchBillingHistory(params))
+    dispatch(fetchBillingHistory(params || {}))
   }, [dispatch])
 
   const getUsageStats = useCallback(() => {

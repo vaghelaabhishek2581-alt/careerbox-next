@@ -1,37 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
-// Course Lesson Schema
-const CourseLessonSchema = new Schema({
-  id: { type: String, required: true },
-  title: { type: String, required: true },
-  description: { type: String },
-  duration: { type: Number, required: true }, // in minutes
-  type: {
-    type: String,
-    enum: ['video', 'text', 'quiz', 'assignment'],
-    required: true
-  },
-  content: { type: String },
-  videoUrl: { type: String },
-  attachments: [{ type: String }]
-}, { _id: false })
-
-// Course Module Schema
-const CourseModuleSchema = new Schema({
-  id: { type: String, required: true },
-  title: { type: String, required: true },
-  description: { type: String },
-  duration: { type: Number, required: true }, // in hours
-  lessons: [CourseLessonSchema]
-}, { _id: false })
-
-// Instructor Schema
-const InstructorSchema = new Schema({
-  name: { type: String, required: true },
-  bio: { type: String, required: true },
-  qualifications: [{ type: String }],
-  experience: { type: String, required: true }
-}, { _id: false })
+// Removed nested schemas to avoid complex union type errors
+// Using Schema.Types.Mixed for nested structures instead
 
 // Course Schema
 const CourseSchema = new Schema({
@@ -80,18 +50,18 @@ const CourseSchema = new Schema({
   },
 
   // Optional new fields
-  specializations: [{ type: String }],
-  applicableStreams: [{ type: String }],
+  specializations: [String],
+  applicableStreams: [String],
   feesFrequency: { type: String },
   feesAmount: { type: Number },
   highestPackageAmount: { type: Number },
   totalSeats: { type: Number },
   managementQuota: { type: Number },
-  examsAccepted: [{ type: String }],
-  eligibilityRequirements: [{ type: String }],
-  assessmentMethods: [{ type: String }],
+  examsAccepted: [String],
+  eligibilityRequirements: [String],
+  assessmentMethods: [String],
   certificationType: { type: String },
-  tags: [{ type: String }],
+  tags: [String],
 
   // Legacy fields for backward compatibility (optional)
   category: {
@@ -114,11 +84,8 @@ const CourseSchema = new Schema({
     type: Number,
     default: 0
   },
-  prerequisites: [{
-    type: String,
-    maxlength: 200
-  }],
-  curriculum: [CourseModuleSchema],
+  prerequisites: [String],
+  curriculum: [Schema.Types.Mixed],
   instructor: { type: String }, // Changed from InstructorSchema to simple string
   status: {
     type: String,

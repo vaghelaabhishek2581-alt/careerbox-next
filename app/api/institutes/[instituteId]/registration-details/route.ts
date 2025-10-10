@@ -18,7 +18,7 @@ const registrationDetailsSchema = z.object({
 })
 
 // GET /api/institutes/[instituteId]/registration-details - Get registration details for specific institute
-export async function GET(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
     try {
         const auth = await getAuthenticatedUser(req)
         if (!auth?.userId) {
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: { instituteId:
         }
 
         const { userId, user } = auth
-        const { instituteId } = params
+        const { instituteId } = await context.params
 
         if (!instituteId) {
             return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest, { params }: { params: { instituteId:
 }
 
 // PATCH /api/institutes/[instituteId]/registration-details - Update registration details
-export async function PATCH(req: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
     try {
         const auth = await getAuthenticatedUser(req)
         if (!auth?.userId) {
@@ -75,7 +75,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { instituteI
         }
 
         const { userId, user } = auth
-        const { instituteId } = params
+        const { instituteId } = await context.params
 
         if (!instituteId) {
             return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })

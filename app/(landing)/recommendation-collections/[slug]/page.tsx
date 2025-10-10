@@ -120,7 +120,7 @@ export default async function InstituteDetailPageRoute({
         }}
       />
 
-      <InstituteDetailPage institute={institute} />
+      <InstituteDetailPage institute={institute as any} />
     </>
   );
 }

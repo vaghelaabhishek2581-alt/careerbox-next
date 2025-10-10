@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { connectToDatabase } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { blacklistToken } from '@/lib/auth/token-blacklist'
 import jwt from 'jsonwebtoken'
 
 export async function POST (request: NextRequest) {
@@ -12,16 +13,13 @@ export async function POST (request: NextRequest) {
     })
 
     if (token) {
-      const { db } = await connectToDatabase()
-
       // Add token to blacklist using the token's jti (JWT ID) or sub (user ID) + iat (issued at)
-      const tokenIdentifier = token.jti || `${token.sub}-${token.iat}`
+      const tokenIdentifier = token.jti as string || `${token.sub || 'unknown'}-${token.iat || Date.now()}`
 
-      await db.collection('blacklisted_tokens').insertOne({
+      await blacklistToken({
         tokenId: tokenIdentifier,
-        userId: token.sub,
-        email: token.email,
-        blacklistedAt: new Date(),
+        userId: String(token.sub || ''),
+        email: token.email || undefined,
         expiresAt: new Date(Number(token.exp || 0) * 1000) // Convert exp to Date
       })
 
@@ -43,15 +41,13 @@ export async function POST (request: NextRequest) {
           decodedToken.payload
         ) {
           const payload = decodedToken.payload as any
-          const { db } = await connectToDatabase()
 
-          const tokenIdentifier = payload.jti || `${payload.sub}-${payload.iat}`
+          const tokenIdentifier = payload.jti as string || `${payload.sub || 'unknown'}-${payload.iat || Date.now()}`
 
-          await db.collection('blacklisted_tokens').insertOne({
+          await blacklistToken({
             tokenId: tokenIdentifier,
-            userId: payload.sub,
+            userId: String(payload.sub || ''),
             email: payload.email,
-            blacklistedAt: new Date(),
             expiresAt: new Date((payload.exp || 0) * 1000)
           })
 
@@ -110,18 +106,4 @@ export async function POST (request: NextRequest) {
   }
 }
 
-// Utility function to check if a token is blacklisted (use in middleware or auth checks)
-export async function isTokenBlacklisted (tokenId: string): Promise<boolean> {
-  try {
-    const { db } = await connectToDatabase()
-    const blacklistedToken = await db.collection('blacklisted_tokens').findOne({
-      tokenId,
-      expiresAt: { $gt: new Date() } // Only check non-expired blacklisted tokens
-    })
-
-    return !!blacklistedToken
-  } catch (error) {
-    console.error('Error checking token blacklist:', error)
-    return false
-  }
-}
+// Token blacklist utilities are now in @/lib/auth/token-blacklist

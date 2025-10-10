@@ -227,6 +227,7 @@ export default function InstituteSidebar({ className, isCollapsed = false, onTog
     };
 
     const isActive = (href: string) => {
+        if (!pathname) return false;
         if (href === "/dashboard/institute") {
             return pathname === href;
         }

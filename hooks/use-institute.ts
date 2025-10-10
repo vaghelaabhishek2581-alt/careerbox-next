@@ -32,7 +32,7 @@ export const useInstitute = () => {
   }, [dispatch])
 
   const getInstitutes = useCallback((params?: { page?: number; limit?: number; status?: string }) => {
-    dispatch(fetchInstitutes(params))
+    dispatch(fetchInstitutes(params || {}))
   }, [dispatch])
 
   const searchInstitutesList = useCallback((filters: any) => {

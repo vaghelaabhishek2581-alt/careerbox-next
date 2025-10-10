@@ -95,16 +95,17 @@ export default function FacilityManagement() {
       };
 
       if (editingFacility) {
-        await dispatch(updateFacility({
+        dispatch(updateFacility({
           ...editingFacility,
           ...facilityData
-        })).unwrap();
+        }));
+        setIsDialogOpen(false);
+        resetForm();
       } else {
         await dispatch(addFacility(facilityData)).unwrap();
+        setIsDialogOpen(false);
+        resetForm();
       }
-      
-      setIsDialogOpen(false);
-      resetForm();
     } catch (error) {
       console.error("Failed to save facility:", error);
     }

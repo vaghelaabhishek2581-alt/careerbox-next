@@ -98,5 +98,4 @@ export interface IPayment extends Document {
   paidAt?: Date
 }
 
-export { IPayment }
 export default mongoose.models.Payment || mongoose.model<IPayment>('Payment', PaymentSchema)

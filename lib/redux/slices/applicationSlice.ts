@@ -4,12 +4,14 @@ import { API } from '@/lib/api/services'
 // Types
 export interface Application {
   _id: string
+  id?: string // Alias for _id
   userId: string
   type: 'job' | 'course' | 'exam'
   targetId: string
   status: 'pending' | 'reviewed' | 'accepted' | 'rejected'
   applicationData: any
   submittedAt: string
+  appliedAt?: string // Alternative field name
   reviewedAt?: string
   notes?: string
 }

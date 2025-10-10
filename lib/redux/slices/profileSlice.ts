@@ -120,6 +120,21 @@ export interface IProfile {
   verified?: boolean
   followers?: number
   following?: number
+  stats?: {
+    completedCourses?: number
+    skillsAssessed?: number
+    certificationsEarned?: number
+    connectionsCount?: number
+    profileViews?: number
+    endorsements?: number
+    careerGoals?: number
+    networkSize?: number
+  }
+  progress?: {
+    overall?: number
+    skills?: number
+    goals?: number
+  }
 }
 
 interface ProfileState {

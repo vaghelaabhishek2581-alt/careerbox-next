@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import { User } from '@/src/models'
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await getAuthenticatedUser(request)
     
-    if (!session?.user?.id) {
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { userId } = authResult
     await connectToDatabase()
     
     // Fetch fresh user data from database
-    const user = await User.findById(session.user.id)
+    const user = await User.findById(userId)
     
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })

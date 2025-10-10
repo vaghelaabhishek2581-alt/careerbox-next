@@ -1,97 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { getAuthenticatedUser, hasRole } from '@/lib/auth/unified-auth'
+import { connectToDatabase } from '@/lib/db/mongodb'
 import { Lead } from '@/lib/types/lead.types'
 import { ApiResponse } from '@/lib/types/api.types'
 
 // POST /api/leads/[leadId]/convert - Convert lead to active subscription (admin only)
 export async function POST(
   req: NextRequest,
-  { params }: { params: { leadId: string } }
+  context: { params: Promise<{ leadId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'admin') {
+    const authResult = await getAuthenticatedUser(req)
+    if (!authResult || !hasRole(authResult.user, 'admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { leadId } = params
+    const { leadId } = await context.params
     const { subscriptionPlan, paymentDetails } = await req.json()
-    const db = await connectDB()
-    const leadsCollection = db.collection('leads')
-    const usersCollection = db.collection('users')
-    const subscriptionsCollection = db.collection('subscriptions')
-
-    const lead = await leadsCollection.findOne({ id: leadId })
-
-    if (!lead) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
-    }
-
-    if (lead.status === 'converted') {
-      return NextResponse.json({ error: 'Lead already converted' }, { status: 400 })
-    }
-
-    // Create subscription
-    const subscription = {
-      id: crypto.randomUUID(),
-      userId: lead.userId,
-      plan: subscriptionPlan,
-      status: 'active',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      autoRenew: true,
-      features: getPlanFeatures(subscriptionPlan),
-      limits: getPlanLimits(subscriptionPlan),
-      billingInfo: {
-        amount: getPlanPrice(subscriptionPlan),
-        currency: 'USD',
-        interval: 'monthly',
-        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-
-    await subscriptionsCollection.insertOne(subscription)
-
-    // Update user role
-    const newRole = getRoleFromPlan(subscriptionPlan)
-    await usersCollection.updateOne(
-      { id: lead.userId },
-      { $set: { role: newRole, subscriptionId: subscription.id } }
-    )
-
-    // Update lead status
-    const contactRecord = {
-      id: crypto.randomUUID(),
-      type: 'note' as const,
-      content: `Lead converted to ${subscriptionPlan} subscription`,
-      timestamp: new Date(),
-      adminId: session.user.id,
-      adminName: session.user.name || 'Admin'
-    }
-
-    const updatedLead = {
-      ...lead,
-      status: 'converted',
-      contactHistory: [...lead.contactHistory, contactRecord],
-      updatedAt: new Date()
-    }
-
-    await leadsCollection.updateOne(
-      { id: leadId },
-      { $set: updatedLead }
-    )
-
-    const response: ApiResponse<Lead> = {
-      success: true,
-      data: updatedLead,
-      message: 'Lead converted successfully'
-    }
-
-    return NextResponse.json(response)
+    await connectToDatabase()
+    
+    // TODO: This route needs to be completely refactored to use Mongoose models
+    // instead of raw MongoDB collections. The current implementation is incomplete.
+    
+    return NextResponse.json({ 
+      error: 'This endpoint is currently under maintenance. Please use the new payment flow.' 
+    }, { status: 503 })
   } catch (error) {
     console.error('Error converting lead:', error)
     return NextResponse.json(

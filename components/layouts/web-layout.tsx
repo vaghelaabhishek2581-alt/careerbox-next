@@ -5,7 +5,10 @@ const WebLayout = ({children}: {children: React.ReactNode   }) => {
   return (
     <div>
       <Header />
+      <div className='pt-28'>
+
       {children}
+      </div>
     </div>
   )
 }

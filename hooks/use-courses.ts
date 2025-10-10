@@ -25,7 +25,7 @@ export const useCourses = () => {
   } = useSelector((state: RootState) => state.courses)
 
   const getCourses = useCallback((params?: { page?: number; limit?: number; instituteId?: string; status?: string }) => {
-    dispatch(fetchCourses(params))
+    dispatch(fetchCourses(params || {}))
   }, [dispatch])
 
   const searchCoursesList = useCallback((filters: any) => {

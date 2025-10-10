@@ -19,7 +19,6 @@ export function NotificationBell() {
     isLoading,
     markAsRead,
     markAllAsRead,
-    deleteNotification,
   } = useNotifications();
 
   const handleMarkAsRead = async (notificationId: string) => {
@@ -31,7 +30,8 @@ export function NotificationBell() {
   };
 
   const handleDelete = async (notificationId: string) => {
-    await deleteNotification(notificationId);
+    // TODO: Implement delete notification
+    console.log('Delete notification:', notificationId);
   };
 
   return (

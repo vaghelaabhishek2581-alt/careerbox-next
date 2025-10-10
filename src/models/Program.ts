@@ -85,25 +85,19 @@ const ProgramSchema = new Schema({
     required: true,
     maxlength: 5000
   },
-  duration: {
-    years: { type: Number, required: true },
-    months: { type: Number, default: 0 }
-  },
+  duration: Schema.Types.Mixed,
   mode: { 
     type: String, 
     enum: ['full-time', 'part-time', 'online', 'hybrid'],
     required: true
   },
-  eligibilityCriteria: EligibilityCriteriaSchema,
-  feeStructure: FeeStructureSchema,
-  curriculum: [ProgramSemesterSchema],
+  eligibilityCriteria: Schema.Types.Mixed,
+  feeStructure: Schema.Types.Mixed,
+  curriculum: [Schema.Types.Mixed],
   totalCredits: { type: Number, required: true },
-  accreditation: [{ 
-    type: String,
-    maxlength: 200
-  }],
+  accreditation: [String],
   affiliatedUniversity: { type: String },
-  approvedBy: [{ type: String }], // e.g., "AICTE", "UGC", "NAAC"
+  approvedBy: [String], // e.g., "AICTE", "UGC", "NAAC"
   
   // Admission details
   totalSeats: { type: Number, required: true },
@@ -112,11 +106,7 @@ const ProgramSchema = new Schema({
   admissionEndDate: { type: Date },
   
   // Rankings and ratings
-  ranking: {
-    national: { type: Number },
-    state: { type: Number },
-    category: { type: Number }
-  },
+  ranking: Schema.Types.Mixed,
   
   // Statistics
   currentStudents: { type: Number, default: 0 },
@@ -251,5 +241,4 @@ export interface IProgram extends Document {
   updatedAt: Date
 }
 
-export { IProgram }
 export default mongoose.models.Program || mongoose.model<IProgram>('Program', ProgramSchema)

@@ -78,16 +78,15 @@ const dashboardSlice = createSlice({
     });
     builder.addCase(fetchDashboardStats.fulfilled, (state, action) => {
       state.isLoading = false;
-      state.stats = action.payload;
+      state.stats = action.payload as DashboardStats;
     });
     builder.addCase(fetchDashboardStats.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.error.message || 'Failed to fetch dashboard stats';
     });
-
     builder.addCase(fetchRecentActivities.fulfilled, (state, action) => {
       if (state.stats) {
-        state.stats.recentActivities = action.payload.activities;
+        state.stats.recentActivities = (action.payload as any).activities;
       }
     });
   },

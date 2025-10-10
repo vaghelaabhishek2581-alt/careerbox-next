@@ -110,18 +110,32 @@ export interface Admissions {
 }
 
 export interface PlacementData {
-  overallPlacementRate: string;
-  averageSalary: string;
-  highestSalary: string;
-  medianSalary: string;
-  companiesVisited: number;
-  totalOffers: number;
-  topRecruiters: string[];
+  overallPlacementRate?: string | number;
+  averageSalary?: string | number;
+  highestSalary?: string | number;
+  medianSalary?: string | number;
+  companiesVisited?: number;
+  totalOffers?: number;
+  topRecruiters?: string[];
+  placementRate?: number;
+  averagePackage?: number;
+  highestPackage?: number;
 }
 
 export interface Placements {
-  [year: string]: PlacementData | string[];
-  sectors: string[];
+  [key: string]: any;
+  sectors?: string[];
+  topRecruiters?: string[];
+  // Direct placement data properties (new structure)
+  overallPlacementRate?: string | number;
+  averageSalary?: string | number;
+  highestSalary?: string | number;
+  medianSalary?: string | number;
+  companiesVisited?: number;
+  totalOffers?: number;
+  placementRate?: number;
+  averagePackage?: number;
+  highestPackage?: number;
 }
 
 export interface Ranking {
@@ -194,6 +208,7 @@ export interface CourseFees {
   messFee: string;
   otherFees: string;
   totalAnnualFee: string;
+  totalFee?: number; // Added for InstituteDetailPage compatibility
   scholarships: string[];
 }
 
@@ -258,29 +273,79 @@ export interface BarCouncilRecognition {
   barExamEligible: string;
 }
 
+export interface CoursePlacement {
+  averagePackage: number;
+  highestPackage: number;
+  placementRate: number;
+  topRecruiters: string[];
+}
+
 export interface Course {
   id: string;
   name: string;
   degree: string;
-  slug: string;
-  institute: string;
+  slug?: string;
+  institute?: string;
+  school?: string;
   duration: string;
   level: string;
   category: string;
-  description: string;
-  objectives: string[];
-  curriculum: Curriculum;
-  eligibilityCriteria: EligibilityCriteria;
-  admissionProcess: string[];
-  fees: CourseFees;
-  facultyProfile: FacultyProfile;
-  infrastructure: CourseInfrastructure;
-  careerProspects: CareerProspects;
-  industryConnections: IndustryConnections;
-  studentActivities: StudentActivities;
+  description?: string;
+  objectives?: string[];
+  curriculum?: Curriculum;
+  eligibilityCriteria?: EligibilityCriteria;
+  admissionProcess?: string[];
+  fees?: CourseFees | { tuitionFee: number; totalFee: number; currency: string };
+  facultyProfile?: FacultyProfile;
+  infrastructure?: CourseInfrastructure;
+  careerProspects?: CareerProspects;
+  industryConnections?: IndustryConnections;
+  studentActivities?: StudentActivities;
   specializations?: string[];
   practicalTraining?: PracticalTraining;
   barCouncilRecognition?: BarCouncilRecognition;
+  totalSeats?: number;
+  placements?: CoursePlacement;
+  
+  // Additional optional properties used in InstituteDetailPage
+  educationType?: string;
+  brochure?: {
+    url: string;
+    name?: string;
+  };
+  recognition?: Array<{
+    name: string;
+    type?: string;
+  }>;
+  reviewCount?: number;
+  questionsCount?: number;
+  location?: {
+    city?: string;
+    state?: string;
+    country?: string;
+    locality?: string;
+  };
+}
+
+export interface MediaGallery {
+  photos?: {
+    [category: string]: string[] | Array<{
+      mediaId?: number;
+      thumbUrl?: string;
+      mediaUrl: string;
+      widgetThumbUrl?: string;
+      mediaTitle?: string;
+      altText?: string;
+    }>;
+  };
+  videos?: Array<{
+    url?: string;
+    mediaUrl?: string;
+    title?: string;
+    mediaTitle?: string;
+    thumbnail?: string;
+    thumbUrl?: string;
+  }>;
 }
 
 export interface Institute {
@@ -306,6 +371,7 @@ export interface Institute {
   alumniNetwork: AlumniNetwork;
   awards: string[];
   courses: Course[];
+  mediaGallery?: MediaGallery;
 }
 
 // Search and Filter Types

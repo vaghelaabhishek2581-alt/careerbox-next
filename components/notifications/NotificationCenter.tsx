@@ -43,6 +43,7 @@ export default function NotificationCenter() {
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'application' | 'system' | 'social' | 'admin'>('all');
   const [isLoading, setIsLoading] = useState(true);
   // const { socket, isConnected } = useSocket();
+  const isConnected = false; // TODO: Implement socket connection
 
   // useEffect(() => {
   //   fetchNotifications();

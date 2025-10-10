@@ -64,16 +64,17 @@ export default function LocationsManagement() {
     
     try {
       if (editingLocation) {
-        await dispatch(updateLocation({
+        dispatch(updateLocation({
           ...editingLocation,
           ...formData
-        })).unwrap();
+        }));
+        setIsDialogOpen(false);
+        resetForm();
       } else {
         await dispatch(addLocation(formData)).unwrap();
+        setIsDialogOpen(false);
+        resetForm();
       }
-      
-      setIsDialogOpen(false);
-      resetForm();
     } catch (error) {
       console.error("Failed to save location:", error);
     }

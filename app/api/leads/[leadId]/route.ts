@@ -1,42 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { connectDB } from '@/lib/db'
+import { getAuthenticatedUser, hasRole } from '@/lib/auth/unified-auth'
+import { connectToDatabase } from '@/lib/db/mongodb'
 import { Lead } from '@/lib/types/lead.types'
 import { ApiResponse } from '@/lib/types/api.types'
 
 // GET /api/leads/[leadId] - Fetch lead by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { leadId: string } }
+  context: { params: Promise<{ leadId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const authResult = await getAuthenticatedUser(req)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { leadId } = params
-    const db = await connectDB()
-    const leadsCollection = db.collection('leads')
-
-    const lead = await leadsCollection.findOne({ id: leadId })
-
-    if (!lead) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
-    }
-
-    // Check if user can access this lead
-    if (session.user.role !== 'admin' && lead.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const response: ApiResponse<Lead> = {
-      success: true,
-      data: lead
-    }
-
-    return NextResponse.json(response)
+    const { userId, user } = authResult
+    const { leadId } = await context.params
+    await connectToDatabase()
+    
+    // TODO: This needs to be refactored to use Mongoose models
+    return NextResponse.json({ 
+      error: 'This endpoint is currently under maintenance. Please use the new lead management system.' 
+    }, { status: 503 })
   } catch (error) {
     console.error('Error fetching lead:', error)
     return NextResponse.json(
@@ -49,47 +35,23 @@ export async function GET(
 // PUT /api/leads/[leadId] - Update lead
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { leadId: string } }
+  context: { params: Promise<{ leadId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const authResult = await getAuthenticatedUser(req)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { leadId } = params
+    const { userId, user } = authResult
+    const { leadId } = await context.params
     const updateData = await req.json()
-    const db = await connectDB()
-    const leadsCollection = db.collection('leads')
-
-    const lead = await leadsCollection.findOne({ id: leadId })
-
-    if (!lead) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
-    }
-
-    // Check if user can update this lead
-    if (session.user.role !== 'admin' && lead.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const updatedLead = {
-      ...lead,
-      ...updateData,
-      updatedAt: new Date()
-    }
-
-    await leadsCollection.updateOne(
-      { id: leadId },
-      { $set: updatedLead }
-    )
-
-    const response: ApiResponse<Lead> = {
-      success: true,
-      data: updatedLead
-    }
-
-    return NextResponse.json(response)
+    await connectToDatabase()
+    
+    // TODO: This needs to be refactored to use Mongoose models
+    return NextResponse.json({ 
+      error: 'This endpoint is currently under maintenance. Please use the new lead management system.' 
+    }, { status: 503 })
   } catch (error) {
     console.error('Error updating lead:', error)
     return NextResponse.json(

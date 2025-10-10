@@ -1,25 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { connectToDatabase } from '@/lib/db';
-import { ObjectId } from 'mongodb';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { User } from '@/src/models';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const authResult = await getAuthenticatedUser(request);
     
-    if (!session?.user?.id) {
+    if (!authResult) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    const { db } = await connectToDatabase();
     
-    const user = await db.collection('users').findOne({ 
-      _id: new ObjectId(session.user.id) 
-    });
+    const { userId } = authResult;
+
+    await connectToDatabase();
+    
+    const user = await User.findById(userId);
 
     if (!user) {
       return NextResponse.json(

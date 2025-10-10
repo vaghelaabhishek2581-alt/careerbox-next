@@ -21,6 +21,11 @@ export interface ILanguage {
   certifications?: string[]
 }
 
+export interface IEligibilityExam {
+  exam: string
+  score: string
+}
+
 export interface IPersonalDetails {
   firstName: string
   lastName: string
@@ -31,6 +36,8 @@ export interface IPersonalDetails {
   publicProfileId: string
   aboutMe?: string
   phone?: string
+  city?: string
+  eligibilityExams?: IEligibilityExam[]
   interests?: string[]
   professionalBadges?: string[]
   nationality?: string
@@ -168,6 +175,11 @@ const PersonalDetailsSchema = new Schema<IPersonalDetails>({
   },
   aboutMe: { type: String, trim: true, maxlength: 2000 },
   phone: { type: String, trim: true },
+  city: { type: String, trim: true, maxlength: 100 },
+  eligibilityExams: [{
+    exam: { type: String, required: true, trim: true, maxlength: 100 },
+    score: { type: String, required: true, trim: true, maxlength: 50 }
+  }],
   interests: [{ type: String, trim: true, maxlength: 50 }],
   professionalBadges: [{ type: String, trim: true, maxlength: 50 }],
   nationality: { type: String, trim: true }

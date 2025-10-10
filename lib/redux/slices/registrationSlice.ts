@@ -353,7 +353,7 @@ const registrationSlice = createSlice({
         if (action.payload.data && state.currentIntent) {
           state.currentIntent = { ...state.currentIntent, ...action.payload.data }
           const intentIndex = state.intents.findIndex(intent => intent.id === state.currentIntent!.id)
-          if (intentIndex !== -1) {
+          if (intentIndex !== -1 && state.currentIntent) {
             state.intents[intentIndex] = state.currentIntent
           }
         }

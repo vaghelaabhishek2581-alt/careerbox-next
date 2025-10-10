@@ -78,7 +78,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inst
 // PATCH /api/institutes/[instituteId] - Update institute data
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { instituteId: string } }
+  context: { params: Promise<{ instituteId: string }> }
 ) {
   try {
     const authResult = await getAuthenticatedUser(req);
@@ -87,7 +87,7 @@ export async function PATCH(
     }
 
     const { userId } = authResult;
-    const { instituteId } = params;
+    const { instituteId } = await context.params;
     const updateData = await req.json();
 
     await connectToDatabase();

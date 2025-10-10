@@ -4,20 +4,29 @@ import { API } from '@/lib/api/services'
 // Types
 export interface Job {
   _id: string
+  id?: string // Alias for _id
   title: string
   description: string
   company: string
   location: string
   type: 'full-time' | 'part-time' | 'contract' | 'internship'
+  employmentType?: string // Alternative field name
   salary?: {
+    min: number
+    max: number
+    currency: string
+  }
+  salaryRange?: {
     min: number
     max: number
     currency: string
   }
   requirements: string[]
   benefits: string[]
-  status: 'active' | 'paused' | 'closed'
+  skills?: string[]
+  status: 'draft' | 'active' | 'paused' | 'closed'
   businessId: string
+  applicationDeadline?: string | Date
   createdAt: string
   updatedAt: string
 }

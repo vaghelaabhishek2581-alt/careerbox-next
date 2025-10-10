@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { connectToDatabase } from '@/lib/db/mongodb'
-import { Institute as InstituteModel } from '@/src/models'
-import { Institute, InstituteSearchFilters } from '@/lib/types/institute.types'
-import { PaginatedResponse } from '@/lib/types/api.types'
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth/unified-auth";
+import { connectToDatabase } from "@/lib/db/mongodb";
+import { Institute as InstituteModel } from "@/src/models";
+import { Institute, InstituteSearchFilters } from "@/lib/types/institute.types";
+import { PaginatedResponse } from "@/lib/types/api.types";
 
 /**
  * @swagger
@@ -36,115 +35,114 @@ import { PaginatedResponse } from '@/lib/types/api.types'
  *       401:
  *         description: Unauthorized
  */
-export async function GET (request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await getAuthenticatedUser(request);
+    if (!authResult) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const query = searchParams.get('q')
-    const state = searchParams.get('state')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get("q");
+    const state = searchParams.get("state");
+    const limit = parseInt(searchParams.get("limit") || "10");
 
     if (!query) {
-      return NextResponse.json({ institutes: [] })
+      return NextResponse.json({ institutes: [] });
     }
 
-    await connectToDatabase()
+    await connectToDatabase();
 
     const filter: any = {
       instituteName: {
         $regex: query,
-        $options: 'i'
-      }
-    }
+        $options: "i",
+      },
+    };
 
     if (state) {
-      filter['address.state'] = state
+      filter["address.state"] = state;
     }
 
-    const institutes = await InstituteModel
-      .find(filter)
-      .select('_id instituteName type address.state address.city')
+    const institutes = await InstituteModel.find(filter)
+      .select("_id instituteName type address.state address.city")
       .limit(limit)
-      .lean()
+      .lean();
 
-    return NextResponse.json({ institutes })
+    return NextResponse.json({ institutes });
   } catch (error) {
-    console.error('Error searching institutes:', error)
+    console.error("Error searching institutes:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
-    )
+    );
   }
 }
 
 // POST /api/institutes/search - Advanced search with filters and pagination
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await getAuthenticatedUser(req);
+    if (!authResult) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { query, filters, page = 1, limit = 10 } = await req.json();
 
-    const { query, filters, page = 1, limit = 10 } = await req.json()
-
-    await connectToDatabase()
+    await connectToDatabase();
 
     // Build search query
-    const searchQuery: any = { status: 'active' }
+    const searchQuery: any = { status: "active" };
 
     if (query) {
       searchQuery.$or = [
-        { instituteName: { $regex: query, $options: 'i' } },
-        { description: { $regex: query, $options: 'i' } },
-        { type: { $regex: query, $options: 'i' } }
-      ]
+        { instituteName: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+        { type: { $regex: query, $options: "i" } },
+      ];
     }
 
     // Apply filters
     if (filters) {
-      if (filters.type) searchQuery.type = filters.type
-      if (filters.state) searchQuery['address.state'] = filters.state
-      if (filters.city) searchQuery['address.city'] = filters.city
-      if (filters.isVerified !== undefined) searchQuery.isVerified = filters.isVerified
+      if (filters.type) searchQuery.type = filters.type;
+      if (filters.state) searchQuery["address.state"] = filters.state;
+      if (filters.city) searchQuery["address.city"] = filters.city;
+      if (filters.isVerified !== undefined)
+        searchQuery.isVerified = filters.isVerified;
       if (filters.establishedYear) {
-        if (filters.establishedYear.min) searchQuery.establishedYear = { $gte: filters.establishedYear.min }
+        if (filters.establishedYear.min)
+          searchQuery.establishedYear = { $gte: filters.establishedYear.min };
         if (filters.establishedYear.max) {
-          searchQuery.establishedYear = { 
-            ...searchQuery.establishedYear, 
-            $lte: filters.establishedYear.max 
-          }
+          searchQuery.establishedYear = {
+            ...searchQuery.establishedYear,
+            $lte: filters.establishedYear.max,
+          };
         }
       }
     }
 
     // Calculate pagination
-    const skip = (page - 1) * limit
-    const total = await InstituteModel.countDocuments(searchQuery)
-    const institutes = await InstituteModel
-      .find(searchQuery)
+    const skip = (page - 1) * limit;
+    const total = await InstituteModel.countDocuments(searchQuery);
+    const institutes = await InstituteModel.find(searchQuery)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean()
+      .lean();
 
     const response: PaginatedResponse<Institute> = {
-      data: institutes,
+      data: institutes as unknown as Institute[],
       total,
       page,
       limit,
-      hasMore: skip + institutes.length < total
-    }
+      hasMore: skip + institutes.length < total,
+    };
 
-    return NextResponse.json(response)
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Error searching institutes:', error)
+    console.error("Error searching institutes:", error);
     return NextResponse.json(
-      { error: 'Failed to search institutes' },
+      { error: "Failed to search institutes" },
       { status: 500 }
-    )
+    );
   }
 }

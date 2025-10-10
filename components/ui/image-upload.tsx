@@ -56,7 +56,7 @@ export function ImageUpload({
         throw new Error(response.error || "Failed to get upload URL");
       }
 
-      const { uploadUrl, fileUrl } = response.data;
+      const { uploadUrl, fileUrl } = response.data as { uploadUrl: string; fileUrl: string };
 
       // Upload to S3
       const uploadResponse = await fetch(uploadUrl, {

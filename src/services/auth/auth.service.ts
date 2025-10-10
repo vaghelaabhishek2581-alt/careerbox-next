@@ -4,7 +4,7 @@ import { API } from '@/lib/api/services'
 
 export class AuthService {
   static async login (input: LoginInput) {
-    const response = await API.auth.login(input)
+    const response = await API.auth.login(input.email || '', input.password || '')
 
     if (!response.success) {
       throw new Error(response.error || 'Login failed')
@@ -28,7 +28,7 @@ export class AuthService {
   }
 
   static async register (input: RegisterInput) {
-    const response = await API.auth.register(input)
+    const response = await API.auth.register(input.name || '', input.email || '', input.password || '')
 
     if (!response.success) {
       throw new Error(response.error || 'Registration failed')

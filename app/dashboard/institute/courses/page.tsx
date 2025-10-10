@@ -89,8 +89,12 @@ export default function InstituteCourses() {
 
   const coursesArray = Array.isArray(courses) ? courses : [];
   const filteredCourses = coursesArray.filter(course => {
+    const instructorName = typeof course.instructor === 'string' 
+      ? course.instructor 
+      : course.instructor?.name || '';
+    
     const matchesSearch = (course.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                         (course.instructor?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (instructorName.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
                          (course.category?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
                          (course.courseType?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     
@@ -331,11 +335,20 @@ export default function InstituteCourses() {
                 <div className="flex items-center gap-3">
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-blue-600 text-white text-xs">
-                      {course.instructor ? course.instructor.split(' ').map(n => n[0]).join('') : 'IN'}
+                      {(() => {
+                        const instructorName = typeof course.instructor === 'string' 
+                          ? course.instructor 
+                          : course.instructor?.name || '';
+                        return instructorName ? instructorName.split(' ').map((n: string) => n[0]).join('') : 'IN';
+                      })()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{course.instructor || 'No Instructor Assigned'}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {typeof course.instructor === 'string' 
+                        ? course.instructor 
+                        : course.instructor?.name || 'No Instructor Assigned'}
+                    </p>
                     <p className="text-xs text-gray-500">Instructor</p>
                   </div>
                 </div>

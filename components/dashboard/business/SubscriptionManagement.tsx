@@ -314,13 +314,13 @@ export default function SubscriptionManagement() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Job Posts</span>
-                        <span>{usageStats.jobPosts} / {currentSubscription.limits.jobPosts === -1 ? '∞' : currentSubscription.limits.jobPosts}</span>
+                        <span>{usageStats.jobPosts} / {currentSubscription.limits.jobPosts === -1 ? '∞' : currentSubscription.limits.jobPosts ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full" 
                           style={{ 
-                            width: `${currentSubscription.limits.jobPosts === -1 ? 0 : (usageStats.jobPosts / currentSubscription.limits.jobPosts) * 100}%` 
+                            width: `${currentSubscription.limits.jobPosts === -1 ? 0 : (usageStats.jobPosts / (currentSubscription.limits.jobPosts ?? 1)) * 100}%` 
                           }}
                         />
                       </div>
@@ -328,13 +328,13 @@ export default function SubscriptionManagement() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Exam Posts</span>
-                        <span>{usageStats.examPosts} / {currentSubscription.limits.examPosts === -1 ? '∞' : currentSubscription.limits.examPosts}</span>
+                        <span>{usageStats.examPosts} / {currentSubscription.limits.examPosts === -1 ? '∞' : currentSubscription.limits.examPosts ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-green-600 h-2 rounded-full" 
                           style={{ 
-                            width: `${currentSubscription.limits.examPosts === -1 ? 0 : (usageStats.examPosts / currentSubscription.limits.examPosts) * 100}%` 
+                            width: `${currentSubscription.limits.examPosts === -1 ? 0 : (usageStats.examPosts / (currentSubscription.limits.examPosts ?? 1)) * 100}%` 
                           }}
                         />
                       </div>
@@ -342,13 +342,13 @@ export default function SubscriptionManagement() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Applicant Views</span>
-                        <span>{usageStats.applicantViews} / {currentSubscription.limits.applicantViews === -1 ? '∞' : currentSubscription.limits.applicantViews}</span>
+                        <span>{usageStats.applicantViews} / {currentSubscription.limits.applicantViews === -1 ? '∞' : currentSubscription.limits.applicantViews ?? 0}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-purple-600 h-2 rounded-full" 
                           style={{ 
-                            width: `${currentSubscription.limits.applicantViews === -1 ? 0 : (usageStats.applicantViews / currentSubscription.limits.applicantViews) * 100}%` 
+                            width: `${currentSubscription.limits.applicantViews === -1 ? 0 : (usageStats.applicantViews / (currentSubscription.limits.applicantViews ?? 1)) * 100}%` 
                           }}
                         />
                       </div>

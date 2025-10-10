@@ -470,7 +470,7 @@ export async function PATCH(request: NextRequest) {
     console.log('Update data received:', Object.keys(data))
 
     // Validate the incoming data
-    let validatedData
+    let validatedData: z.infer<typeof UserProfileUpdateSchema>
     try {
       validatedData = UserProfileUpdateSchema.parse(data)
       console.log('✅ Data validation passed')

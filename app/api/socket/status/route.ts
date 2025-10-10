@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSocketServer } from '../../../../server.mts'
 
 export async function GET(request: NextRequest) {
   try {
-    const io = getSocketServer()
+    // Access the global socket server if available
+    const io = (global as any).socketIO
     
     if (!io) {
       return NextResponse.json({

@@ -283,6 +283,36 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
         <div className="space-y-6">
           {/* Mobile: Courses First, Desktop: Grid Layout */}
 
+
+          {/* Detailed Facilities Section */}
+          {(institute as any).campusDetails?.detailedFacilities && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Campus Facilities
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6">
+                  {(institute as any).campusDetails.detailedFacilities.map((facility: any, index: number) => (
+                    <div key={index} className="border-l-4 border-blue-500 pl-4">
+                      <h3 className="font-semibold text-lg mb-2">{facility.name}</h3>
+                      <p className="text-gray-600 mb-3">{facility.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {facility.features.map((feature: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {feature}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Mobile Courses Section - Shows first on mobile */}
           <div className="block lg:hidden">
             {institute.courses.length > 0 ? (
@@ -347,69 +377,137 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                   </div>
 
                   {/* Courses List View */}
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {institute.courses.slice(0, 3).map((course) => (
-                      <div key={course.id} className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-2xl p-5">
+                      <div key={course.id} className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-2xl p-5 shadow-lg">
                         <div className="flex flex-col gap-4">
                           {/* Course Header */}
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                                  <GraduationCap className="h-5 w-5 text-white" />
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                                  <GraduationCap className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
                                   <h3 className="text-lg font-bold text-gray-900">
-                                    {course.degree} in {course.name}
+                                    {course.degree}{course.name && ` in ${course.name}`}
                                   </h3>
-                                  <div className="flex gap-2 mt-1">
+                                  <div className="flex gap-2 mt-1 flex-wrap">
                                     <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-1">{course.level}</Badge>
                                     <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-1">{course.category}</Badge>
+                                    {course.educationType && (
+                                      <Badge className="bg-green-100 text-green-700 text-xs px-2 py-1">{course.educationType}</Badge>
+                                    )}
                                   </div>
                                 </div>
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6"
-                              onClick={() => handleApplyClick(`${course.degree} in ${course.name}`)}
-                            >
-                              Apply Now
-                            </Button>
+                            <div className="flex flex-col gap-2">
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4"
+                                onClick={() => handleApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
+                              >
+                                Apply Now
+                              </Button>
+                              {course.brochure && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  className="border-blue-300 text-blue-600 hover:bg-blue-50 text-xs px-2"
+                                >
+                                  <a href={course.brochure.url} target="_blank" rel="noopener noreferrer">
+                                    Brochure
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
                           </div>
 
                           {/* Course Description */}
-                          <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 pl-12">
-                            {course.description}
-                          </p>
+                          {course.description && (
+                            <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
+                              {course.description}
+                            </p>
+                          )}
 
                           {/* Course Details Grid */}
-                          <div className="grid grid-cols-2 gap-4 pl-12">
-                            <div className="flex items-center gap-2 text-sm">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="flex items-center gap-2 text-sm bg-white/70 rounded-lg p-2">
                               <Clock className="h-4 w-4 text-blue-500" />
                               <span className="text-gray-600">{course.duration}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <BookOpen className="h-4 w-4 text-green-500" />
-                              <span className="text-gray-600">{course.curriculum?.totalCredits || 'N/A'} Credits</span>
+                            <div className="flex items-center gap-2 text-sm bg-white/70 rounded-lg p-2">
+                              <Users className="h-4 w-4 text-purple-500" />
+                              <span className="text-gray-600">{course.totalSeats || 'N/A'} Seats</span>
                             </div>
                           </div>
 
-                          {/* Fee & Package Info */}
-                          <div className="flex gap-6 pl-12">
-                            {course.fees && (
-                              <div className="bg-white rounded-lg px-4 py-2 shadow-sm">
-                                <div className="text-xs text-gray-500">Annual Fee</div>
-                                <div className="font-bold text-green-600">{course.fees.totalAnnualFee}</div>
+                          {/* Fees Information */}
+                          {course.fees && (
+                            <div className="bg-white/80 rounded-lg p-3">
+                              <h5 className="text-sm font-semibold text-green-700 mb-2">Fee Structure</h5>
+                              <div className="grid grid-cols-2 gap-3">
+                                {course.fees?.totalFee && (
+                                  <div>
+                                    <div className="text-xs text-gray-500">Total Fee</div>
+                                    <div className="font-bold text-green-600">₹{course.fees.totalFee.toLocaleString()}</div>
+                                  </div>
+                                )}
+                                {course.fees?.tuitionFee && course.fees.tuitionFee !== course.fees?.totalFee && (
+                                  <div>
+                                    <div className="text-xs text-gray-500">Tuition Fee</div>
+                                    <div className="font-bold text-blue-600">₹{course.fees.tuitionFee.toLocaleString()}</div>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                            {course.careerProspects && (
-                              <div className="bg-white rounded-lg px-4 py-2 shadow-sm">
-                                <div className="text-xs text-gray-500">Avg Package</div>
-                                <div className="font-bold text-blue-600">{course.careerProspects.averageSalary}</div>
+                            </div>
+                          )}
+
+                          {/* Placement Information */}
+                          {course.placements && (
+                            <div className="bg-white/80 rounded-lg p-3">
+                              <h5 className="text-sm font-semibold text-blue-700 mb-2">Placement Statistics</h5>
+                              <div className="grid grid-cols-3 gap-2">
+                                {course.placements.averagePackage && (
+                                  <div>
+                                    <div className="text-xs text-gray-500">Avg Package</div>
+                                    <div className="font-bold text-green-600 text-sm">₹{course.placements.averagePackage.toLocaleString()}</div>
+                                  </div>
+                                )}
+                                {course.placements.highestPackage && (
+                                  <div>
+                                    <div className="text-xs text-gray-500">Highest</div>
+                                    <div className="font-bold text-purple-600 text-sm">₹{course.placements.highestPackage.toLocaleString()}</div>
+                                  </div>
+                                )}
+                                {course.placements.placementRate && (
+                                  <div>
+                                    <div className="text-xs text-gray-500">Rate</div>
+                                    <div className="font-bold text-orange-600 text-sm">{course.placements.placementRate}%</div>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
+                              {course.placements.topRecruiters && course.placements.topRecruiters.length > 0 && (
+                                <div className="mt-2">
+                                  <div className="text-xs text-gray-500 mb-1">Top Recruiters:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {course.placements.topRecruiters.slice(0, 3).map((recruiter, idx) => (
+                                      <Badge key={idx} className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5">
+                                        {recruiter}
+                                      </Badge>
+                                    ))}
+                                    {course.placements.topRecruiters.length > 3 && (
+                                      <Badge className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5">
+                                        +{course.placements.topRecruiters.length - 3}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -435,7 +533,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
           </div>
 
           {/* Desktop Grid Layout */}
-          <div className="hidden lg:flex lg:grid lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="hidden lg:grid lg:grid-cols-4 gap-6 lg:gap-8">
             {/* Main Content Column */}
             <div className="lg:col-span-3 space-y-6">
               {/* About Section */}
@@ -541,88 +639,188 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                       </div>
                     </div>
 
-                    {/* Courses List View */}
-                    <div className="space-y-6">
+                    {/* Courses List View - Compact */}
+                    <div className="space-y-4">
                       {institute.courses.map((course) => (
-                        <div key={course.id} className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 border border-blue-100 rounded-3xl p-6 lg:p-8 relative overflow-hidden">
+                        <div key={course.id} className="bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20 border border-blue-100 rounded-2xl p-4 lg:p-5 relative overflow-hidden shadow-md hover:shadow-lg transition-all duration-300">
                           {/* Background Pattern */}
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/50 to-purple-100/50 rounded-full -translate-y-16 translate-x-16"></div>
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-100/30 to-purple-100/30 rounded-full -translate-y-12 translate-x-12"></div>
 
                           <div className="relative z-10">
-                            {/* Course Header */}
-                            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 lg:gap-6 mb-6">
+                            {/* Course Header - Compact */}
+                            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-3 lg:gap-4 mb-4">
                               <div className="flex-1">
-                                <div className="flex items-start gap-4 mb-4">
-                                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <GraduationCap className="h-7 w-7 text-white" />
+                                <div className="flex items-start gap-3 mb-3">
+                                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                                    <GraduationCap className="h-6 w-6 text-white" />
                                   </div>
                                   <div className="flex-1">
-                                    <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">
-                                      {course.degree} in {course.name}
+                                    <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-2 leading-tight">
+                                      {course.degree}{course.name && ` in ${course.name}`}
                                     </h3>
-                                    <div className="flex flex-wrap gap-2">
-                                      <Badge className="bg-blue-100 text-blue-700 px-3 py-1 text-sm">{course.level}</Badge>
-                                      <Badge className="bg-purple-100 text-purple-700 px-3 py-1 text-sm">{course.category}</Badge>
+                                    <div className="flex flex-wrap gap-1.5 mb-2">
+                                      <Badge className="bg-blue-100 text-blue-700 px-2 py-0.5 text-xs">{course.level}</Badge>
+                                      <Badge className="bg-purple-100 text-purple-700 px-2 py-0.5 text-xs">{course.category}</Badge>
+                                      {course.educationType && (
+                                        <Badge className="bg-green-100 text-green-700 px-2 py-0.5 text-xs">{course.educationType}</Badge>
+                                      )}
+                                      {course.school && (
+                                        <Badge className="bg-orange-100 text-orange-700 px-2 py-0.5 text-xs">{course.school}</Badge>
+                                      )}
+                                      {course.recognition && course.recognition.length > 0 && (
+                                        course.recognition.map((rec: { name: string; type?: string }, idx: number) => (
+                                          <Badge key={idx} className="bg-red-100 text-red-700 px-2 py-0.5 text-xs">{rec.name} Approved</Badge>
+                                        ))
+                                      )}
                                     </div>
                                   </div>
                                 </div>
-                                <p className="text-gray-700 leading-relaxed line-clamp-2 text-base">{course.description}</p>
                               </div>
 
-                              {/* Action Button */}
-                              <Button
-                                size="lg"
-                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                                onClick={() => handleApplyClick(`${course.degree} in ${course.name}`)}
-                              >
-                                Apply Now
-                              </Button>
+                              {/* Action Buttons - Compact */}
+                              <div className="flex flex-row lg:flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 text-xs"
+                                  onClick={() => handleApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
+                                >
+                                  Apply Now
+                                </Button>
+                                {course.brochure && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                    className="border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-2 text-xs"
+                                  >
+                                    <a href={course.brochure.url} target="_blank" rel="noopener noreferrer">
+                                      Brochure
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
                             </div>
 
-                            {/* Course Details Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                              <div className="flex items-center gap-3 bg-white/70 rounded-xl p-3">
-                                <Clock className="h-5 w-5 text-blue-500" />
+                            {/* Course Details Grid - Compact */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                              <div className="flex items-center gap-2 bg-white/70 rounded-lg p-2.5 border border-blue-100">
+                                <Clock className="h-4 w-4 text-blue-500 flex-shrink-0" />
                                 <div>
                                   <div className="text-xs text-gray-500">Duration</div>
-                                  <div className="font-medium text-gray-700">{course.duration}</div>
+                                  <div className="font-medium text-gray-700 text-sm">{course.duration}</div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3 bg-white/70 rounded-xl p-3">
-                                <BookOpen className="h-5 w-5 text-green-500" />
+                              <div className="flex items-center gap-2 bg-white/70 rounded-lg p-2.5 border border-purple-100">
+                                <Users className="h-4 w-4 text-purple-500 flex-shrink-0" />
                                 <div>
-                                  <div className="text-xs text-gray-500">Credits</div>
-                                  <div className="font-medium text-gray-700">{course.curriculum?.totalCredits || 'N/A'}</div>
+                                  <div className="text-xs text-gray-500">Seats</div>
+                                  <div className="font-medium text-gray-700 text-sm">{course.totalSeats || 'N/A'}</div>
                                 </div>
                               </div>
-                              {course.fees && (
-                                <div className="flex items-center gap-3 bg-green-50 rounded-xl p-3">
-                                  <CreditCard className="h-5 w-5 text-green-500" />
+                              {course.reviewCount && (
+                                <div className="flex items-center gap-2 bg-white/70 rounded-lg p-2.5 border border-yellow-100">
+                                  <Award className="h-4 w-4 text-yellow-500 flex-shrink-0" />
                                   <div>
-                                    <div className="text-xs text-gray-500">Annual Fee</div>
-                                    <div className="font-bold text-green-600">{course.fees.totalAnnualFee}</div>
+                                    <div className="text-xs text-gray-500">Reviews</div>
+                                    <div className="font-medium text-gray-700 text-sm">{course.reviewCount}</div>
                                   </div>
                                 </div>
                               )}
-                              {course.careerProspects && (
-                                <div className="flex items-center gap-3 bg-blue-50 rounded-xl p-3">
-                                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                              {course.questionsCount && (
+                                <div className="flex items-center gap-2 bg-white/70 rounded-lg p-2.5 border border-indigo-100">
+                                  <BookOpen className="h-4 w-4 text-indigo-500 flex-shrink-0" />
                                   <div>
-                                    <div className="text-xs text-gray-500">Avg Package</div>
-                                    <div className="font-bold text-blue-600">{course.careerProspects.averageSalary}</div>
+                                    <div className="text-xs text-gray-500">Q&A</div>
+                                    <div className="font-medium text-gray-700 text-sm">{course.questionsCount}</div>
                                   </div>
                                 </div>
                               )}
                             </div>
 
-                            {/* Eligibility */}
-                            {course.eligibilityCriteria && (
-                              <div className="bg-purple-50 rounded-xl p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <GraduationCap className="h-4 w-4 text-purple-500" />
-                                  <span className="font-medium text-purple-700 text-sm">Eligibility Criteria</span>
+                            {/* Combined Info Section - Compact */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                              {/* Fees Information - Compact */}
+                              {course.fees && (
+                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                                  <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center gap-2">
+                                    <CreditCard className="h-4 w-4" />
+                                    Fee Structure
+                                  </h4>
+                                  <div className="space-y-2">
+                                    {course.fees?.totalFee && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">Total Fee</span>
+                                        <span className="font-bold text-green-600 text-sm">₹{course.fees.totalFee.toLocaleString()}</span>
+                                      </div>
+                                    )}
+                                    {course.fees?.tuitionFee && course.fees.tuitionFee !== course.fees?.totalFee && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">Tuition Fee</span>
+                                        <span className="font-bold text-blue-600 text-sm">₹{course.fees.tuitionFee.toLocaleString()}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <p className="text-sm text-purple-600">{course.eligibilityCriteria.academicRequirement}</p>
+                              )}
+
+                              {/* Placement Information - Compact */}
+                              {course.placements && (
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                                  <h4 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4" />
+                                    Placements
+                                  </h4>
+                                  <div className="space-y-2">
+                                    {course.placements.averagePackage && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">Average</span>
+                                        <span className="font-bold text-green-600 text-sm">₹{course.placements.averagePackage.toLocaleString()}</span>
+                                      </div>
+                                    )}
+                                    {course.placements.highestPackage && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">Highest</span>
+                                        <span className="font-bold text-purple-600 text-sm">₹{course.placements.highestPackage.toLocaleString()}</span>
+                                      </div>
+                                    )}
+                                    {course.placements.placementRate && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">Rate</span>
+                                        <span className="font-bold text-orange-600 text-sm">{course.placements.placementRate}%</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Top Recruiters - Compact */}
+                            {course.placements?.topRecruiters && course.placements.topRecruiters.length > 0 && (
+                              <div className="mt-4 pt-4 border-t border-gray-100">
+                                <h5 className="font-medium text-blue-700 mb-2 text-sm">Top Recruiters:</h5>
+                                <div className="flex flex-wrap gap-1">
+                                  {course.placements.topRecruiters.slice(0, 6).map((recruiter, idx) => (
+                                    <Badge key={idx} className="bg-blue-100 text-blue-700 px-2 py-0.5 text-xs">
+                                      {recruiter}
+                                    </Badge>
+                                  ))}
+                                  {course.placements.topRecruiters.length > 6 && (
+                                    <Badge className="bg-gray-100 text-gray-600 px-2 py-0.5 text-xs">
+                                      +{course.placements.topRecruiters.length - 6} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Location Information - Compact */}
+                            {course.location && (
+                              <div className="mt-3 pt-3 border-t border-gray-100">
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <MapPin className="h-4 w-4" />
+                                  {course.location.locality && `${course.location.locality}, `}
+                                  {course.location.city}, {course.location.state}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -637,6 +835,116 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                     <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Courses Coming Soon</h3>
                     <p className="text-gray-500">Detailed course information will be available soon.</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Campus Gallery Section */}
+              {(institute as any).mediaGallery && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      Campus Gallery
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {Object.entries((institute as any).mediaGallery.photos).map(([category, photos]: [string, any]) => 
+                        (Array.isArray(photos) ? photos : []).slice(0, 2).map((photo: any, index: number) => (
+                          <div key={`${category}-${index}`} className="relative group cursor-pointer">
+                            <img
+                              src={photo.widgetThumbUrl || photo.thumbUrl}
+                              alt={photo.altText}
+                              className="w-full h-32 object-cover rounded-lg transition-transform group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                              <span className="text-white text-sm font-medium">{photo.mediaTitle}</span>
+                            </div>
+                            <Badge className="absolute top-2 left-2 text-xs">{category}</Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Placements & Career Prospects */}
+              {institute.placements && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Placements & Career Prospects
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <TrendingUp className="h-6 w-6 text-blue-600" />
+                          <div className="text-sm text-blue-600 font-medium">Average Package</div>
+                        </div>
+                        <div className="text-2xl font-bold text-blue-700">₹{institute.placements.averageSalary}</div>
+                      </div>
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Award className="h-6 w-6 text-green-600" />
+                          <div className="text-sm text-green-600 font-medium">Highest Package</div>
+                        </div>
+                        <div className="text-2xl font-bold text-green-700">₹{institute.placements.highestSalary}</div>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Building2 className="h-6 w-6 text-purple-600" />
+                          <div className="text-sm text-purple-600 font-medium">Companies Visited</div>
+                        </div>
+                        <div className="text-2xl font-bold text-purple-700">{institute.placements.companiesVisited}</div>
+                      </div>
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Users className="h-6 w-6 text-orange-600" />
+                          <div className="text-sm text-orange-600 font-medium">Total Offers</div>
+                        </div>
+                        <div className="text-2xl font-bold text-orange-700">{institute.placements.totalOffers}</div>
+                      </div>
+                    </div>
+
+                    {/* Top Recruiters */}
+                    {institute.placements.topRecruiters && institute.placements.topRecruiters.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                          <Building2 className="h-5 w-5 text-blue-500" />
+                          Top Recruiters
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                          {institute.placements.topRecruiters.map((recruiter, index) => (
+                            <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:shadow-md transition-shadow">
+                              <div className="text-sm font-medium text-gray-700">{recruiter}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Placement Sectors */}
+                    {institute.placements.sectors && institute.placements.sectors.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5 text-green-500" />
+                          Placement Sectors
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {institute.placements.sectors.map((sector, index) => (
+                            <div key={index} className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+                              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+                              <span className="text-sm text-gray-700">{sector}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -687,6 +995,92 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Media Gallery */}
+              {institute.mediaGallery && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      Campus Gallery
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Photos */}
+                    {institute.mediaGallery.photos && Object.keys(institute.mediaGallery.photos).length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-gray-900 mb-4">Campus Photos</h4>
+                        <div className="space-y-6">
+                          {Object.entries(institute.mediaGallery.photos).map(([category, images]) => (
+                            <div key={category}>
+                              <h5 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                {category}
+                              </h5>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {Array.isArray(images) ? images.slice(0, 6).map((image, index) => (
+                                  <div key={index} className="relative group overflow-hidden rounded-lg bg-gray-100 aspect-video">
+                                    <img
+                                      src={typeof image === 'string' ? image : image.mediaUrl}
+                                      alt={typeof image === 'string' ? `${category} ${index + 1}` : image.altText || `${category} ${index + 1}`}
+                                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                      loading="lazy"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
+                                  </div>
+                                )) : null}
+                              </div>
+                              {Array.isArray(images) && images.length > 6 && (
+                                <div className="text-center mt-3">
+                                  <Button variant="outline" size="sm">
+                                    View All {images.length} {category} Photos
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Videos */}
+                    {institute.mediaGallery.videos && institute.mediaGallery.videos.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-4">Campus Videos</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {institute.mediaGallery.videos.slice(0, 4).map((video, index) => (
+                            <div key={index} className="relative group">
+                              <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-video">
+                                <img
+                                  src={video.thumbnail || video.thumbUrl}
+                                  alt={video.title || video.mediaTitle}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                  <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center group-hover:bg-white transition-colors">
+                                    <div className="w-0 h-0 border-l-[8px] border-l-gray-700 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent ml-1"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="mt-2">
+                                <h6 className="font-medium text-sm text-gray-900">{video.title || video.mediaTitle}</h6>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {institute.mediaGallery.videos.length > 4 && (
+                          <div className="text-center mt-4">
+                            <Button variant="outline" size="sm">
+                              View All {institute.mediaGallery.videos.length} Videos
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Desktop Sidebar */}
@@ -974,6 +1368,72 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
               </Card>
             )}
           </div>
+          {/* Rankings Section */}
+          {institute.rankings.national.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Rankings & Recognition
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {institute.rankings.national.map((ranking, index) => (
+                    <div key={index} className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border">
+                      <div className="text-2xl font-bold text-blue-600">#{ranking.rank}</div>
+                      <div className="text-sm text-gray-600">{ranking.agency} {ranking.year}</div>
+                      <div className="text-sm font-medium">{ranking.category}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Research & Innovation Section */}
+          {institute.researchAndInnovation && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  Research & Innovation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{institute.researchAndInnovation.researchCenters}</div>
+                    <div className="text-sm text-gray-600">Research Centers</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{institute.researchAndInnovation.patentsFiled}</div>
+                    <div className="text-sm text-gray-600">Patents Filed</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">{institute.researchAndInnovation.publicationsPerYear}</div>
+                    <div className="text-sm text-gray-600">Publications/Year</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">{institute.researchAndInnovation.phdScholars}</div>
+                    <div className="text-sm text-gray-600">PhD Scholars</div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">{institute.researchAndInnovation.incubationCenter.name}</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Startups Funded:</span> {institute.researchAndInnovation.incubationCenter.startupsFunded}
+                    </div>
+                    <div>
+                      <span className="font-medium">Total Funding:</span> ₹{institute.researchAndInnovation.incubationCenter.totalFunding}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
         </div>
       </div>
 

@@ -103,6 +103,7 @@ export async function GET(
         foundedYear: profile.foundedYear,
         revenue: profile.revenue,
         employeeCount: profile.employeeCount,
+        jobPostings: profile.jobPostings || 0,
         headquarters: profile.headquarters,
         contactInfo: profile.contactInfo,
         services: profile.services || [],

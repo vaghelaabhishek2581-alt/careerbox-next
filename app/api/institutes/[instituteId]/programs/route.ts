@@ -50,7 +50,7 @@ const programSchema = z.object({
 })
 
 // GET - Fetch programs for specific institute
-export async function GET(request: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
     try {
         const authResult = await getAuthenticatedUser(request)
         if (!authResult) {
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest, { params }: { params: { institut
         }
 
         const { userId, user } = authResult
-        const { instituteId } = params
+        const { instituteId } = await context.params
 
         if (!instituteId) {
             return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest, { params }: { params: { institut
 }
 
 // POST - Create a new program
-export async function POST(request: NextRequest, { params }: { params: { instituteId: string } }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ instituteId: string }> }) {
     try {
         const authResult = await getAuthenticatedUser(request)
         if (!authResult) {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest, { params }: { params: { institu
         }
 
         const { userId, user } = authResult
-        const { instituteId } = params
+        const { instituteId } = await context.params
 
         if (!instituteId) {
             return NextResponse.json({ error: 'Institute ID is required' }, { status: 400 })

@@ -200,6 +200,7 @@ export default function AdminSidebar({ className, isCollapsed = false, onToggle 
   };
 
   const isActive = (href: string) => {
+    if (!pathname) return false;
     if (href === "/dashboard/admin") {
       return pathname === href;
     }
