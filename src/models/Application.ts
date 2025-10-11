@@ -1,7 +1,16 @@
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Schema, Types, model, models } from 'mongoose'
+
+// Types for subdocuments
+export interface ApplicationDocument {
+  id: string
+  name: string
+  type: 'resume' | 'cover_letter' | 'certificate' | 'portfolio' | 'other'
+  url: string
+  uploadedAt: Date
+}
 
 // Application Document Schema
-const ApplicationDocumentSchema = new Schema({
+const ApplicationDocumentSchema = new Schema<ApplicationDocument>({
   id: { type: String, required: true },
   name: { type: String, required: true },
   type: { 
@@ -14,7 +23,7 @@ const ApplicationDocumentSchema = new Schema({
 }, { _id: false })
 
 // Application Schema
-const ApplicationSchema = new Schema({
+const ApplicationSchema = new Schema<IApplication>({
   userId: { 
     type: Schema.Types.ObjectId, 
     ref: 'User', 
@@ -92,9 +101,9 @@ ApplicationSchema.pre('save', function(next) {
 })
 
 // Interface for Application document
-export interface IApplication extends Document {
-  _id: mongoose.Types.ObjectId
-  userId: mongoose.Types.ObjectId
+export interface IApplication {
+  _id: Types.ObjectId
+  userId: Types.ObjectId
   type: 'job' | 'course' | 'exam'
   targetId: string
   status: 'pending' | 'reviewed' | 'shortlisted' | 'accepted' | 'rejected' | 'withdrawn'
@@ -102,13 +111,7 @@ export interface IApplication extends Document {
   updatedAt: Date
   reviewedAt?: Date
   notes?: string
-  documents?: {
-    id: string
-    name: string
-    type: 'resume' | 'cover_letter' | 'certificate' | 'portfolio' | 'other'
-    url: string
-    uploadedAt: Date
-  }[]
+  documents?: ApplicationDocument[]
   interviewScheduled?: Date
   interviewNotes?: string
   
@@ -129,4 +132,4 @@ export interface IApplication extends Document {
   specialRequirements?: string
 }
 
-export default mongoose.models.Application || mongoose.model<IApplication>('Application', ApplicationSchema)
+export default models.Application || model<IApplication>('Application', ApplicationSchema)
