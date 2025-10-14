@@ -2,6 +2,8 @@
 
 import { connectToDatabase } from '@/lib/db/mongoose'
 import StudentLead, { IStudentLead } from '@/src/models/StudentLead'
+import Profile from '@/src/models/Profile'
+import User from '@/src/models/User'
 import { Types } from 'mongoose'
 
 export type CreateStudentLeadInput = {
@@ -13,6 +15,7 @@ export type CreateStudentLeadInput = {
   email?: string
   phone?: string
   city?: string
+  eligibilityExams?: Array<{ exam: string; score: string }>
 
   // Context
   courseId?: string
@@ -41,8 +44,42 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
 
     // Basic validation
     const isAuthed = Boolean(input.userId)
-    if (!isAuthed) {
-      if (!input.fullName || !input.email) {
+    
+    let fullName = input.fullName
+    let email = input.email
+    let phone = input.phone
+    let city = input.city
+    let eligibilityExams = input.eligibilityExams
+
+    // If user is authenticated, fetch their details from Profile
+    if (isAuthed && input.userId) {
+      try {
+        const profile = await Profile.findOne({ userId: new Types.ObjectId(input.userId) })
+        const user = await User.findById(new Types.ObjectId(input.userId))
+
+        if (profile && user) {
+          // Use profile data
+          fullName = `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
+          email = user.email
+          phone = profile.personalDetails.phone || phone
+          city = profile.personalDetails.city || city
+          eligibilityExams = profile.personalDetails.eligibilityExams || eligibilityExams
+        } else {
+          // Profile not found, require manual data
+          if (!input.fullName || !input.email) {
+            return { ok: false, error: 'User profile not found. Please provide fullName and email.' }
+          }
+        }
+      } catch (profileErr) {
+        console.error('Error fetching user profile:', profileErr)
+        // Fall back to provided data
+        if (!input.fullName || !input.email) {
+          return { ok: false, error: 'Failed to fetch user profile. Please provide fullName and email.' }
+        }
+      }
+    } else {
+      // Guest user - validate required fields
+      if (!fullName || !email) {
         return { ok: false, error: 'fullName and email are required for guest lead' }
       }
     }
@@ -54,10 +91,10 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
     // Build document
     const doc: Partial<IStudentLead> = {
       userId: input.userId ? new Types.ObjectId(input.userId) : undefined,
-      fullName: input.fullName || '',
-      email: (input.email || '').toLowerCase().trim(),
-      phone: input.phone,
-      city: input.city,
+      fullName: fullName || '',
+      email: (email || '').toLowerCase().trim(),
+      phone: phone,
+      city: city,
       courseId: input.courseId,
       courseName: input.courseName,
       instituteId: input.instituteId,
@@ -68,6 +105,7 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
       source: input.source || 'institute_detail_page',
       utm: input.utm,
       status: 'new',
+      eligibilityExams: eligibilityExams,
     }
 
     // Persist

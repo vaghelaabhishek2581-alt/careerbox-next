@@ -13,6 +13,7 @@ import type {
   CourseSearchParams,
   CourseSearchResult,
 } from "@/types/institute";
+import { clearOrganizationError } from "../redux/slices/organizationSlice";
 
 // Helper: escape regex
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -39,9 +40,9 @@ function mapAdminToUiInstitute(admin: IAdminInstitute): UiInstitute {
       ? (admin as any).programmes.flatMap((p: any) => Array.isArray(p?.course) ? p.course : [])
       : []) as any[]),
   ]
-
+console.log("adminadmin", admin);
   return {
-    id: admin.id,
+    id: admin._id?.toString?.() || admin.id,
     name: admin.name,
     shortName: admin.shortName || admin.name,
     slug: admin.slug,
@@ -100,6 +101,7 @@ function mapAdminToUiInstitute(admin: IAdminInstitute): UiInstitute {
       founder: admin.overview?.founder || "",
       chancellor: admin.overview?.chancellor || "",
       viceChancellor: admin.overview?.viceChancellor || "",
+      stats: (admin.overview as any)?.stats || [],
     },
     campusDetails: {
       totalArea: "",
@@ -268,6 +270,68 @@ function mapAdminToUiInstitute(admin: IAdminInstitute): UiInstitute {
         })
       ) as any,
     } : undefined,
+    programmes: (admin as any).programmes ? (admin as any).programmes.map((p: any) => ({
+      id: p.id || p._id?.toString(),
+      name: p.name,
+      courseCount: p.courseCount,
+      placementRating: p.placementRating,
+      eligibilityExams: p.eligibilityExams || [],
+      course: (Array.isArray(p.course) ? p.course : []).map((c: any) => ({
+        id: c._id?.toString?.() || c.seoUrl || c.name,
+        name: c.name,
+        degree: c.degree || "",
+        slug: c.seoUrl || undefined,
+        school: c.school,
+        duration: c.duration || "",
+        level: c.courseLevel || c.level || "",
+        category: c.category || "",
+        description: undefined,
+        objectives: undefined,
+        curriculum: undefined,
+        admissionProcess: undefined,
+        fees: ((): any => {
+          if (typeof c.fees === 'object' && c.fees) {
+            const f: any = c.fees as any;
+            return {
+              tuitionFee: f.tuitionFee?.toString?.() || "",
+              hostelFee: "",
+              messFee: "",
+              otherFees: "",
+              totalAnnualFee: "",
+              totalFee: typeof f.totalFee === 'number' ? f.totalFee : undefined,
+              scholarships: Array.isArray(f.scholarships) ? f.scholarships : [],
+            };
+          }
+          return undefined;
+        })(),
+        facultyProfile: undefined,
+        infrastructure: undefined,
+        careerProspects: undefined,
+        industryConnections: undefined,
+        studentActivities: undefined,
+        specializations: undefined,
+        practicalTraining: undefined,
+        barCouncilRecognition: undefined,
+        totalSeats: c.totalSeats,
+        placements: c.placements ? {
+          averagePackage: c.placements.averagePackage || 0,
+          highestPackage: c.placements.highestPackage || 0,
+          placementRate: c.placements.placementRate || 0,
+          topRecruiters: c.placements.topRecruiters || [],
+        } : undefined,
+        location: c.location ? {
+          city: c.location.city,
+          state: c.location.state,
+          country: undefined,
+          locality: c.location.locality,
+        } : undefined,
+        educationType: c.educationType,
+        brochure: c.brochure ? { url: normalizeUrl(c.brochure.url) || '', name: undefined } : undefined,
+        recognition: c.recognition?.map((r: string) => ({ name: r })) || [],
+        reviewCount: c.reviewCount,
+        questionsCount: c.questionsCount,
+      } as UiCourse)),
+    })) : undefined,
   };
 }
 

@@ -152,49 +152,15 @@ export default function AdminInstituteNewPage() {
   const [photosCategories, setPhotosCategories] = useState<Array<{ category: string; urls: string[] }>>([])
   const [videos, setVideos] = useState<Array<{ url: string; title?: string; thumbnail?: string }>>([])
 
-  // courses
-  const [courses, setCourses] = useState<Array<{
-    id: string; name: string; degree?: string; school?: string; duration?: string; level?: string; category?: string; totalSeats?: string; reviewCount?: string; questionsCount?: string; tuitionFee?: string; totalFee?: string; currency?: string; brochureUrl?: string; brochureYear?: string; seoUrl?: string; state?: string; city?: string; locality?: string; educationType?: string; deliveryMethod?: string; courseLevel?: string; affiliatedUniversity?: string; recognition?: string[]; avgPackage?: string; highestPackage?: string; placementRate?: string; placementRecruiters?: string[];
-  }>>([])
 
-  // programmes (new structure)
+  // stats
+  const [stats, setStats] = useState<Array<{ title: string; description: string }>>([])
+
+  // programmes
   const [programmes, setProgrammes] = useState<Array<{
-    id?: string
-    name: string
-    courseCount?: string
-    placementRating?: string
-    eligibilityExams: string[]
-    course: Array<{
-      id?: string
-      name: string
-      degree?: string
-      school?: string
-      duration?: string
-      level?: string
-      category?: string
-      totalSeats?: string
-      reviewCount?: string
-      questionsCount?: string
-      tuitionFee?: string
-      totalFee?: string
-      currency?: string
-      brochureUrl?: string
-      brochureYear?: string
-      seoUrl?: string
-      state?: string
-      city?: string
-      locality?: string
-      educationType?: string
-      deliveryMethod?: string
-      courseLevel?: string
-      affiliatedUniversity?: string
-      recognition?: string[]
-      eligibilityExams?: string[]
-      avgPackage?: string
-      highestPackage?: string
-      placementRate?: string
-      placementRecruiters?: string[]
-    }>
+    id: string; name: string; courseCount?: number; placementRating?: number; eligibilityExams?: string[]; course?: Array<{
+      id: string; name: string; degree?: string; school?: string; duration?: string; level?: string; category?: string; totalSeats?: number; reviewCount?: number; questionsCount?: number; fees?: { tuitionFee?: number; totalFee?: number; currency?: string }; brochure?: { url?: string; year?: number }; seoUrl?: string; affiliatedUniversity?: string; location?: { state?: string; city?: string; locality?: string }; educationType?: string; deliveryMethod?: string; courseLevel?: string; eligibilityExams?: string[]; recognition?: Array<{ name: string }>; placements?: { averagePackage?: number; highestPackage?: number; placementRate?: number; topRecruiters?: string[] };
+    }>;
   }>>([])
 
   // Helpers to manage nested arrays of objects
@@ -212,35 +178,13 @@ export default function AdminInstituteNewPage() {
   function updateRanking(idx: number, next: Partial<{ agency: string; category: string; rank: string; year: string }>) { const arr=[...rankingsNational]; arr[idx]={...arr[idx],...next}; setRankingsNational(arr) }
   function removeRanking(idx: number) { const arr=[...rankingsNational]; arr.splice(idx,1); setRankingsNational(arr) }
 
-  function addCourse() { setCourses([...(courses||[]), { id: '', name: '', recognition: [], placementRecruiters: [] }]) }
-  function updateCourse(idx: number, next: any) { const arr=[...courses]; arr[idx] = { ...arr[idx], ...next }; setCourses(arr) }
-  function removeCourse(idx: number) { const arr=[...courses]; arr.splice(idx,1); setCourses(arr) }
+  function addStat() { setStats([...(stats||[]), { title: '', description: '' }]) }
+  function updateStat(idx: number, next: Partial<{ title: string; description: string }>) { const arr=[...stats]; arr[idx] = { ...arr[idx], ...next }; setStats(arr) }
+  function removeStat(idx: number) { const arr=[...stats]; arr.splice(idx,1); setStats(arr) }
 
-  // programme helpers
-  function addProgramme() { setProgrammes([...(programmes||[]), { name: '', eligibilityExams: [], course: [] }]) }
+  function addProgramme() { setProgrammes([...(programmes||[]), { id: '', name: '', courseCount: 0, placementRating: 0, eligibilityExams: [], course: [] }]) }
   function updateProgramme(idx: number, next: any) { const arr=[...programmes]; arr[idx] = { ...arr[idx], ...next }; setProgrammes(arr) }
   function removeProgramme(idx: number) { const arr=[...programmes]; arr.splice(idx,1); setProgrammes(arr) }
-  function addProgrammeCourse(pIdx: number) {
-    const arr=[...programmes];
-    const cur = arr[pIdx];
-    cur.course = [...(cur.course||[]), { name: '', recognition: [], eligibilityExams: [], placementRecruiters: [] } as any]
-    arr[pIdx] = { ...cur };
-    setProgrammes(arr)
-  }
-  function updateProgrammeCourse(pIdx: number, cIdx: number, next: any) {
-    const arr=[...programmes];
-    const cur = arr[pIdx];
-    const courses = [...(cur.course||[])];
-    courses[cIdx] = { ...courses[cIdx], ...next };
-    cur.course = courses; arr[pIdx] = { ...cur }; setProgrammes(arr)
-  }
-  function removeProgrammeCourse(pIdx: number, cIdx: number) {
-    const arr=[...programmes];
-    const cur = arr[pIdx];
-    const courses = [...(cur.course||[])];
-    courses.splice(cIdx,1);
-    cur.course = courses; arr[pIdx] = { ...cur }; setProgrammes(arr)
-  }
 
   function onBulkFileSelected(file: File | undefined) {
     if (!file) return
@@ -353,6 +297,7 @@ export default function AdminInstituteNewPage() {
           ...(overviewFounder ? { founder: overviewFounder } : {}),
           ...(overviewChancellor ? { chancellor: overviewChancellor } : {}),
           ...(overviewViceChancellor ? { viceChancellor: overviewViceChancellor } : {}),
+          ...(stats.length ? { stats } : {}),
         },
         campusDetails: {
           ...(campusType ? { campusType } : {}),
@@ -408,89 +353,32 @@ export default function AdminInstituteNewPage() {
           ...(photosCategories.length ? { photos: photosCategories.reduce((acc, cur)=> { acc[cur.category] = cur.urls; return acc }, {} as any) } : {}),
           ...(videos.length ? { videos } : {}),
         },
-        ...(courses.length ? { courses: courses.map(c => ({
-          id: c.id,
-          name: c.name,
-          ...(c.degree ? { degree: c.degree } : {}),
-          ...(c.school ? { school: c.school } : {}),
-          ...(c.duration ? { duration: c.duration } : {}),
-          ...(c.level ? { level: c.level } : {}),
-          ...(c.category ? { category: c.category } : {}),
-          ...(c.totalSeats ? { totalSeats: Number(c.totalSeats) } : {}),
-          ...(c.reviewCount ? { reviewCount: Number(c.reviewCount) } : {}),
-          ...(c.questionsCount ? { questionsCount: Number(c.questionsCount) } : {}),
-          fees: {
-            ...(c.tuitionFee ? { tuitionFee: Number(c.tuitionFee) } : {}),
-            ...(c.totalFee ? { totalFee: Number(c.totalFee) } : {}),
-            ...(c.currency ? { currency: c.currency } : {}),
-          },
-          brochure: {
-            ...(c.brochureUrl ? { url: c.brochureUrl } : {}),
-            ...(c.brochureYear ? { year: Number(c.brochureYear) } : {}),
-          },
-          ...(c.seoUrl ? { seoUrl: c.seoUrl } : {}),
-          location: {
-            ...(c.state ? { state: c.state } : {}),
-            ...(c.city ? { city: c.city } : {}),
-            ...(c.locality ? { locality: c.locality } : {}),
-          },
-          ...(c.educationType ? { educationType: c.educationType } : {}),
-          ...(c.deliveryMethod ? { deliveryMethod: c.deliveryMethod } : {}),
-          ...(c.courseLevel ? { courseLevel: c.courseLevel } : {}),
-          ...(c.affiliatedUniversity ? { affiliatedUniversity: c.affiliatedUniversity } : {}),
-          ...(c.recognition && c.recognition.length ? { recognition: c.recognition } : {}),
-          placements: {
-            ...(c.avgPackage ? { averagePackage: Number(c.avgPackage) } : {}),
-            ...(c.highestPackage ? { highestPackage: Number(c.highestPackage) } : {}),
-            ...(c.placementRate ? { placementRate: Number(c.placementRate) } : {}),
-            ...(c.placementRecruiters && c.placementRecruiters.length ? { topRecruiters: c.placementRecruiters } : {}),
-          }
-        })) } : {}),
         ...(programmes.length ? { programmes: programmes.map(p => ({
-          ...(p.id ? { id: p.id } : {}),
+          id: p.id,
           name: p.name,
-          ...(p.courseCount ? { courseCount: Number(p.courseCount) } : {}),
-          ...(p.placementRating ? { placementRating: Number(p.placementRating) } : {}),
-          ...(p.eligibilityExams?.length ? { eligibilityExams: p.eligibilityExams } : {}),
-          course: (p.course||[]).map(c => ({
-            ...(c.id ? { _id: c.id } : {}),
+          ...(p.courseCount ? { courseCount: p.courseCount } : {}),
+          ...(p.placementRating ? { placementRating: p.placementRating } : {}),
+          ...(p.eligibilityExams && p.eligibilityExams.length ? { eligibilityExams: p.eligibilityExams } : {}),
+          ...(p.course && p.course.length ? { courses: p.course.map(c => ({
+            id: c.id,
             name: c.name,
             ...(c.degree ? { degree: c.degree } : {}),
             ...(c.school ? { school: c.school } : {}),
             ...(c.duration ? { duration: c.duration } : {}),
             ...(c.level ? { level: c.level } : {}),
             ...(c.category ? { category: c.category } : {}),
-            ...(c.totalSeats ? { totalSeats: Number(c.totalSeats) } : {}),
-            ...(c.reviewCount ? { reviewCount: Number(c.reviewCount) } : {}),
-            ...(c.questionsCount ? { questionsCount: Number(c.questionsCount) } : {}),
-            fees: {
-              ...(c.tuitionFee ? { tuitionFee: Number(c.tuitionFee) } : {}),
-              ...(c.totalFee ? { totalFee: Number(c.totalFee) } : {}),
-              ...(c.currency ? { currency: c.currency } : {}),
-            },
-            brochure: {
-              ...(c.brochureUrl ? { url: c.brochureUrl } : {}),
-              ...(c.brochureYear ? { year: Number(c.brochureYear) } : {}),
-            },
+            ...(c.totalSeats ? { totalSeats: c.totalSeats } : {}),
+            ...(c.fees ? { fees: c.fees } : {}),
+            ...(c.brochure ? { brochure: c.brochure } : {}),
             ...(c.seoUrl ? { seoUrl: c.seoUrl } : {}),
-            location: {
-              ...(c.state ? { state: c.state } : {}),
-              ...(c.city ? { city: c.city } : {}),
-              ...(c.locality ? { locality: c.locality } : {}),
-            },
+            ...(c.affiliatedUniversity ? { affiliatedUniversity: c.affiliatedUniversity } : {}),
+            ...(c.location ? { location: c.location } : {}),
             ...(c.educationType ? { educationType: c.educationType } : {}),
             ...(c.deliveryMethod ? { deliveryMethod: c.deliveryMethod } : {}),
             ...(c.courseLevel ? { courseLevel: c.courseLevel } : {}),
-            ...(c.affiliatedUniversity ? { affiliatedUniversity: c.affiliatedUniversity } : {}),
-            ...(c.recognition && c.recognition.length ? { recognition: c.recognition } : {}),
             ...(c.eligibilityExams && c.eligibilityExams.length ? { eligibilityExams: c.eligibilityExams } : {}),
-            placements: {
-              ...(c.avgPackage ? { averagePackage: Number(c.avgPackage) } : {}),
-              ...(c.highestPackage ? { highestPackage: Number(c.highestPackage) } : {}),
-              ...(c.placementRate ? { placementRate: Number(c.placementRate) } : {}),
-              ...(c.placementRecruiters && c.placementRecruiters.length ? { topRecruiters: c.placementRecruiters } : {}),
-            }
-          }))
+            ...(c.placements ? { placements: c.placements } : {}),
+          })) } : {}),
         })) } : {}),
       }
 
@@ -620,6 +508,22 @@ export default function AdminInstituteNewPage() {
           <div><Label>Founder</Label><Input value={overviewFounder} onChange={(e)=> setOverviewFounder(e.target.value)} /></div>
           <div><Label>Chancellor</Label><Input value={overviewChancellor} onChange={(e)=> setOverviewChancellor(e.target.value)} /></div>
           <div><Label>Vice Chancellor</Label><Input value={overviewViceChancellor} onChange={(e)=> setOverviewViceChancellor(e.target.value)} /></div>
+          
+          <div className="md:col-span-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Stats</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={addStat}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+            </div>
+            <div className="space-y-3">
+              {stats.map((stat, idx) => (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2" key={idx}>
+                  <div><Label>Title</Label><Input value={stat.title} onChange={(e)=> updateStat(idx, { title: e.target.value })} /></div>
+                  <div className="md:col-span-2"><Label>Description</Label><Input value={stat.description} onChange={(e)=> updateStat(idx, { description: e.target.value })} /></div>
+                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> removeStat(idx)}><Trash2 className="w-4 h-4"/></Button></div>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -779,118 +683,97 @@ export default function AdminInstituteNewPage() {
         </CardContent>
       </Card>
 
-      {/* Programmes (new structure) */}
+      {/* Programmes */}
       <Card>
-        <CardHeader><CardTitle>Programmes (New Structure)</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Programmes</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Programme List</Label>
-            <Button type="button" variant="secondary" size="sm" onClick={addProgramme}><Plus className="w-4 h-4 mr-1"/>Add Programme</Button>
+            <Button type="button" variant="secondary" size="sm" onClick={addProgramme}><Plus className="w-4 h-4 mr-1"/>Add</Button>
           </div>
-          <div className="space-y-4">
-            {programmes.map((p, pIdx) => (
-              <div key={pIdx} className="space-y-3 border rounded-md p-3">
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
-                  <div><Label>ID</Label><Input value={p.id||''} onChange={(e)=> updateProgramme(pIdx, { id: e.target.value })} /></div>
-                  <div className="md:col-span-2"><Label>Name</Label><Input value={p.name} onChange={(e)=> updateProgramme(pIdx, { name: e.target.value })} /></div>
-                  <div><Label>Course Count</Label><Input value={p.courseCount||''} onChange={(e)=> updateProgramme(pIdx, { courseCount: e.target.value })} /></div>
-                  <div><Label>Placement Rating</Label><Input value={p.placementRating||''} onChange={(e)=> updateProgramme(pIdx, { placementRating: e.target.value })} /></div>
-                  <div className="md:col-span-2"><StringList label="Eligibility Exams" values={p.eligibilityExams||[]} onChange={(v)=> updateProgramme(pIdx, { eligibilityExams: v })} placeholder="CAT"/></div>
+          <div className="space-y-6">
+            {programmes.map((prog, progIdx) => (
+              <div className="space-y-4 border rounded-md p-4" key={progIdx}>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <div><Label>Programme ID</Label><Input value={prog.id} onChange={(e)=> updateProgramme(progIdx, { id: e.target.value })} /></div>
+                  <div><Label>Programme Name</Label><Input value={prog.name} onChange={(e)=> updateProgramme(progIdx, { name: e.target.value })} /></div>
+                  <div><Label>Course Count</Label><Input value={prog.courseCount??''} onChange={(e)=> updateProgramme(progIdx, { courseCount: e.target.value ? Number(e.target.value) : 0 })} /></div>
+                  <div><Label>Placement Rating</Label><Input value={prog.placementRating??''} onChange={(e)=> updateProgramme(progIdx, { placementRating: e.target.value ? Number(e.target.value) : 0 })} /></div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <Label>Programme Courses</Label>
-                  <div className="flex items-center gap-2">
-                    <Button type="button" variant="secondary" size="sm" onClick={()=> addProgrammeCourse(pIdx)}><Plus className="w-4 h-4 mr-1"/>Add Course</Button>
-                    <Button type="button" variant="destructive" size="sm" onClick={()=> removeProgramme(pIdx)}><Trash2 className="w-4 h-4 mr-1"/>Remove Programme</Button>
+                
+                <div className="space-y-2">
+                  <StringList label="Eligibility Exams" values={prog.eligibilityExams||[]} onChange={(v)=> updateProgramme(progIdx, { eligibilityExams: v })} placeholder="GMAT, CAT, XAT"/>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Courses in Programme</Label>
+                    <Button type="button" variant="secondary" size="sm" onClick={()=> {
+                      const arr = [...programmes];
+                      const courses = [...(arr[progIdx].course||[])];
+                      courses.push({ id: '', name: '', degree: '', school: '', duration: '', level: '', category: '', totalSeats: 0, reviewCount: 0, questionsCount: 0, fees: { tuitionFee: 0, totalFee: 0, currency: 'INR' }, brochure: { url: '', year: new Date().getFullYear() }, seoUrl: '', affiliatedUniversity: '', location: { state: '', city: '' }, educationType: '', deliveryMethod: '', courseLevel: '', eligibilityExams: [], placements: { averagePackage: 0, highestPackage: 0, placementRate: 0, topRecruiters: [] } });
+                      arr[progIdx] = { ...arr[progIdx], course: courses };
+                      setProgrammes(arr)
+                    }}><Plus className="w-4 h-4 mr-1"/>Add Course</Button>
+                  </div>
+                  <div className="space-y-4">
+                    {(prog.course||[]).map((course, courseIdx) => (
+                      <div className="space-y-3 border rounded-md p-4 bg-gray-50" key={courseIdx}>
+                        <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
+                          <div><Label>Course ID</Label><Input value={course.id} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], id: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div className="md:col-span-2"><Label>Course Name</Label><Input value={course.name} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], name: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Degree</Label><Input value={course.degree||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], degree: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>School</Label><Input value={course.school||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], school: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Duration</Label><Input value={course.duration||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], duration: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
+                          <div><Label>Level</Label><Input value={course.level||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], level: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Category</Label><Input value={course.category||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], category: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Total Seats</Label><Input value={course.totalSeats??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], totalSeats: e.target.value ? Number(e.target.value) : 0 }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Review Count</Label><Input value={course.reviewCount??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], reviewCount: e.target.value ? Number(e.target.value) : 0 }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Questions Count</Label><Input value={course.questionsCount??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], questionsCount: e.target.value ? Number(e.target.value) : 0 }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>SEO URL</Label><Input value={course.seoUrl||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], seoUrl: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div><Label>Tuition Fee</Label><Input value={course.fees?.tuitionFee??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const fees = { ...(courses[courseIdx].fees||{}) }; fees.tuitionFee = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], fees }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Total Fee</Label><Input value={course.fees?.totalFee??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const fees = { ...(courses[courseIdx].fees||{}) }; fees.totalFee = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], fees }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Currency</Label><Input value={course.fees?.currency||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const fees = { ...(courses[courseIdx].fees||{}) }; fees.currency = e.target.value; courses[courseIdx] = { ...courses[courseIdx], fees }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Affiliated University</Label><Input value={course.affiliatedUniversity||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], affiliatedUniversity: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div><Label>Brochure URL</Label><Input value={course.brochure?.url||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const brochure = { ...(courses[courseIdx].brochure||{}) }; brochure.url = e.target.value; courses[courseIdx] = { ...courses[courseIdx], brochure }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Brochure Year</Label><Input value={course.brochure?.year??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const brochure = { ...(courses[courseIdx].brochure||{}) }; brochure.year = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], brochure }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Education Type</Label><Input value={course.educationType||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], educationType: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Delivery Method</Label><Input value={course.deliveryMethod||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], deliveryMethod: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div><Label>Course Level</Label><Input value={course.courseLevel||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], courseLevel: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>State</Label><Input value={course.location?.state||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const location = { ...(courses[courseIdx].location||{}) }; location.state = e.target.value; courses[courseIdx] = { ...courses[courseIdx], location }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>City</Label><Input value={course.location?.city||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const location = { ...(courses[courseIdx].location||{}) }; location.city = e.target.value; courses[courseIdx] = { ...courses[courseIdx], location }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Locality</Label><Input value={course.location?.locality||''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const location: { state?: string; city?: string; locality?: string } = { ...(courses[courseIdx].location||{}) }; location.locality = e.target.value; courses[courseIdx] = { ...courses[courseIdx], location }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div><Label>Avg Package</Label><Input value={course.placements?.averagePackage??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const placements = { ...(courses[courseIdx].placements||{}) }; placements.averagePackage = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], placements }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Highest Package</Label><Input value={course.placements?.highestPackage??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const placements = { ...(courses[courseIdx].placements||{}) }; placements.highestPackage = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], placements }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div><Label>Placement Rate</Label><Input value={course.placements?.placementRate??''} onChange={(e)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const placements = { ...(courses[courseIdx].placements||{}) }; placements.placementRate = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], placements }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} /></div>
+                          <div className="flex items-end"><Button type="button" variant="destructive" size="sm" onClick={()=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses.splice(courseIdx,1); arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }}><Trash2 className="w-4 h-4 mr-1"/>Remove</Button></div>
+                        </div>
+                        <div className="md:col-span-4">
+                          <StringList label="Recognition" values={course.recognition?.map((r: { name: string }) => r.name) || []} onChange={(v)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], recognition: v.map(name => ({ name })) }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} placeholder="INC, AICTE"/>
+                        </div>
+                        <div className="md:col-span-4">
+                          <StringList label="Eligibility Exams" values={course.eligibilityExams||[]} onChange={(v)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; courses[courseIdx] = { ...courses[courseIdx], eligibilityExams: v }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} placeholder="GMAT, CAT"/>
+                        </div>
+                        <div className="md:col-span-4">
+                          <StringList label="Top Recruiters" values={course.placements?.topRecruiters||[]} onChange={(v)=> { const arr=[...programmes]; const courses=[...arr[progIdx].course!]; const placements = { ...(courses[courseIdx].placements||{}) }; placements.topRecruiters = v; courses[courseIdx] = { ...courses[courseIdx], placements }; arr[progIdx] = { ...arr[progIdx], course: courses }; setProgrammes(arr) }} placeholder="Company Name"/>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="space-y-3">
-                  {(p.course||[]).map((c, cIdx) => (
-                    <div key={cIdx} className="space-y-2 border rounded p-3">
-                      <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
-                        <div><Label>ID</Label><Input value={c.id||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { id: e.target.value })} /></div>
-                        <div className="md:col-span-2"><Label>Name</Label><Input value={c.name||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { name: e.target.value })} /></div>
-                        <div><Label>Degree</Label><Input value={c.degree||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { degree: e.target.value })} /></div>
-                        <div><Label>School</Label><Input value={c.school||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { school: e.target.value })} /></div>
-                        <div><Label>Duration</Label><Input value={c.duration||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { duration: e.target.value })} /></div>
-                        <div><Label>Level</Label><Input value={c.level||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { level: e.target.value })} /></div>
-                        <div><Label>Category</Label><Input value={c.category||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { category: e.target.value })} /></div>
-                        <div><Label>Total Seats</Label><Input value={c.totalSeats??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { totalSeats: e.target.value })} /></div>
-                        <div><Label>Review Count</Label><Input value={c.reviewCount??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { reviewCount: e.target.value })} /></div>
-                        <div><Label>Questions Count</Label><Input value={c.questionsCount??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { questionsCount: e.target.value })} /></div>
-                        <div><Label>Tuition Fee</Label><Input value={c.tuitionFee??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { tuitionFee: e.target.value })} /></div>
-                        <div><Label>Total Fee</Label><Input value={c.totalFee??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { totalFee: e.target.value })} /></div>
-                        <div><Label>Currency</Label><Input value={c.currency||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { currency: e.target.value })} /></div>
-                        <div className="md:col-span-2"><Label>Brochure URL</Label><Input value={c.brochureUrl||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { brochureUrl: e.target.value })} /></div>
-                        <div><Label>Brochure Year</Label><Input value={c.brochureYear??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { brochureYear: e.target.value })} /></div>
-                        <div className="md:col-span-2"><Label>SEO URL</Label><Input value={c.seoUrl||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { seoUrl: e.target.value })} /></div>
-                        <div><Label>State</Label><Input value={c.state||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { state: e.target.value })} /></div>
-                        <div><Label>City</Label><Input value={c.city||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { city: e.target.value })} /></div>
-                        <div><Label>Locality</Label><Input value={c.locality||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { locality: e.target.value })} /></div>
-                        <div><Label>Education Type</Label><Input value={c.educationType||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { educationType: e.target.value })} /></div>
-                        <div><Label>Delivery Method</Label><Input value={c.deliveryMethod||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { deliveryMethod: e.target.value })} /></div>
-                        <div><Label>Course Level</Label><Input value={c.courseLevel||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { courseLevel: e.target.value })} /></div>
-                        <div className="md:col-span-2"><Label>Affiliated University</Label><Input value={c.affiliatedUniversity||''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { affiliatedUniversity: e.target.value })} /></div>
-                        <div className="md:col-span-3"><StringList label="Recognition" values={c.recognition||[]} onChange={(v)=> updateProgrammeCourse(pIdx, cIdx, { recognition: v })} placeholder="INC"/></div>
-                        <div className="md:col-span-3"><StringList label="Eligibility Exams" values={c.eligibilityExams||[]} onChange={(v)=> updateProgrammeCourse(pIdx, cIdx, { eligibilityExams: v })} placeholder="CAT"/></div>
-                        <div><Label>Average Package</Label><Input value={c.avgPackage??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { avgPackage: e.target.value })} /></div>
-                        <div><Label>Highest Package</Label><Input value={c.highestPackage??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { highestPackage: e.target.value })} /></div>
-                        <div><Label>Placement Rate</Label><Input value={c.placementRate??''} onChange={(e)=> updateProgrammeCourse(pIdx, cIdx, { placementRate: e.target.value })} /></div>
-                        <div className="md:col-span-3"><StringList label="Placement Recruiters" values={c.placementRecruiters||[]} onChange={(v)=> updateProgrammeCourse(pIdx, cIdx, { placementRecruiters: v })} placeholder="Company"/></div>
-                      </div>
-                      <div className="flex justify-end">
-                        <Button type="button" variant="destructive" size="sm" onClick={()=> removeProgrammeCourse(pIdx, cIdx)}><Trash2 className="w-4 h-4 mr-1"/>Remove Course</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Courses */}
-      <Card>
-        <CardHeader><CardTitle>Courses</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>Course List</Label>
-            <Button type="button" variant="secondary" size="sm" onClick={addCourse}><Plus className="w-4 h-4 mr-1"/>Add</Button>
-          </div>
-          <div className="space-y-4">
-            {courses.map((c, idx) => (
-              <div className="space-y-2 border rounded-md p-3" key={idx}>
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
-                  <div><Label>ID</Label><Input value={c.id} onChange={(e)=> updateCourse(idx, { id: e.target.value })} /></div>
-                  <div className="md:col-span-2"><Label>Name</Label><Input value={c.name} onChange={(e)=> updateCourse(idx, { name: e.target.value })} /></div>
-                  <div><Label>Degree</Label><Input value={c.degree||''} onChange={(e)=> updateCourse(idx, { degree: e.target.value })} /></div>
-                  <div><Label>School</Label><Input value={c.school||''} onChange={(e)=> updateCourse(idx, { school: e.target.value })} /></div>
-                  <div><Label>Duration</Label><Input value={c.duration||''} onChange={(e)=> updateCourse(idx, { duration: e.target.value })} /></div>
-                  <div><Label>Level</Label><Input value={c.level||''} onChange={(e)=> updateCourse(idx, { level: e.target.value })} /></div>
-                  <div><Label>Category</Label><Input value={c.category||''} onChange={(e)=> updateCourse(idx, { category: e.target.value })} /></div>
-                  <div><Label>Total Seats</Label><Input value={c.totalSeats||''} onChange={(e)=> updateCourse(idx, { totalSeats: e.target.value })} /></div>
-                  <div><Label>Review Count</Label><Input value={c.reviewCount||''} onChange={(e)=> updateCourse(idx, { reviewCount: e.target.value })} /></div>
-                  <div><Label>Questions Count</Label><Input value={c.questionsCount||''} onChange={(e)=> updateCourse(idx, { questionsCount: e.target.value })} /></div>
-                  <div><Label>Tuition Fee</Label><Input value={c.tuitionFee||''} onChange={(e)=> updateCourse(idx, { tuitionFee: e.target.value })} /></div>
-                  <div><Label>Total Fee</Label><Input value={c.totalFee||''} onChange={(e)=> updateCourse(idx, { totalFee: e.target.value })} /></div>
-                  <div><Label>Currency</Label><Input value={c.currency||''} onChange={(e)=> updateCourse(idx, { currency: e.target.value })} /></div>
-                  <div className="md:col-span-2"><Label>Brochure URL</Label><Input value={c.brochureUrl||''} onChange={(e)=> updateCourse(idx, { brochureUrl: e.target.value })} /></div>
-                  <div><Label>Brochure Year</Label><Input value={c.brochureYear||''} onChange={(e)=> updateCourse(idx, { brochureYear: e.target.value })} /></div>
-                  <div className="md:col-span-2"><Label>SEO URL</Label><Input value={c.seoUrl||''} onChange={(e)=> updateCourse(idx, { seoUrl: e.target.value })} /></div>
-                  <div><Label>State</Label><Input value={c.state||''} onChange={(e)=> updateCourse(idx, { state: e.target.value })} /></div>
-                  <div><Label>City</Label><Input value={c.city||''} onChange={(e)=> updateCourse(idx, { city: e.target.value })} /></div>
-                  <div><Label>Locality</Label><Input value={c.locality||''} onChange={(e)=> updateCourse(idx, { locality: e.target.value })} /></div>
-                  <div><Label>Education Type</Label><Input value={c.educationType||''} onChange={(e)=> updateCourse(idx, { educationType: e.target.value })} /></div>
-                  <div><Label>Delivery Method</Label><Input value={c.deliveryMethod||''} onChange={(e)=> updateCourse(idx, { deliveryMethod: e.target.value })} /></div>
-                  <div><Label>Course Level</Label><Input value={c.courseLevel||''} onChange={(e)=> updateCourse(idx, { courseLevel: e.target.value })} /></div>
-                  <div className="md:col-span-2"><Label>Affiliated University</Label><Input value={c.affiliatedUniversity||''} onChange={(e)=> updateCourse(idx, { affiliatedUniversity: e.target.value })} /></div>
-                  <div className="md:col-span-3"><StringList label="Recognition" values={c.recognition||[]} onChange={(v)=> updateCourse(idx, { recognition: v })} placeholder="INC"/></div>
-                  <div><Label>Average Package</Label><Input value={c.avgPackage||''} onChange={(e)=> updateCourse(idx, { avgPackage: e.target.value })} /></div>
-                  <div><Label>Highest Package</Label><Input value={c.highestPackage||''} onChange={(e)=> updateCourse(idx, { highestPackage: e.target.value })} /></div>
-                  <div><Label>Placement Rate</Label><Input value={c.placementRate||''} onChange={(e)=> updateCourse(idx, { placementRate: e.target.value })} /></div>
-                  <div className="md:col-span-3"><StringList label="Top Recruiters" values={c.placementRecruiters||[]} onChange={(v)=> updateCourse(idx, { placementRecruiters: v })} placeholder="Company"/></div>
-                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> removeCourse(idx)}><Trash2 className="w-4 h-4"/></Button></div>
+                
+                <div className="flex justify-end">
+                  <Button type="button" variant="destructive" size="sm" onClick={()=> removeProgramme(progIdx)}><Trash2 className="w-4 h-4 mr-1"/>Remove Programme</Button>
                 </div>
               </div>
             ))}

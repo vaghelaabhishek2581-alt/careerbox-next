@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select'
+import { ProgrammesSection } from '@/components/publicCollections/ProgrammesSection'
+import { saveUserDetails, loadUserDetails } from '@/lib/utils/localStorage'
+import { useToast } from '@/components/ui/use-toast'
 import {
   MapPin,
   Phone,
@@ -23,7 +26,9 @@ import {
   CreditCard,
   GraduationCap,
   X,
-  Plus
+  Plus,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react'
 
 interface InstituteDetailPageProps {
@@ -38,40 +43,120 @@ interface ApplicationFormData {
   course: string
   eligibilityExams: Array<EligibilityEntry>
 }
-
 interface EligibilityEntry {
   exam: string
   score: string
 }
 
 export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
+  console.log("institute", institute)
+  console.log("programmes", institute.programmes)
+  
   const { data: session } = useSession()
+  const { toast } = useToast()
   const [showApplicationModal, setShowApplicationModal] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string>('')
-  const [formData, setFormData] = useState<ApplicationFormData>({
-    name: '',
-    email: '',
-    phone: '',
-    city: '',
-    course: '',
-    eligibilityExams: [],
+  const [selectedProgrammeId, setSelectedProgrammeId] = useState<string | null>(null)
+  const [expandedProgramme, setExpandedProgramme] = useState<string | null>(null)
+  const [formData, setFormData] = useState<ApplicationFormData>(() => {
+    const savedDetails = loadUserDetails()
+    if (savedDetails) {
+      return {
+        name: savedDetails.name,
+        email: savedDetails.email,
+        phone: savedDetails.phone,
+        city: savedDetails.city,
+        course: '',
+        eligibilityExams: [],
+      }
+    }
+    return {
+      name: '',
+      email: '',
+      phone: '',
+      city: '',
+      course: '',
+      eligibilityExams: [],
+    }
   })
   const [currentExam, setCurrentExam] = useState('')
   const [currentScore, setCurrentScore] = useState('')
+  
+  // Find selected programme
+  const selectedProgramme = selectedProgrammeId 
+    ? institute.programmes?.find(p => (p.id || p.name) === selectedProgrammeId)
+    : null
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleApplyClick = (courseName: string) => {
+  const handleProgrammeClick = (programmeId: string) => {
+    setSelectedProgrammeId(programmeId)
+  }
+
+  const handleBackToProgrammes = () => {
+    setSelectedProgrammeId(null)
+  }
+
+  const handleApplyClick = async (courseName: string) => {
     if (session?.user) {
-      // Authenticated: implement direct apply flow if needed
-      console.log('User is authenticated, proceeding with application for:', courseName)
+      // Authenticated: Direct apply without modal
+      try {
+        const selectedCourseObj = institute.courses.find(c => `${c.degree}${c.name ? ` in ${c.name}` : ''}` === courseName)
+        const courseId = selectedCourseObj?.id
+
+        const res = await fetch('/api/student-leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: (session as any)?.user?.id,
+            courseId,
+            courseName,
+            instituteId: institute.id,
+            instituteSlug: institute.slug,
+            isAdminInstitute: true,
+            source: 'institute_detail_page',
+          }),
+        })
+
+        const data = await res.json()
+        if (!res.ok || !data?.ok) {
+          throw new Error(data?.error || 'Failed to submit application')
+        }
+
+        // Success feedback
+        toast({
+          title: "Application Submitted!",
+          description: "Your application has been submitted successfully. We will contact you soon.",
+          variant: "default",
+        })
+        console.log('Application submitted with id:', data.id)
+      } catch (error: any) {
+        console.error('Failed to submit application:', error?.message || error)
+        toast({
+          title: "Application Failed",
+          description: error?.message || 'Failed to submit application. Please try again.',
+          variant: "destructive",
+        })
+      }
     } else {
-      // Guest: open modal with prefilled course
+      // Guest: Load saved details and open modal
+      const savedDetails = loadUserDetails()
+      if (savedDetails) {
+        setFormData(prev => ({
+          name: savedDetails.name,
+          email: savedDetails.email,
+          phone: savedDetails.phone,
+          city: savedDetails.city,
+          course: courseName,
+          eligibilityExams: prev.eligibilityExams,
+        }))
+      } else {
+        setFormData(prev => ({ ...prev, course: courseName }))
+      }
       setSelectedCourse(courseName)
-      setFormData(prev => ({ ...prev, course: courseName }))
       setShowApplicationModal(true)
     }
   }
@@ -108,17 +193,23 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
 
       // Success UI feedback
       console.log('Lead created with id:', data.id)
+
+      // Save user details to localStorage
+      saveUserDetails({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        city: formData.city,
+      })
+
       setShowApplicationModal(false)
 
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        city: '',
+      // Reset only course and eligibility exams, keep user details
+      setFormData(prev => ({
+        ...prev,
         course: '',
         eligibilityExams: []
-      })
+      }))
       setCurrentExam('')
       setCurrentScore('')
     } catch (error: any) {
@@ -346,225 +437,70 @@ console.log(institute.placements)
               </CardContent>
             </Card>
           )}
-
-          {/* Mobile Courses Section - Shows first on mobile */}
-          <div className="block lg:hidden">
-            {institute.courses.length > 0 ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    Courses ({institute.courses.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Search and Filters */}
-                  <div className="flex flex-col gap-4 mb-6">
-                    {/* Search Bar */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <input
-                        type="text"
-                        placeholder="Search courses..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    {/* Filter Dropdowns */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                      <Select>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="All Degrees" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Degrees</SelectItem>
-                          {Array.from(new Set(institute.courses.map(c => c.degree))).map((degree) => (
-                            <SelectItem key={degree} value={degree}>{degree}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Select>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="All Levels" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Levels</SelectItem>
-                          {Array.from(new Set(institute.courses.map(c => c.level))).map((level) => (
-                            <SelectItem key={level} value={level}>{level}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Select>
-                        <SelectTrigger className="w-full col-span-2 sm:col-span-1">
-                          <SelectValue placeholder="Sort by" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="name">Sort by Name</SelectItem>
-                          <SelectItem value="duration">Sort by Duration</SelectItem>
-                          <SelectItem value="fee">Sort by Fee</SelectItem>
-                          <SelectItem value="relevance">Sort by Relevance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Courses List View */}
-                  <div className="space-y-6">
-                    {institute.courses.slice(0, 3).map((course) => (
-                      <div key={course.id} className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-2xl p-5 shadow-lg">
-                        <div className="flex flex-col gap-4">
-                          {/* Course Header */}
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                                  <GraduationCap className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                  <h3 className="text-lg font-bold text-gray-900">
-                                    {course.degree}{course.name && ` in ${course.name}`}
-                                  </h3>
-                                  <div className="flex gap-2 mt-1 flex-wrap">
-                                    <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-1">{course.level}</Badge>
-                                    <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-1">{course.category}</Badge>
-                                    {course.educationType && (
-                                      <Badge className="bg-green-100 text-green-700 text-xs px-2 py-1">{course.educationType}</Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-2">
-                              <Button
-                                size="sm"
-                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4"
-                                onClick={() => handleApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
-                              >
-                                Apply Now
-                              </Button>
-                              {course.brochure && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  asChild
-                                  className="border-blue-300 text-blue-600 hover:bg-blue-50 text-xs px-2"
-                                >
-                                  <a href={course.brochure.url} target="_blank" rel="noopener noreferrer">
-                         0           Brochure
-                                  </a>
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Course Description */}
-                          {course.description && (
-                            <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
-                              {course.description}
-                            </p>
-                          )}
-
-                          {/* Course Details Grid */}
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="flex items-center gap-2 text-sm bg-white/70 rounded-lg p-2">
-                              <Clock className="h-4 w-4 text-blue-500" />
-                              <span className="text-gray-600">{course.duration}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm bg-white/70 rounded-lg p-2">
-                              <Users className="h-4 w-4 text-purple-500" />
-                              <span className="text-gray-600">{course.totalSeats || 'N/A'} Seats</span>
-                            </div>
-                          </div>
-
-                          {/* Fees Information */}
-                          {course.fees && (
-                            <div className="bg-white/80 rounded-lg p-3">
-                              <h5 className="text-sm font-semibold text-green-700 mb-2">Fee Structure</h5>
-                              <div className="grid grid-cols-2 gap-3">
-                                {course.fees?.totalFee && (
-                                  <div>
-                                    <div className="text-xs text-gray-500">Total Fee</div>
-                                    <div className="font-bold text-green-600">₹{course.fees.totalFee.toLocaleString()}</div>
-                                  </div>
-                                )}
-                                {course.fees?.tuitionFee && course.fees.tuitionFee !== course.fees?.totalFee && (
-                                  <div>
-                                    <div className="text-xs text-gray-500">Tuition Fee</div>
-                                    <div className="font-bold text-blue-600">₹{course.fees.tuitionFee.toLocaleString()}</div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Placement Information */}
-                          {course.placements && (
-                            <div className="bg-white/80 rounded-lg p-3">
-                              <h5 className="text-sm font-semibold text-blue-700 mb-2">Placement Statistics</h5>
-                              <div className="grid grid-cols-3 gap-2">
-                                {course.placements.averagePackage && (
-                                  <div>
-                                    <div className="text-xs text-gray-500">Avg Package</div>
-                                    <div className="font-bold text-green-600 text-sm">₹{course.placements.averagePackage.toLocaleString()}</div>
-                                  </div>
-                                )}
-                                {course.placements.highestPackage && (
-                                  <div>
-                                    <div className="text-xs text-gray-500">Highest</div>
-                                    <div className="font-bold text-purple-600 text-sm">₹{course.placements.highestPackage.toLocaleString()}</div>
-                                  </div>
-                                )}
-                                {course.placements.placementRate && (
-                                  <div>
-                                    <div className="text-xs text-gray-500">Rate</div>
-                                    <div className="font-bold text-orange-600 text-sm">{course.placements.placementRate}%</div>
-                                  </div>
-                                )}
-                              </div>
-                              {course.placements.topRecruiters && course.placements.topRecruiters.length > 0 && (
-                                <div className="mt-2">
-                                  <div className="text-xs text-gray-500 mb-1">Top Recruiters:</div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {course.placements.topRecruiters.slice(0, 3).map((recruiter, idx) => (
-                                      <Badge key={idx} className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5">
-                                        {recruiter}
-                                      </Badge>
-                                    ))}
-                                    {course.placements.topRecruiters.length > 3 && (
-                                      <Badge className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5">
-                                        +{course.placements.topRecruiters.length - 3}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
+          {/* Programmes Section */}
+          {!selectedProgramme && institute.programmes && institute.programmes.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  Programmes ({institute.programmes.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {institute.programmes.map((programme) => (
+                    <button
+                      key={programme.id || programme.name}
+                      onClick={() => handleProgrammeClick(programme.id || programme.name)}
+                      className="bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border border-blue-200 rounded-xl p-6 text-left transition-all duration-300 hover:shadow-lg group"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                          <GraduationCap className="h-6 w-6 text-white" />
                         </div>
+                        <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                       </div>
-                    ))}
-                    {institute.courses.length > 3 && (
-                      <div className="text-center pt-4">
-                        <Button variant="outline" className="w-full">
-                          View All {institute.courses.length} Courses
-                        </Button>
+                      
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">{programme.name}</h3>
+                      
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {programme.course && programme.course.length > 0 && (
+                          <Badge className="bg-blue-100 text-blue-700 px-2 py-1 text-xs">
+                            {programme.course.length} Courses
+                          </Badge>
+                        )}
+                        {programme.placementRating && (
+                          <Badge className="bg-green-100 text-green-700 px-2 py-1 text-xs">
+                            {programme.placementRating}★ Rating
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Courses Coming Soon</h3>
-                  <p className="text-gray-500">Detailed course information will be available soon.</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+
+                      {programme.eligibilityExams && programme.eligibilityExams.length > 0 && (
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Exams:</span> {programme.eligibilityExams.join(', ')}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+) : selectedProgramme ? (
+  <div className="space-y-4">
+    {/* Back Button */}
+    <Button
+      variant="outline"
+      onClick={handleBackToProgrammes}
+      className="flex items-center gap-2"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      Back to All Programmes
+    </Button>
+    
+    <ProgrammesSection programmes={[selectedProgramme]} onApplyClick={handleApplyClick} autoExpand={true} />
+  </div>
+) : null}
 
           {/* Desktop Grid Layout */}
           <div className="hidden lg:grid lg:grid-cols-4 gap-6 lg:gap-8">
@@ -579,299 +515,24 @@ console.log(institute.placements)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed mb-6">
-                    {institute.overview.description}
-                  </p>
+                {institute?.overview?.stats?.[0]?.description && (
+  <>
+    {institute?.overview?.stats?.[0]?.title && (
+      <h3 className="text-xl font-semibold text-gray-900 mb-4">
+        {institute.overview.stats[0].title}
+      </h3>
+    )}
+    <p className="text-gray-700 leading-relaxed">
+      {institute.overview.stats[0].description}
+    </p>
+  </>
+)}
 
                 </CardContent>
               </Card>
 
               {/* Courses Section */}
-              {institute.courses.length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      Courses ({institute.courses.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-
-                    {/* Search and Filters */}
-                    <div className="flex flex-col gap-4 mb-6">
-                      {/* Search Bar */}
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                        <input
-                          type="text"
-                          placeholder="Search courses..."
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-
-                      {/* Filter Dropdowns */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                        <Select>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="All Degrees" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Degrees</SelectItem>
-                            {Array.from(new Set(institute.courses.map(c => c.degree))).map((degree) => (
-                              <SelectItem key={degree} value={degree}>{degree}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Select>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="All Levels" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Levels</SelectItem>
-                            {Array.from(new Set(institute.courses.map(c => c.level))).map((level) => (
-                              <SelectItem key={level} value={level}>{level}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Select>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="All Categories" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
-                            {Array.from(new Set(institute.courses.map(c => c.category))).map((category) => (
-                              <SelectItem key={category} value={category}>{category}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Select>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="All Durations" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Durations</SelectItem>
-                            {Array.from(new Set(institute.courses.map(c => c.duration))).map((duration) => (
-                              <SelectItem key={duration} value={duration}>{duration}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Select>
-                          <SelectTrigger className="w-full col-span-2 sm:col-span-1">
-                            <SelectValue placeholder="Sort by" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="name">Sort by Name</SelectItem>
-                            <SelectItem value="duration">Sort by Duration</SelectItem>
-                            <SelectItem value="fee">Sort by Fee</SelectItem>
-                            <SelectItem value="relevance">Sort by Relevance</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Courses List View - Compact */}
-                    <div className="space-y-4">
-                      {institute.courses.map((course) => (
-                        <div key={course.id} className="bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20 border border-blue-100 rounded-2xl p-4 lg:p-5 relative overflow-hidden shadow-md hover:shadow-lg transition-all duration-300">
-                          {/* Background Pattern */}
-                          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-100/30 to-purple-100/30 rounded-full -translate-y-12 translate-x-12"></div>
-
-                          <div className="relative z-10">
-                            {/* Course Header - Compact */}
-                            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-3 lg:gap-4 mb-4">
-                              <div className="flex-1">
-                                <div className="flex items-start gap-3 mb-3">
-                                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-                                    <GraduationCap className="h-6 w-6 text-white" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-2 leading-tight">
-                                      {course.degree}{course.name && ` in ${course.name}`}
-                                    </h3>
-                                    <div className="flex flex-wrap gap-1.5 mb-2">
-                                      <Badge className="bg-blue-100 text-blue-700 px-2 py-0.5 text-xs">{course.level}</Badge>
-                                      <Badge className="bg-purple-100 text-purple-700 px-2 py-0.5 text-xs">{course.category}</Badge>
-                                      {course.educationType && (
-                                        <Badge className="bg-green-100 text-green-700 px-2 py-0.5 text-xs">{course.educationType}</Badge>
-                                      )}
-                                      {course.school && (
-                                        <Badge className="bg-orange-100 text-orange-700 px-2 py-0.5 text-xs">{course.school}</Badge>
-                                      )}
-                                      {course.recognition && course.recognition.length > 0 && (
-                                        course.recognition.map((rec: { name: string; type?: string }, idx: number) => (
-                                          <Badge key={idx} className="bg-red-100 text-red-700 px-2 py-0.5 text-xs">{rec.name} Approved</Badge>
-                                        ))
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Action Buttons - Compact */}
-                              <div className="flex flex-row lg:flex-col gap-2">
-                                <Button
-                                  size="sm"
-                                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 text-xs"
-                                  onClick={() => handleApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
-                                >
-                                  Apply Now
-                                </Button>
-                                {course.brochure && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    asChild
-                                    className="border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-2 text-xs"
-                                  >
-                                    <a href={course.brochure.url} target="_blank" rel="noopener noreferrer">
-                                      Brochure
-                                    </a>
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Course Details Grid - Compact */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                              <div className="flex items-center gap-2 bg-white/70 rounded-lg p-2.5 border border-blue-100">
-                                <Clock className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                                <div>
-                                  <div className="text-xs text-gray-500">Duration</div>
-                                  <div className="font-medium text-gray-700 text-sm">{course.duration}</div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 bg-white/70 rounded-lg p-2.5 border border-purple-100">
-                                <Users className="h-4 w-4 text-purple-500 flex-shrink-0" />
-                                <div>
-                                  <div className="text-xs text-gray-500">Seats</div>
-                                  <div className="font-medium text-gray-700 text-sm">{course.totalSeats || 'N/A'}</div>
-                                </div>
-                              </div>
-                              {course.reviewCount && (
-                                <div className="flex items-center gap-2 bg-white/70 rounded-lg p-2.5 border border-yellow-100">
-                                  <Award className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                                  <div>
-                                    <div className="text-xs text-gray-500">Reviews</div>
-                                    <div className="font-medium text-gray-700 text-sm">{course.reviewCount}</div>
-                                  </div>
-                                </div>
-                              )}
-                              {course.questionsCount && (
-                                <div className="flex items-center gap-2 bg-white/70 rounded-lg p-2.5 border border-indigo-100">
-                                  <BookOpen className="h-4 w-4 text-indigo-500 flex-shrink-0" />
-                                  <div>
-                                    <div className="text-xs text-gray-500">Q&A</div>
-                                    <div className="font-medium text-gray-700 text-sm">{course.questionsCount}</div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Combined Info Section - Compact */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                              {/* Fees Information - Compact */}
-                              {course.fees && (
-                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
-                                  <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center gap-2">
-                                    <CreditCard className="h-4 w-4" />
-                                    Fee Structure
-                                  </h4>
-                                  <div className="space-y-2">
-                                    {course.fees?.totalFee && (
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-xs text-gray-600">Total Fee</span>
-                                        <span className="font-bold text-green-600 text-sm">₹{course.fees.totalFee.toLocaleString()}</span>
-                                      </div>
-                                    )}
-                                    {course.fees?.tuitionFee && course.fees.tuitionFee !== course.fees?.totalFee && (
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-xs text-gray-600">Tuition Fee</span>
-                                        <span className="font-bold text-blue-600 text-sm">₹{course.fees.tuitionFee.toLocaleString()}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Placement Information - Compact */}
-                              {course.placements && (
-                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-                                  <h4 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
-                                    <TrendingUp className="h-4 w-4" />
-                                    Placements
-                                  </h4>
-                                  <div className="space-y-2">
-                                    {course.placements.averagePackage && (
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-xs text-gray-600">Average</span>
-                                        <span className="font-bold text-green-600 text-sm">₹{course.placements.averagePackage.toLocaleString()}</span>
-                                      </div>
-                                    )}
-                                    {course.placements.highestPackage && (
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-xs text-gray-600">Highest</span>
-                                        <span className="font-bold text-purple-600 text-sm">₹{course.placements.highestPackage.toLocaleString()}</span>
-                                      </div>
-                                    )}
-                                    {course.placements.placementRate && (
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-xs text-gray-600">Rate</span>
-                                        <span className="font-bold text-orange-600 text-sm">{course.placements.placementRate}%</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Top Recruiters - Compact */}
-                            {course.placements?.topRecruiters && course.placements.topRecruiters.length > 0 && (
-                              <div className="mt-4 pt-4 border-t border-gray-100">
-                                <h5 className="font-medium text-blue-700 mb-2 text-sm">Top Recruiters:</h5>
-                                <div className="flex flex-wrap gap-1">
-                                  {course.placements.topRecruiters.slice(0, 6).map((recruiter, idx) => (
-                                    <Badge key={idx} className="bg-blue-100 text-blue-700 px-2 py-0.5 text-xs">
-                                      {recruiter}
-                                    </Badge>
-                                  ))}
-                                  {course.placements.topRecruiters.length > 6 && (
-                                    <Badge className="bg-gray-100 text-gray-600 px-2 py-0.5 text-xs">
-                                      +{course.placements.topRecruiters.length - 6} more
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Location Information - Compact */}
-                            {course.location && (
-                              <div className="mt-3 pt-3 border-t border-gray-100">
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <MapPin className="h-4 w-4" />
-                                  {course.location.locality && `${course.location.locality}, `}
-                                  {course.location.city}, {course.location.state}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Courses Coming Soon</h3>
-                    <p className="text-gray-500">Detailed course information will be available soon.</p>
-                  </CardContent>
-                </Card>
-              )}
+             
 
               {/* Campus Gallery Section */}
               {(institute as any).mediaGallery && (

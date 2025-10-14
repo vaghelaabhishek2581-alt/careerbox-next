@@ -1,387 +1,602 @@
-{
-  "id": "gujarat-university",
-  "name": "Gujarat University",
-  "shortName": "GU",
-  "slug": "gujarat-university",
-  "establishedYear": 1950,
-  "type": "Public/Government",
-  "status": "Active",
-  "logo": "https://images.shiksha.com/mediadata/images/1569330473php9YWiJ7.jpg",
-  "coverImage": "https://images.shiksha.com/mediadata/images/1701684559phpzNmkcR_1280x960.jpg",
-  "website": "https://www.gujaratuniversity.ac.in/",
-  "accreditation": {
-    "naac": {
-      "grade": "None",
-      "category": "NAAC None",
-      "cgpa": 0,
-      "validUntil": "",
-      "cycleNumber": 0
-    },
-    "nirf": {
-      "overallRank": "101-150",
-      "universityRank": "74",
-      "managementRank": "18",
-      "year": 2025
-    },
-    "ugc": {
-      "recognition": "Recognized"
-    }
-  },
-  "location": {
-    "address": "Gujarat University, Navarangpura",
-    "city": "Ahmedabad",
-    "state": "Gujarat",
-    "pincode": "380009",
-    "country": "India",
-    "coordinates": {
-      "latitude": 23.036104,
-      "longitude": 72.546718
-    },
-    "nearbyLandmarks": [
-      "Navarangpura - 0 km",
-      "Ahmedabad Railway Station - 8 km",
-      "Sardar Vallabhbhai Patel International Airport - 15 km"
-    ]
-  },
-  "contact": {
-    "phone": [
-      "07926300105",
-      "07926308565"
-    ],
-    "email": "registrar@gujaratuniversity.ac.in",
-    "website": "https://www.gujaratuniversity.ac.in/",
-    "admissionsEmail": "sfc@gujaratuniversity.ac.in"
-  },
-  "overview": {
-"stats":[
-  {"title":"Recognition & Rankings",
-"description":"NAAC Accreditation: At different times it has been given grades like A+ or A++ depending on cycle. In NIRF rankings (2025), Gujarat University is placed: In “Overall Category” among universities.  Also specific rankings for some disciplines (e.g. Management) are lower/higher depending on performance. "}
-],
-    "vision": "To be a leading university in higher education and research",
-    "mission": "To provide quality education and foster research and innovation",
-    "motto": "Knowledge is Light",
-    "founder": "Government of Gujarat",
-    "chancellor": "Hon'ble Governor of Gujarat",
-    "viceChancellor": "Prof. (Dr.) Himanshu Pandya"
-  },
-  "campusDetails": {
-    "campusType": "Urban",
-    "environment": "Academic Environment",
-    "facilities": {
-      "academic": [
-        "Library (3,50,457 books, 11,600 E-Books, 7,500 E-Journals)",
-        "Computer Lab",
-        "Language Lab",
-        "Advanced Laboratories",
-        "Research Centers"
-      ],
-      "residential": [
-        "Boys Hostel (256 rooms, 550 beds)",
-        "Girls Hostel (126 rooms, 196 beds)",
-        "Mess Facilities",
-        "Common Rooms"
-      ],
-      "recreational": [
-        "Sports Complex",
-        "Basketball Court",
-        "Cricket Ground",
-        "Tennis Court",
-        "Gymnasium",
-        "Athlete Track",
-        "Hockey Ground",
-        "Volleyball Court",
-        "400 Mtr. Track",
-        "Kabaddi and Khokho Ground"
-      ],
-      "support": [
-        "Cafeteria",
-        "Hospital / Medical Facilities",
-        "Wi-Fi Campus",
-        "Convenience Store",
-        "Bank",
-        "Post Office",
-        "Open Air Theatre",
-        "Multipurpose Hall"
-      ]
-    }
-  },
-  "academics": {
-    "totalStudents": 50000,
-    "totalFaculty": 2000,
-    "studentFacultyRatio": "15:1",
-    "internationalStudents": 500,
-    "totalPrograms": 16,
-    "schools": [
-      {
-        "name": "B.K. School of Professional and Management Studies",
-        "established": 1976,
-        "programs": [
-          "MBA",
-          "Integrated MBA"
-        ]
+[
+  {
+    "id": "cept-university",
+    "name": "CEPT University",
+    "shortName": "CEPT",
+    "slug": "cept-university",
+    "establishedYear": 1962,
+    "type": "Private",
+    "status": "Active",
+    "logo": "https://cept.ac.in/cept-logo.png",
+    "coverImage": "https://cept.ac.in/media/images/IMG_3967_copy.width-1600.jpg",
+    "website": "https://cept.ac.in/",
+    "accreditation": {
+      "naac": {
+        "grade": "A",
+        "category": "NAAC A",
+        "cgpa": 3.25,
+        "validUntil": "2028-03-20",
+        "cycleNumber": 2
       },
-      {
-        "name": "St. Xavier's College, Ahmedabad",
-        "established": 1955,
-        "programs": [
-          "BCA",
-          "B.Sc"
-        ]
-      },
-      {
-        "name": "H L College of Commerce",
-        "established": 1936,
-        "programs": [
-          "B.Com"
-        ]
-      },
-      {
-        "name": "B. J. Medical College, Ahmedabad",
-        "established": 1871,
-        "programs": [
-          "MBBS"
-        ]
-      },
-      {
-        "name": "Smt. N.H.L. Municipal Medical College"
-      },
-      {
-        "name": "Government BBA College, Ahmedabad",
-        "established": 2007,
-        "programs": [
-          "BBA"
-        ]
-      }
-    ]
-  },
-  "admissions": {
-    "admissionProcess": [
-      "Online Application",
-      "Entrance Exam",
-      "Merit List",
-      "Counseling",
-      "Document Verification",
-      "Fee Payment"
-    ],
-    "reservationPolicy": {
-      "sc": "15%",
-      "st": "7.5%",
-      "obc": "27%",
-      "ews": "10%",
-      "pwd": "5%"
-    }
-  },
-  "placements": {
-    "2024": {
-      "overallPlacementRate": "85%",
-      "averageSalary": "6 LPA",
-      "highestSalary": "25 LPA",
-      "medianSalary": "5.5 LPA",
-      "companiesVisited": 150,
-      "totalOffers": 2000
-    },
-    "topRecruiters": [
-      "TCS",
-      "Airtel",
-      "Home First Finance Corp.",
-      "Intech System",
-      "HDB Financial",
-      "HDFC Bank",
-      "ICICI",
-      "Directi",
-      "India Bulls",
-      "ITC",
-      "Amul",
-      "ICICI Prudential",
-      "Vodafone",
-      "Samsara Shipping",
-      "Coca-Cola",
-      "Sanghi",
-      "Swift Pro",
-      "Innoeye",
-      "Bitwise",
-      "Atul Ltd.",
-      "Audi",
-      "DHFL",
-      "HFFC",
-      "Idea Cellular Services",
-      "Cadila",
-      "Intas Pharmaceuticals"
-    ],
-    "sectors": [
-      "IT & Software - 40%",
-      "Finance & Banking - 25%",
-      "Healthcare - 15%",
-      "Manufacturing - 10%",
-      "Others - 10%"
-    ]
-  },
-  "rankings": {
-    "national": [
-      {
-        "agency": "NIRF",
-        "category": "Overall",
-        "rank": "101-150",
+      "nirf": {
+        "overallRank": "Not Available",
+        "universityRank": "Not Available",
+        "architectureRank": 5,
         "year": 2025
       },
-      {
-        "agency": "NIRF",
-        "category": "University",
-        "rank": 74,
-        "year": 2025
-      },
-      {
-        "agency": "Outlook",
-        "category": "Management Institutes",
-        "rank": 18,
-        "year": 2024
+      "ugc": {
+        "recognition": "Recognized"
       }
-    ],
-    "rankingsDescription": "Gujarat University Navrangpura Ahmedabad Gujarat is one of the esteemed universities. It has been ranked by many national ranking entities across various categories. The university is ranked among the top 100 universities in India. Gujarat University ranked 18th under the MBA/PGDM category by the Outlook 2024. The university also ranked 74th under the university category by the NIRF 2025."
-  },
-  "researchAndInnovation": {
-    "researchCenters": 10,
-    "patentsFiled": 50,
-    "publicationsPerYear": 200,
-    "researchFunding": "10 Crores",
-    "phdScholars": 100,
-    "incubationCenter": {
-      "name": "Innovation Hub",
-      "startupsFunded": 20,
-      "totalFunding": "5 Crores"
     },
-    "collaborations": [
-      "Industry Partners",
-      "Research Institutes"
-    ]
-  },
-  "alumniNetwork": {
-    "totalAlumni": 50000,
-    "notableAlumni": [
-      "Distinguished Alumni 1",
-      "Distinguished Alumni 2"
-    ],
-    "alumniInFortune500": 25,
-    "entrepreneursCreated": 100
-  },
-  "awards": [
-    "Excellence in Education Award",
-    "Best Infrastructure Award"
-  ],
-  "mediaGallery": {
-    "photos": {
-      "Campus View": [
-        "https://images.shiksha.com/mediadata/images/1530249242phpyuaIQs.jpeg"
-      ],
-      "Entrance": [
-        "https://images.shiksha.com/mediadata/images/1701684571phpUyD0Om.jpeg",
-        "https://images.shiksha.com/mediadata/images/1530255408phpmBnUEI.jpeg"
-      ],
-      "Hostel Building": [
-        "https://images.shiksha.com/mediadata/images/1530530346phpkTa5Kx.jpeg",
-        "https://images.shiksha.com/mediadata/images/1530530365phphet9rl.jpeg"
-      ],
-      "Auditorium": [
-        "https://images.shiksha.com/mediadata/images/1530249802phpoyMqu7.jpeg"
-      ],
-      "Cafeteria / Mess": [
-        "https://images.shiksha.com/mediadata/images/1530530322phpeIdhDv.jpeg"
-      ],
-      "Event": [
-        "https://images.shiksha.com/mediadata/images/1530531008phpMQMf1t.jpeg"
-      ],
-      "Fest": [
-        "https://images.shiksha.com/mediadata/images/1530249857phpwQhuNq.jpeg"
-      ],
-      "Gymnasium": [
-        "https://images.shiksha.com/mediadata/images/1530249826php7IVn4L.jpeg"
-      ],
-      "Library": [
-        "https://images.shiksha.com/mediadata/images/1530249285phppqnQyh.png"
-      ],
-      "Medical Facility": [
-        "https://images.shiksha.com/mediadata/images/1530530398phpQJ4Y5c.jpeg"
-      ],
-      "Night View": [
-        "https://images.shiksha.com/mediadata/images/1530249266phpatdeBt.jpeg"
-      ],
-      "Others": [
-        "https://images.shiksha.com/mediadata/images/1530249312phpfMujmr.jpeg",
-        "https://images.shiksha.com/mediadata/images/1530249845phpDlm3nW.jpeg",
-        "https://images.shiksha.com/mediadata/images/1530530417php7U8rmw.jpeg"
+    "location": {
+      "address": "Kasturbhai Lalbhai Campus, University Road, Navrangpura",
+      "city": "Ahmedabad",
+      "state": "Gujarat",
+      "pincode": "380009",
+      "country": "India",
+      "coordinates": {
+        "latitude": 23.0381,
+        "longitude": 72.5458
+      },
+      "nearbyLandmarks": [
+        "Gujarat University - 1 km",
+        "Ahmedabad University - 0.5 km",
+        "LD College of Engineering - 1.5 km"
       ]
     },
-    "videos": [
-      {
-        "url": "https://www.youtube.com/v/gLpUydyau8c",
-        "title": "Campus View",
-        "thumbnail": "https://i.ytimg.com/vi/gLpUydyau8c/default.jpg"
-      },
-      {
-        "url": "https://www.youtube.com/v/sDDOoEK9SZM",
-        "title": "GU Milestones",
-        "thumbnail": "https://i.ytimg.com/vi/sDDOoEK9SZM/default.jpg"
-      }
-    ]
-  },
-  "programmes": [
-    {
-      "id": "123456",
-      "name": "BPT",
-      "courseCount": 20,
-      "placementRating": 3,
-      "eligibilityExams": [
-        "Gmat",
-        "Xat",
-        "Cat"
+    "contact": {
+      "phone": [
+        "+91-79-68310000"
       ],
-      "course": [
+      "email": "enquiries@cept.ac.in",
+      "website": "https://cept.ac.in/",
+      "admissionsEmail": "admissions@cept.ac.in"
+    },
+    "overview": {
+      "stats": [
         {
-          "id": "961047",
-          "name": "Bachelor of Physiotherapy (BPT)",
-          "degree": "BPT",
-          "school": "Apollo Institute of Physiotherapy",
-          "duration": "54 months",
-          "level": "Undergraduate", 
-          "category": "Medical & Health Sciences",
-          "totalSeats": 65,
-          "fees": {
-            "tuitionFee": 308000,
-            "totalFee": 308000,
-            "currency": "INR"
-          },
-          "brochure": {
-            "url": "https://images.shiksha.com/mediadata/listingsBrochures/brochure_961047_1756067413.pdf?v=1756076754",
-            "year": 2025
-          },
-          "seoUrl": "/college/apollo-institute-of-physiotherapy-ahmedabad-197115/course-bachelor-of-physiotherapy-bpt-961047",
-          "affiliatedUniversity": "Gujarat University",
-          "location": {
-            "state": "Gujarat",
-            "city": "Ahmedabad"
-          },
-          "educationType": "Full Time",
-          "deliveryMethod": "Classroom",
-          "courseLevel": "UG",
-          "eligibilityExams": [
-            "Gmat",
-            "Xat",
-            "Cat"
-          ],
-          "placements": {
-            "averagePackage": "NA",
-            "highestPackage": 520000,
-            "placementRate": 90,
-            "topRecruiters": [
-              "Apollo Hospitals",
-              "Fortis",
-              "Max Healthcare",
-              "Sports Clinics",
-              "Rehab Centers"
-            ]
-          }
+          "title": "Recognition & Rankings",
+          "description": "CEPT University is a premier institution for human habitat studies. It consistently ranks among the top architecture colleges in India, securing the 5th position in the NIRF 2025 rankings for Architecture and Planning. It is renowned for its studio-based learning and legacy."
+        }
+      ],
+      "vision": "To enable our graduates to become leading professionals in the field of human habitats and to be a globally respected academic and research institution.",
+      "mission": "To provide an interdisciplinary approach to understanding, designing, planning, constructing, and managing human habitats.",
+      "motto": "Understanding for Action",
+      "founder": "Dr. B. V. Doshi",
+      "chancellor": "Mr. Sanjay Lalbhai (Chairperson)",
+      "viceChancellor": "Dr. Bimal Patel (President)"
+    },
+    "campusDetails": {
+      "campusType": "Urban",
+      "environment": "Creative and Studio-based",
+      "facilities": {
+        "academic": [
+          "CEPT Library with specialized collections",
+          "Fabrication Labs (FabLab)",
+          "Workshops for wood, metal, and model making",
+          "Computer Labs with design software",
+          "Exhibition Galleries"
+        ],
+        "residential": [
+          "Separate hostel blocks for men and women",
+          "Shared and individual rooms",
+          "Mess and canteen facilities"
+        ],
+        "recreational": [
+          "Sports grounds for football and cricket",
+          "Basketball and volleyball courts",
+          "Indoor games room",
+          "Student lounges"
+        ],
+        "support": [
+          "Campus canteens and cafes",
+          "Stationery and reprographics store",
+          "First-aid and medical tie-ups",
+          "Wi-Fi enabled campus"
+        ]
+      }
+    },
+    "academics": {
+      "totalStudents": 2500,
+      "totalFaculty": 200,
+      "studentFacultyRatio": "13:1",
+      "internationalStudents": 75,
+      "totalPrograms": 10,
+      "schools": [
+        {
+          "name": "Faculty of Architecture"
+        },
+        {
+          "name": "Faculty of Planning"
+        },
+        {
+          "name": "Faculty of Technology"
+        },
+        {
+          "name": "Faculty of Design"
+        },
+        {
+          "name": "Faculty of Management"
         }
       ]
-    }
-  ]
-}
+    },
+    "admissions": {
+      "admissionProcess": [
+        "Online Application",
+        "Appear for National Entrance Exams (NATA, JEE Paper 2, GATE, CEED)",
+        "Portfolio Review and Interview (for some courses)",
+        "Preparation of Merit List",
+        "Admission Offer"
+      ],
+      "reservationPolicy": {
+        "stateDomicile": "50%",
+        "allIndia": "50%"
+      }
+    },
+    "placements": {
+      "2025": {
+        "overallPlacementRate": "92%",
+        "averageSalary": "7.5 LPA",
+        "highestSalary": "18 LPA",
+        "medianSalary": "7 LPA",
+        "companiesVisited": 150,
+        "totalOffers": 400
+      },
+      "topRecruiters": [
+        "HCP Design, Planning and Management",
+        "INEOS Styrolution",
+        "Adani Realty",
+        "Tata Consulting Engineers",
+        "Lodha Group",
+        "Godrej Properties",
+        "Larsen & Toubro (L&T)",
+        "AECOM",
+        "JLL"
+      ],
+      "sectors": [
+        "Architecture & Design - 40%",
+        "Urban Planning & Policy - 25%",
+        "Construction & Project Management - 20%",
+        "Real Estate - 15%"
+      ]
+    },
+    "rankings": {
+      "national": [
+        {
+          "agency": "NIRF",
+          "category": "Architecture and Planning",
+          "rank": 5,
+          "year": 2025
+        }
+      ],
+      "rankingsDescription": "CEPT University is a leading institution in India for architecture and planning, as evidenced by its consistent high ranking in the NIRF framework. Its focus on habitat-related professions makes it a specialized and highly sought-after university."
+    },
+    "researchAndInnovation": {
+      "researchCenters": 6,
+      "patentsFiled": 10,
+      "publicationsPerYear": 100,
+      "researchFunding": "7 Crores",
+      "phdScholars": 80,
+      "incubationCenter": {
+        "name": "CEPT Research and Development Foundation (CRDF)"
+      },
+      "collaborations": [
+        "ETH Zurich",
+        "UCL Bartlett",
+        "Ahmedabad Municipal Corporation"
+      ]
+    },
+    "alumniNetwork": {
+      "totalAlumni": 15000,
+      "notableAlumni": [
+        "Bimal Patel",
+        "Rajeev Kathpalia",
+        "Gurjit Singh Matharoo"
+      ],
+      "alumniInFortune500": 5,
+      "entrepreneursCreated": 250
+    },
+    "awards": [
+      "Aga Khan Award for Architecture (associated with faculty/alumni)"
+    ],
+    "mediaGallery": {
+      "photos": {
+        "Campus": [
+          "https://admissions.cept.ac.in/images/campus-life/cept-campus-01.jpg"
+        ],
+        "Studios": [
+          "https://cept.ac.in/media/images/FA_Studio_1.width-1600.jpg"
+        ]
+      },
+      "videos": [
+        {
+          "url": "https://www.youtube.com/watch?v=example_cept",
+          "title": "Life at CEPT University",
+          "thumbnail": "https://i.ytimg.com/vi/example_cept/0.jpg"
+        }
+      ]
+    },
+    "courses": [],
+    "programmes": [
+      {
+        "id": "CEPT-BARCH",
+        "name": "Bachelor of Architecture (B.Arch)",
+        "courseCount": 1,
+        "placementRating": 4.8,
+        "eligibilityExams": [
+          "NATA",
+          "JEE Main Paper 2"
+        ],
+        "course": [
+          {
+            "name": "Bachelor of Architecture (B.Arch)",
+            "degree": "B.Arch",
+            "school": "Faculty of Architecture",
+            "duration": "5 years",
+            "level": "Undergraduate",
+            "category": "Architecture",
+            "totalSeats": 80,
+            "fees": {
+              "tuitionFee": 380000,
+              "totalFee": 1900000,
+              "currency": "INR"
+            },
+            "seoUrl": "/university/cept-university/course/barch",
+            "courseLevel": "UG",
+            "placements": {
+              "averagePackage": 650000,
+              "highestPackage": 1500000,
+              "placementRate": 95,
+              "topRecruiters": [
+                "HCP Design",
+                "Perkins Eastman",
+                "Morphogenesis"
+              ]
+            },
+            "eligibilityExams": [
+              "NATA"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "CEPT-MPLAN",
+        "name": "Master of Planning (M.Plan)",
+        "courseCount": 3,
+        "placementRating": 4.5,
+        "eligibilityExams": [
+          "GATE"
+        ],
+        "course": [
+          {
+            "name": "M.Plan in Urban Planning",
+            "degree": "M.Plan",
+            "school": "Faculty of Planning",
+            "duration": "2 years",
+            "level": "Postgraduate",
+            "category": "Planning",
+            "totalSeats": 40,
+            "fees": {
+              "tuitionFee": 420000,
+              "totalFee": 840000,
+              "currency": "INR"
+            },
+            "seoUrl": "/university/cept-university/course/mplan-urban",
+            "courseLevel": "PG",
+            "placements": {
+              "averagePackage": 800000,
+              "highestPackage": 1800000,
+              "placementRate": 90,
+              "topRecruiters": [
+                "AECOM",
+                "JLL",
+                "Tata Trusts",
+                "KPMG"
+              ]
+            },
+            "eligibilityExams": [
+              "GATE"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mica-ahmedabad",
+    "name": "MICA, The School of Ideas",
+    "shortName": "MICA",
+    "slug": "mica-ahmedabad",
+    "establishedYear": 1991,
+    "type": "Private",
+    "status": "Active",
+    "logo": "https://www.mica.ac.in/images/logo.png",
+    "coverImage": "https://www.mica.ac.in/images/slider/1.jpg",
+    "website": "https://www.mica.ac.in/",
+    "accreditation": {
+      "naac": {
+        "grade": "A",
+        "category": "NAAC A",
+        "cgpa": 3.15,
+        "validUntil": "2026-11-10",
+        "cycleNumber": 1
+      },
+      "nirf": {
+        "overallRank": "Not Applicable",
+        "universityRank": "Not Applicable",
+        "managementRank": 35,
+        "year": 2025
+      },
+      "ugc": {
+        "recognition": "AICTE Approved"
+      }
+    },
+    "location": {
+      "address": "Shela, Off S. P. Ring Road",
+      "city": "Ahmedabad",
+      "state": "Gujarat",
+      "pincode": "380058",
+      "country": "India",
+      "coordinates": {
+        "latitude": 23.018,
+        "longitude": 72.4336
+      },
+      "nearbyLandmarks": [
+        "South Bopal - 3 km",
+        "S. G. Highway - 8 km"
+      ]
+    },
+    "contact": {
+      "phone": [
+        "+91-2717-308250"
+      ],
+      "email": "admissionenquiry@mica.ac.in",
+      "website": "https://www.mica.ac.in/",
+      "admissionsEmail": "admissionenquiry@mica.ac.in"
+    },
+    "overview": {
+      "stats": [
+        {
+          "title": "Recognition & Rankings",
+          "description": "MICA is India's premier residential institute for Strategic Marketing and Communication. It holds the 35th rank in the Management category in the NIRF 2025 rankings. MICA is renowned for its unique pedagogy that blends creativity with business strategy and its highly sought-after graduates."
+        }
+      ],
+      "vision": "To be the premier institution for creating leaders in Strategic Marketing and Communication.",
+      "mission": "To develop empathetic leaders and thinkers who are creative and adaptive to a changing world.",
+      "motto": "The School of Ideas",
+      "founder": "A. G. Krishnamurthy",
+      "chancellor": "Mr. Tridip Suhrud (President)",
+      "viceChancellor": "Dr. Githa Heggde (Dean)"
+    },
+    "campusDetails": {
+      "campusType": "Suburban",
+      "environment": "Creative and Collaborative",
+      "facilities": {
+        "academic": [
+          "Knowledge Exchange and Information Centre (KEIC)",
+          "Communication Labs",
+          "Digital Media Studios",
+          "Classrooms designed for interactive learning",
+          "Auditorium"
+        ],
+        "residential": [
+          "Fully residential campus with hostels for all students",
+          "Single and twin-sharing rooms",
+          "Student Mess and Night Canteen"
+        ],
+        "recreational": [
+          "Sports facilities including football, cricket, and basketball",
+          "Gymnasium",
+          "Amphitheatre (KEOC)",
+          "Student-run clubs and committees"
+        ],
+        "support": [
+          "24/7 Medical Centre",
+          "Wi-Fi enabled campus and hostels",
+          "Convenience store"
+        ]
+      }
+    },
+    "academics": {
+      "totalStudents": 600,
+      "totalFaculty": 50,
+      "studentFacultyRatio": "12:1",
+      "internationalStudents": 15,
+      "totalPrograms": 4,
+      "schools": [
+        {
+          "name": "Post Graduate Diploma in Management – Communications (PGDM-C)"
+        },
+        {
+          "name": "Post Graduate Diploma in Management (PGDM)"
+        },
+        {
+          "name": "Crafting Creative Communication (CCC)"
+        },
+        {
+          "name": "Fellow Programme in Management (FPM)"
+        }
+      ]
+    },
+    "admissions": {
+      "admissionProcess": [
+        "Appear for CAT/XAT/GMAT",
+        "Appear for MICA Admission Test (MICAT)",
+        "Shortlisting for Group Exercise (GE) & Personal Interview (PI)",
+        "Final Merit List Preparation"
+      ],
+      "reservationPolicy": {}
+    },
+    "placements": {
+      "2025": {
+        "overallPlacementRate": "100%",
+        "averageSalary": "21 LPA",
+        "highestSalary": "45 LPA",
+        "medianSalary": "20 LPA",
+        "companiesVisited": 100,
+        "totalOffers": 250
+      },
+      "topRecruiters": [
+        "Procter & Gamble (P&G)",
+        "Hindustan Unilever Limited (HUL)",
+        "Google",
+        "Amazon",
+        "The Coca-Cola Company",
+        "L'Oréal",
+        "Accenture Strategy",
+        "Ogilvy",
+        "Leo Burnett",
+        "Tata Group"
+      ],
+      "sectors": [
+        "FMCG/FMCD - 30%",
+        "IT & E-commerce - 25%",
+        "Advertising & Media - 20%",
+        "Consulting - 15%",
+        "Others - 10%"
+      ]
+    },
+    "rankings": {
+      "national": [
+        {
+          "agency": "NIRF",
+          "category": "Management",
+          "rank": 35,
+          "year": 2025
+        }
+      ],
+      "rankingsDescription": "MICA's strong industry connections and specialized curriculum in marketing and communication are reflected in its consistent ranking among the top 40 management institutes in India by NIRF. It is widely regarded as the best in its niche."
+    },
+    "researchAndInnovation": {
+      "researchCenters": 3,
+      "patentsFiled": 2,
+      "publicationsPerYear": 40,
+      "researchFunding": "3 Crores",
+      "phdScholars": 30,
+      "incubationCenter": null,
+      "collaborations": [
+        "Michigan State University",
+        "Northwestern University",
+        "ESSEC Business School"
+      ]
+    },
+    "alumniNetwork": {
+      "totalAlumni": 5000,
+      "notableAlumni": [
+        "Sidharth Rao (Group CEO, Dentsu MB)",
+        "Manmeet Vohra (Director, Marketing, Tata Starbucks)",
+        "Kainaz Karmakar (CCO, Ogilvy India)"
+      ],
+      "alumniInFortune500": 100,
+      "entrepreneursCreated": 100
+    },
+    "awards": [
+      "Best Communication School Award"
+    ],
+    "mediaGallery": {
+      "photos": {
+        "Campus": [
+          "https://images.shiksha.com/mediadata/images/1574677735php96T9yX.jpeg"
+        ],
+        "KEOC": [
+          "https://www.mica.ac.in/images/life/DSC_0109.JPG"
+        ]
+      },
+      "videos": [
+        {
+          "url": "https://www.youtube.com/watch?v=example_mica",
+          "title": "Welcome to MICA - The School of Ideas",
+          "thumbnail": "https://i.ytimg.com/vi/example_mica/0.jpg"
+        }
+      ]
+    },
+    "courses": [],
+    "programmes": [
+      {
+        "id": "MICA-PGDM-C",
+        "name": "Post Graduate Diploma in Management - Communications (PGDM-C)",
+        "courseCount": 1,
+        "placementRating": 5,
+        "eligibilityExams": [
+          "CAT",
+          "XAT",
+          "GMAT",
+          "MICAT"
+        ],
+        "course": [
+          {
+            "name": "Post Graduate Diploma in Management - Communications (PGDM-C)",
+            "degree": "PGDM",
+            "school": "MICA",
+            "duration": "2 years",
+            "level": "Postgraduate",
+            "category": "Management",
+            "totalSeats": 216,
+            "fees": {
+              "tuitionFee": 2300000,
+              "totalFee": 2300000,
+              "currency": "INR"
+            },
+            "seoUrl": "/college/mica-ahmedabad/course/pgdm-c",
+            "courseLevel": "PG",
+            "placements": {
+              "averagePackage": 2100000,
+              "highestPackage": 4500000,
+              "placementRate": 100,
+              "topRecruiters": [
+                "HUL",
+                "P&G",
+                "Google",
+                "Amazon"
+              ]
+            },
+            "eligibilityExams": [
+              "MICAT"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "MICA-CCC",
+        "name": "Crafting Creative Communication (CCC)",
+        "courseCount": 1,
+        "placementRating": 4.2,
+        "eligibilityExams": [
+          "MICAT"
+        ],
+        "course": [
+          {
+            "name": "Post Graduate Certificate in Crafting Creative Communication (CCC)",
+            "degree": "PG Certificate",
+            "school": "MICA",
+            "duration": "1 year",
+            "level": "Postgraduate",
+            "category": "Communication",
+            "totalSeats": 40,
+            "fees": {
+              "tuitionFee": 1000000,
+              "totalFee": 1000000,
+              "currency": "INR"
+            },
+            "seoUrl": "/college/mica-ahmedabad/course/ccc",
+            "courseLevel": "PG",
+            "placements": {
+              "averagePackage": 900000,
+              "highestPackage": 1500000,
+              "placementRate": 90,
+              "topRecruiters": [
+                "Ogilvy",
+                "Leo Burnett",
+                "DDB Mudra",
+                "Publicis"
+              ]
+            },
+            "eligibilityExams": [
+              "MICAT"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -33,10 +33,21 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      // new structure: programmes[].course[]
+      // new structure: programmes[].course[] and programmes[].courses[]
       if (Array.isArray(doc?.programmes)) {
         doc.programmes = doc.programmes.map((p: any) => {
-          if (Array.isArray(p?.course)) {
+          // Handle 'courses' (plural) and convert to 'course' (singular) for schema compatibility
+          if (Array.isArray(p?.courses)) {
+            p.course = p.courses.map((c: any) => {
+              const explicitId = c?._id || c?.id // accept either _id or id
+              const _id = normalizeId(explicitId)
+              const { id, ...rest } = c || {};
+              return { _id, ...rest };
+            })
+            delete p.courses // remove the plural version
+          }
+          // Handle 'course' (singular) structure
+          else if (Array.isArray(p?.course)) {
             p.course = p.course.map((c: any) => {
               const explicitId = c?._id || c?.id // accept either _id or id
               const _id = normalizeId(explicitId)

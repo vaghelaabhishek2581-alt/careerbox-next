@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import AdminInstitute from '@/src/models/AdminInstitute'
 
@@ -48,6 +49,39 @@ export async function POST(req: NextRequest) {
 
     // enforce slug normalization similar to schema
     body.slug = String(body.slug).trim().toLowerCase()
+
+    // Normalize course ids for legacy and programmes
+    const normalizeId = (val: any) => (val && mongoose.isValidObjectId(val) ? new mongoose.Types.ObjectId(String(val)) : new mongoose.Types.ObjectId())
+    if (Array.isArray(body?.courses)) {
+      body.courses = body.courses.map((c: any) => {
+        const explicitId = c?._id || c?.id
+        const _id = normalizeId(explicitId)
+        const { id, ...rest } = c || {}
+        return { _id, ...rest }
+      })
+    }
+    if (Array.isArray(body?.programmes)) {
+      body.programmes = body.programmes.map((p: any) => {
+        // Handle both old 'course' and new 'courses' structure
+        if (Array.isArray(p?.course)) {
+          p.course = p.course.map((c: any) => {
+            const explicitId = c?._id || c?.id
+            const _id = normalizeId(explicitId)
+            const { id, ...rest } = c || {}
+            return { _id, ...rest }
+          })
+        }
+        if (Array.isArray(p?.courses)) {
+          p.courses = p.courses.map((c: any) => {
+            const explicitId = c?._id || c?.id
+            const _id = normalizeId(explicitId)
+            const { id, ...rest } = c || {}
+            return { _id, ...rest }
+          })
+        }
+        return p
+      })
+    }
 
     const created = await AdminInstitute.create(body)
     return NextResponse.json(created, { status: 201 })

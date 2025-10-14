@@ -47,6 +47,10 @@ export default function AdminInstituteDetailPage() {
 
   // Form state mirrors AdminInstitute fields
   const [form, setForm] = useState<any>({})
+  // JSON import dialog state
+  const [jsonOpen, setJsonOpen] = useState(false)
+  const [jsonBusy, setJsonBusy] = useState(false)
+  const [jsonText, setJsonText] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -108,6 +112,22 @@ export default function AdminInstituteDetailPage() {
       toast({ title: 'Save failed', description: e.message, variant: 'destructive' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Import JSON into current form (merge)
+  async function onImportSubmit() {
+    try {
+      setJsonBusy(true)
+      const parsed = JSON.parse(jsonText || '{}')
+      setForm((prev: any) => ({ ...prev, ...(parsed || {}) }))
+      toast({ title: 'Imported JSON into form' })
+      setJsonOpen(false)
+      setJsonText('')
+    } catch (e: any) {
+      toast({ title: 'Import failed', description: e?.message || String(e), variant: 'destructive' })
+    } finally {
+      setJsonBusy(false)
     }
   }
 
@@ -187,6 +207,28 @@ export default function AdminInstituteDetailPage() {
           <div><Label>Founder</Label><Input value={getPath(['overview','founder'],'')} onChange={(e)=> setPath(['overview','founder'], e.target.value)} /></div>
           <div><Label>Chancellor</Label><Input value={getPath(['overview','chancellor'],'')} onChange={(e)=> setPath(['overview','chancellor'], e.target.value)} /></div>
           <div><Label>Vice Chancellor</Label><Input value={getPath(['overview','viceChancellor'],'')} onChange={(e)=> setPath(['overview','viceChancellor'], e.target.value)} /></div>
+          
+          <div className="md:col-span-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Stats</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setPath(['overview','stats'], [...(getPath(['overview','stats'], []) as any[]), { title: '', description: '' }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+            </div>
+            <div className="space-y-3">
+              {(getPath(['overview','stats'], []) as any[]).map((stat: any, idx: number) => (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2" key={idx}>
+                  <div><Label>Title</Label><Input value={stat.title||''} onChange={(e)=> {
+                    const arr = [...(getPath(['overview','stats'], []) as any[])]; arr[idx] = { ...arr[idx], title: e.target.value }; setPath(['overview','stats'], arr)
+                  }} /></div>
+                  <div className="md:col-span-2"><Label>Description</Label><Input value={stat.description||''} onChange={(e)=> {
+                    const arr = [...(getPath(['overview','stats'], []) as any[])]; arr[idx] = { ...arr[idx], description: e.target.value }; setPath(['overview','stats'], arr)
+                  }} /></div>
+                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
+                    const arr = [...(getPath(['overview','stats'], []) as any[])]; arr.splice(idx,1); setPath(['overview','stats'], arr)
+                  }}><Trash2 className="w-4 h-4"/></Button></div>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -362,154 +404,97 @@ export default function AdminInstituteDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Programmes (new structure) */}
+      {/* Programmes */}
       <Card>
-        <CardHeader><CardTitle>Programmes (New Structure)</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Programmes</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Programme List</Label>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => setPath(['programmes'], [...(getPath(['programmes'], []) as any[]), { name: '', eligibilityExams: [], course: [] }])}
-            >
-              <Plus className="w-4 h-4 mr-1"/>Add Programme
-            </Button>
+            <Button type="button" variant="secondary" size="sm" onClick={()=> setPath(['programmes'], [...(getPath(['programmes'], []) as any[]), { id: '', name: '', courseCount: 0, placementRating: 0, eligibilityExams: [], course: [] }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
           </div>
-          <div className="space-y-4">
-            {(getPath(['programmes'], []) as any[]).map((p: any, pIdx: number) => (
-              <div key={pIdx} className="space-y-3 border rounded-md p-3">
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
-                  <div><Label>ID</Label><Input value={p.id||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[pIdx] = { ...arr[pIdx], id: e.target.value }; setPath(['programmes'], arr) }} /></div>
-                  <div className="md:col-span-2"><Label>Name</Label><Input value={p.name||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[pIdx] = { ...arr[pIdx], name: e.target.value }; setPath(['programmes'], arr) }} /></div>
-                  <div><Label>Course Count</Label><Input value={p.courseCount??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[pIdx] = { ...arr[pIdx], courseCount: e.target.value }; setPath(['programmes'], arr) }} /></div>
-                  <div><Label>Placement Rating</Label><Input value={p.placementRating??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[pIdx] = { ...arr[pIdx], placementRating: e.target.value }; setPath(['programmes'], arr) }} /></div>
-                  <div className="md:col-span-2">
-                    <StringList label="Eligibility Exams" values={p.eligibilityExams||[]} onChange={(v)=> {
-                      const arr=[...(getPath(['programmes'], []) as any[])];
-                      arr[pIdx] = { ...arr[pIdx], eligibilityExams: v };
-                      setPath(['programmes'], arr)
-                    }} placeholder="CAT"/>
-                  </div>
+          <div className="space-y-6">
+            {(getPath(['programmes'], []) as any[]).map((prog: any, progIdx: number) => (
+              <div className="space-y-4 border rounded-md p-4" key={progIdx}>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <div><Label>Programme ID</Label><Input value={prog.id||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[progIdx] = { ...arr[progIdx], id: e.target.value }; setPath(['programmes'], arr) }} /></div>
+                  <div><Label>Programme Name</Label><Input value={prog.name||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[progIdx] = { ...arr[progIdx], name: e.target.value }; setPath(['programmes'], arr) }} /></div>
+                  <div><Label>Course Count</Label><Input value={prog.courseCount??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[progIdx] = { ...arr[progIdx], courseCount: e.target.value ? Number(e.target.value) : 0 }; setPath(['programmes'], arr) }} /></div>
+                  <div><Label>Placement Rating</Label><Input value={prog.placementRating??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[progIdx] = { ...arr[progIdx], placementRating: e.target.value ? Number(e.target.value) : 0 }; setPath(['programmes'], arr) }} /></div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <Label>Programme Courses</Label>
-                  <div className="flex items-center gap-2">
+                
+                <div className="space-y-2">
+                  <StringList label="Eligibility Exams" values={prog.eligibilityExams||[]} onChange={(v)=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr[progIdx] = { ...arr[progIdx], eligibilityExams: v }; setPath(['programmes'], arr) }} placeholder="GMAT, CAT, XAT"/>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Courses in Programme</Label>
                     <Button type="button" variant="secondary" size="sm" onClick={()=> {
-                      const arr=[...(getPath(['programmes'], []) as any[])];
-                      const cur = { ...(arr[pIdx]||{}) };
-                      const list = [...(cur.course||[])];
-                      list.push({ name: '', recognition: [], eligibilityExams: [], placementRecruiters: [] });
-                      cur.course = list; arr[pIdx] = cur; setPath(['programmes'], arr)
+                      const arr=[...(getPath(['programmes'], []) as any[])]; 
+                      const courses = [...(arr[progIdx].course||[])]; 
+                      courses.push({ id: '', name: '', degree: '', school: '', duration: '', level: '', category: '', totalSeats: 0, fees: { tuitionFee: 0, totalFee: 0, currency: 'INR' }, brochure: { url: '', year: new Date().getFullYear() }, seoUrl: '', affiliatedUniversity: '', location: { state: '', city: '' }, educationType: '', deliveryMethod: '', courseLevel: '', eligibilityExams: [], placements: { averagePackage: 0, highestPackage: 0, placementRate: 0, topRecruiters: [] } }); 
+                      arr[progIdx] = { ...arr[progIdx], course: courses }; 
+                      setPath(['programmes'], arr)
                     }}><Plus className="w-4 h-4 mr-1"/>Add Course</Button>
-                    <Button type="button" variant="destructive" size="sm" onClick={()=> {
-                      const arr=[...(getPath(['programmes'], []) as any[])];
-                      arr.splice(pIdx,1); setPath(['programmes'], arr)
-                    }}><Trash2 className="w-4 h-4 mr-1"/>Remove Programme</Button>
+                  </div>
+                  <div className="space-y-4">
+                    {(prog.course||[]).map((course: any, courseIdx: number) => (
+                      <div className="space-y-3 border rounded-md p-4 bg-gray-50" key={courseIdx}>
+                        <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
+                          <div><Label>Course ID</Label><Input value={course.id||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], id: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div className="md:col-span-2"><Label>Course Name</Label><Input value={course.name||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], name: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Degree</Label><Input value={course.degree||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], degree: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>School</Label><Input value={course.school||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], school: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Duration</Label><Input value={course.duration||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], duration: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
+                          <div><Label>Level</Label><Input value={course.level||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], level: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Category</Label><Input value={course.category||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], category: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Total Seats</Label><Input value={course.totalSeats??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], totalSeats: e.target.value ? Number(e.target.value) : 0 }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Review Count</Label><Input value={course.reviewCount??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], reviewCount: e.target.value ? Number(e.target.value) : 0 }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Questions Count</Label><Input value={course.questionsCount??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], questionsCount: e.target.value ? Number(e.target.value) : 0 }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>SEO URL</Label><Input value={course.seoUrl||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], seoUrl: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div><Label>Tuition Fee</Label><Input value={course.fees?.tuitionFee??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const fees = { ...(courses[courseIdx].fees||{}) }; fees.tuitionFee = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], fees }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Total Fee</Label><Input value={course.fees?.totalFee??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const fees = { ...(courses[courseIdx].fees||{}) }; fees.totalFee = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], fees }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Currency</Label><Input value={course.fees?.currency||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const fees = { ...(courses[courseIdx].fees||{}) }; fees.currency = e.target.value; courses[courseIdx] = { ...courses[courseIdx], fees }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Affiliated University</Label><Input value={course.affiliatedUniversity||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], affiliatedUniversity: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div><Label>Brochure URL</Label><Input value={course.brochure?.url||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const brochure = { ...(courses[courseIdx].brochure||{}) }; brochure.url = e.target.value; courses[courseIdx] = { ...courses[courseIdx], brochure }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Brochure Year</Label><Input value={course.brochure?.year??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const brochure = { ...(courses[courseIdx].brochure||{}) }; brochure.year = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], brochure }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Education Type</Label><Input value={course.educationType||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], educationType: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Delivery Method</Label><Input value={course.deliveryMethod||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], deliveryMethod: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div><Label>Course Level</Label><Input value={course.courseLevel||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], courseLevel: e.target.value }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>State</Label><Input value={course.location?.state||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const location = { ...(courses[courseIdx].location||{}) }; location.state = e.target.value; courses[courseIdx] = { ...courses[courseIdx], location }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>City</Label><Input value={course.location?.city||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const location = { ...(courses[courseIdx].location||{}) }; location.city = e.target.value; courses[courseIdx] = { ...courses[courseIdx], location }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Locality</Label><Input value={course.location?.locality||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const location = { ...(courses[courseIdx].location||{}) }; location.locality = e.target.value; courses[courseIdx] = { ...courses[courseIdx], location }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div><Label>Avg Package</Label><Input value={course.placements?.averagePackage??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const placements = { ...(courses[courseIdx].placements||{}) }; placements.averagePackage = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], placements }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Highest Package</Label><Input value={course.placements?.highestPackage??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const placements = { ...(courses[courseIdx].placements||{}) }; placements.highestPackage = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], placements }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div><Label>Placement Rate</Label><Input value={course.placements?.placementRate??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const placements = { ...(courses[courseIdx].placements||{}) }; placements.placementRate = e.target.value ? Number(e.target.value) : 0; courses[courseIdx] = { ...courses[courseIdx], placements }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} /></div>
+                          <div className="flex items-end"><Button type="button" variant="destructive" size="sm" onClick={()=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses.splice(courseIdx,1); arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }}><Trash2 className="w-4 h-4 mr-1"/>Remove</Button></div>
+                        </div>
+                        <div className="md:col-span-4">
+                          <StringList label="Recognition" values={course.recognition||[]} onChange={(v)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], recognition: v }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} placeholder="INC, AICTE"/>
+                        </div>
+                        <div className="md:col-span-4">
+                          <StringList label="Eligibility Exams" values={course.eligibilityExams||[]} onChange={(v)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; courses[courseIdx] = { ...courses[courseIdx], eligibilityExams: v }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} placeholder="GMAT, CAT"/>
+                        </div>
+                        <div className="md:col-span-4">
+                          <StringList label="Top Recruiters" values={course.placements?.topRecruiters||[]} onChange={(v)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const courses=[...arr[progIdx].course]; const placements = { ...(courses[courseIdx].placements||{}) }; placements.topRecruiters = v; courses[courseIdx] = { ...courses[courseIdx], placements }; arr[progIdx] = { ...arr[progIdx], course: courses }; setPath(['programmes'], arr) }} placeholder="Company Name"/>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="space-y-3">
-                  {(p.course||[]).map((c: any, cIdx: number) => (
-                    <div key={cIdx} className="space-y-2 border rounded p-3">
-                      <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
-                        <div><Label>ID</Label><Input value={c.id||''} onChange={(e)=> {
-                          const arr=[...(getPath(['programmes'], []) as any[])];
-                          const cur = { ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], id: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr)
-                        }} /></div>
-                        <div className="md:col-span-2"><Label>Name</Label><Input value={c.name||''} onChange={(e)=> {
-                          const arr=[...(getPath(['programmes'], []) as any[])];
-                          const cur = { ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], name: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr)
-                        }} /></div>
-                        <div><Label>Degree</Label><Input value={c.degree||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], degree: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>School</Label><Input value={c.school||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], school: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Duration</Label><Input value={c.duration||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], duration: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Level</Label><Input value={c.level||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], level: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Category</Label><Input value={c.category||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], category: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Total Seats</Label><Input value={c.totalSeats??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], totalSeats: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Review Count</Label><Input value={c.reviewCount??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], reviewCount: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Questions Count</Label><Input value={c.questionsCount??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], questionsCount: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Tuition Fee</Label><Input value={c.tuitionFee??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], tuitionFee: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Total Fee</Label><Input value={c.totalFee??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], totalFee: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Currency</Label><Input value={c.currency||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], currency: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div className="md:col-span-2"><Label>Brochure URL</Label><Input value={c.brochureUrl||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], brochureUrl: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Brochure Year</Label><Input value={c.brochureYear??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], brochureYear: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div className="md:col-span-2"><Label>SEO URL</Label><Input value={c.seoUrl||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], seoUrl: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>State</Label><Input value={c.state||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], state: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>City</Label><Input value={c.city||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], city: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Locality</Label><Input value={c.locality||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], locality: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Education Type</Label><Input value={c.educationType||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], educationType: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Delivery Method</Label><Input value={c.deliveryMethod||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], deliveryMethod: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Course Level</Label><Input value={c.courseLevel||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], courseLevel: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div className="md:col-span-2"><Label>Affiliated University</Label><Input value={c.affiliatedUniversity||''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], affiliatedUniversity: e.target.value }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div className="md:col-span-3"><StringList label="Recognition" values={c.recognition||[]} onChange={(v)=> {
-                          const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], recognition: v }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr)
-                        }} placeholder="INC"/></div>
-                        <div className="md:col-span-3"><StringList label="Eligibility Exams" values={c.eligibilityExams||[]} onChange={(v)=> {
-                          const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list[cIdx] = { ...list[cIdx], eligibilityExams: v }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr)
-                        }} placeholder="CAT"/></div>
-                        <div><Label>Average Package</Label><Input value={c.avgPackage??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; const plc={ ...(list[cIdx].placements||{}) }; plc.averagePackage = e.target.value; list[cIdx] = { ...list[cIdx], avgPackage: e.target.value, placements: plc }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Highest Package</Label><Input value={c.highestPackage??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; const plc={ ...(list[cIdx].placements||{}) }; plc.highestPackage = e.target.value; list[cIdx] = { ...list[cIdx], highestPackage: e.target.value, placements: plc }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div><Label>Placement Rate</Label><Input value={c.placementRate??''} onChange={(e)=> { const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; const plc={ ...(list[cIdx].placements||{}) }; plc.placementRate = e.target.value; list[cIdx] = { ...list[cIdx], placementRate: e.target.value, placements: plc }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr) }} /></div>
-                        <div className="md:col-span-3"><StringList label="Placement Recruiters" values={c.placementRecruiters||[]} onChange={(v)=> {
-                          const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; const plc={ ...(list[cIdx].placements||{}) }; plc.topRecruiters = v; list[cIdx] = { ...list[cIdx], placementRecruiters: v, placements: plc }; cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr)
-                        }} placeholder="Company"/></div>
-                      </div>
-                      <div className="flex justify-end">
-                        <Button type="button" variant="destructive" size="sm" onClick={()=> {
-                          const arr=[...(getPath(['programmes'], []) as any[])]; const cur={ ...(arr[pIdx]||{}) }; const list=[...(cur.course||[])]; list.splice(cIdx,1); cur.course=list; arr[pIdx]=cur; setPath(['programmes'], arr)
-                        }}><Trash2 className="w-4 h-4 mr-1"/>Remove Course</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Courses */}
-      <Card>
-        <CardHeader><CardTitle>Courses</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>Course List</Label>
-            <Button type="button" variant="secondary" size="sm" onClick={()=> setPath(['courses'], [...(getPath(['courses'], []) as any[]), { id: '', name: '' }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
-          </div>
-          <div className="space-y-4">
-            {(getPath(['courses'], []) as any[]).map((c: any, idx: number) => (
-              <div className="space-y-2 border rounded-md p-3" key={idx}>
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
-                  <div><Label>ID</Label><Input value={c.id||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], id: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div className="md:col-span-2"><Label>Name</Label><Input value={c.name||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], name: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Degree</Label><Input value={c.degree||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], degree: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>School</Label><Input value={c.school||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], school: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Duration</Label><Input value={c.duration||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], duration: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Level</Label><Input value={c.level||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], level: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Category</Label><Input value={c.category||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], category: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Total Seats</Label><Input value={c.totalSeats??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], totalSeats: e.target.value ? Number(e.target.value) : undefined }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Review Count</Label><Input value={c.reviewCount??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], reviewCount: e.target.value ? Number(e.target.value) : undefined }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Questions Count</Label><Input value={c.questionsCount??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], questionsCount: e.target.value ? Number(e.target.value) : undefined }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Tuition Fee</Label><Input value={c.fees?.tuitionFee??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const fees = { ...(arr[idx].fees||{}) }; fees.tuitionFee = e.target.value ? Number(e.target.value) : undefined; arr[idx] = { ...arr[idx], fees }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Total Fee</Label><Input value={c.fees?.totalFee??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const fees = { ...(arr[idx].fees||{}) }; fees.totalFee = e.target.value ? Number(e.target.value) : undefined; arr[idx] = { ...arr[idx], fees }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Currency</Label><Input value={c.fees?.currency||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const fees = { ...(arr[idx].fees||{}) }; fees.currency = e.target.value; arr[idx] = { ...arr[idx], fees }; setPath(['courses'], arr) }} /></div>
-                  <div className="md:col-span-2"><Label>Brochure URL</Label><Input value={c.brochure?.url||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const brochure = { ...(arr[idx].brochure||{}) }; brochure.url = e.target.value; arr[idx] = { ...arr[idx], brochure }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Brochure Year</Label><Input value={c.brochure?.year??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const brochure = { ...(arr[idx].brochure||{}) }; brochure.year = e.target.value ? Number(e.target.value) : undefined; arr[idx] = { ...arr[idx], brochure }; setPath(['courses'], arr) }} /></div>
-                  <div className="md:col-span-2"><Label>SEO URL</Label><Input value={c.seoUrl||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], seoUrl: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>State</Label><Input value={c.location?.state||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const location = { ...(arr[idx].location||{}) }; location.state = e.target.value; arr[idx] = { ...arr[idx], location }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>City</Label><Input value={c.location?.city||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const location = { ...(arr[idx].location||{}) }; location.city = e.target.value; arr[idx] = { ...arr[idx], location }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Locality</Label><Input value={c.location?.locality||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const location = { ...(arr[idx].location||{}) }; location.locality = e.target.value; arr[idx] = { ...arr[idx], location }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Education Type</Label><Input value={c.educationType||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], educationType: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Delivery Method</Label><Input value={c.deliveryMethod||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], deliveryMethod: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Course Level</Label><Input value={c.courseLevel||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], courseLevel: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div className="md:col-span-2"><Label>Affiliated University</Label><Input value={c.affiliatedUniversity||''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], affiliatedUniversity: e.target.value }; setPath(['courses'], arr) }} /></div>
-                  <div className="md:col-span-3"><StringList label="Recognition" values={c.recognition||[]} onChange={(v)=> { const arr=[...(getPath(['courses'], []) as any[])]; arr[idx] = { ...arr[idx], recognition: v }; setPath(['courses'], arr) }} placeholder="INC"/></div>
-                  <div><Label>Average Package</Label><Input value={c.placements?.averagePackage??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const placements={ ...(arr[idx].placements||{}) }; placements.averagePackage = e.target.value ? Number(e.target.value) : undefined; arr[idx] = { ...arr[idx], placements }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Highest Package</Label><Input value={c.placements?.highestPackage??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const placements={ ...(arr[idx].placements||{}) }; placements.highestPackage = e.target.value ? Number(e.target.value) : undefined; arr[idx] = { ...arr[idx], placements }; setPath(['courses'], arr) }} /></div>
-                  <div><Label>Placement Rate</Label><Input value={c.placements?.placementRate??''} onChange={(e)=> { const arr=[...(getPath(['courses'], []) as any[])]; const placements={ ...(arr[idx].placements||{}) }; placements.placementRate = e.target.value ? Number(e.target.value) : undefined; arr[idx] = { ...arr[idx], placements }; setPath(['courses'], arr) }} /></div>
-                  <div className="md:col-span-3"><StringList label="Top Recruiters" values={c.placements?.topRecruiters||[]} onChange={(v)=> { const arr=[...(getPath(['courses'], []) as any[])]; const placements={ ...(arr[idx].placements||{}) }; placements.topRecruiters = v; arr[idx] = { ...arr[idx], placements }; setPath(['courses'], arr) }} placeholder="Company"/></div>
-                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> { const arr=[...(getPath(['courses'], []) as any[])]; arr.splice(idx,1); setPath(['courses'], arr) }}><Trash2 className="w-4 h-4"/></Button></div>
+                
+                <div className="flex justify-end">
+                  <Button type="button" variant="destructive" size="sm" onClick={()=> { const arr=[...(getPath(['programmes'], []) as any[])]; arr.splice(progIdx,1); setPath(['programmes'], arr) }}><Trash2 className="w-4 h-4 mr-1"/>Remove Programme</Button>
                 </div>
               </div>
             ))}

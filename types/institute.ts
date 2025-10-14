@@ -54,6 +54,10 @@ export interface Overview {
   founder: string;
   chancellor: string;
   viceChancellor: string;
+  stats?: Array<{
+    title: string;
+    description: string;
+  }>;
 }
 
 export interface CampusFacilities {
@@ -348,6 +352,15 @@ export interface MediaGallery {
   }>;
 }
 
+export interface Programme {
+  id?: string;
+  name: string;
+  courseCount?: number;
+  placementRating?: number;
+  eligibilityExams?: string[];
+  course: Course[];
+}
+
 export interface Institute {
   id: string;
   name: string;
@@ -371,6 +384,7 @@ export interface Institute {
   alumniNetwork: AlumniNetwork;
   awards: string[];
   courses: Course[];
+  programmes?: Programme[];
   mediaGallery?: MediaGallery;
 }
 

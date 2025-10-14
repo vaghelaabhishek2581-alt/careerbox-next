@@ -8,6 +8,7 @@ export interface IStudentLead extends Document {
   email: string
   phone?: string
   city?: string
+  eligibilityExams?: Array<{ exam: string; score: string }>
 
   // What they applied for
   courseId?: string
@@ -38,6 +39,10 @@ const StudentLeadSchema = new Schema<IStudentLead>(
     email: { type: String, required: true, lowercase: true, trim: true },
     phone: { type: String },
     city: { type: String },
+    eligibilityExams: [{
+      exam: { type: String, trim: true },
+      score: { type: String, trim: true }
+    }],
     courseId: { type: String }, 
     courseName: { type: String },
     instituteId: { type: String },

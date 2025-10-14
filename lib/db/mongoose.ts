@@ -21,10 +21,10 @@ export async function connectToDatabase() {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 15000, // Reduced from 60s to 15s
-      socketTimeoutMS: 30000, // Reduced from 60s to 30s
-      connectTimeoutMS: 15000, // Reduced from 60s to 15s
-      maxIdleTimeMS: 30000, // Reduced from 60s to 30s
+      serverSelectionTimeoutMS: 30000, // Increased to 30s
+      socketTimeoutMS: 45000, // Increased to 45s
+      connectTimeoutMS: 30000, // Increased to 30s
+      maxIdleTimeMS: 60000, // Increased to 60s
       family: 4,
       retryWrites: true,
       // Add additional connection options for better reliability
@@ -40,6 +40,19 @@ export async function connectToDatabase() {
       return mongoose
     }).catch((error) => {
       console.error('❌ Failed to connect to MongoDB with Mongoose:', error.message)
+      
+      // Provide helpful error messages
+      if (error.message.includes('timed out')) {
+        console.error(`
+🔧 Connection Timeout - Possible Solutions:
+1. Check MongoDB Atlas IP Whitelist (Network Access)
+2. Verify your internet connection
+3. Check if MongoDB cluster is paused
+4. Verify connection string in .env.local
+5. Try adding 0.0.0.0/0 to IP whitelist (dev only)
+        `)
+      }
+      
       throw error
     })
   }

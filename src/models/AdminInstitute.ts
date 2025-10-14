@@ -427,7 +427,6 @@ export interface IAdminInstitute extends Document {
 
   // New structure: Programmes with nested courses
   programmes?: Array<{
-    id?: string
     name: string
     courseCount?: number
     placementRating?: number
@@ -514,14 +513,13 @@ const CourseSchema = new Schema(
 // ===============================
 const ProgrammeSchema = new Schema(
   {
-    id: String,
+    _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
     name: { type: String, required: true },
     courseCount: Number,
     placementRating: Number,
     eligibilityExams: [String],
     course: [CourseSchema],
   },
-  { _id: false }
 )
 
 // ===============================
@@ -587,7 +585,6 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
       founder: String,
       chancellor: String,
       viceChancellor: String,
-      // New: overview stats array
       stats: [
         new Schema(
           {
@@ -705,9 +702,6 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
       ],
     },
 
-    // 👇 Modularized course schema with ObjectIds
-    courses: [CourseSchema],
-    // New structure: programmes with nested courses
     programmes: [ProgrammeSchema],
   },
   {
