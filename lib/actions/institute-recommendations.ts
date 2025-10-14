@@ -1,168 +1,393 @@
 "use server";
 
 import { cache } from "react";
-import {
+import { connectToDatabase } from "@/lib/db/mongoose";
+import AdminInstitute, { IAdminInstitute } from "@/src/models/AdminInstitute";
+import type { IInstitute as IAccountInstitute } from "@/src/models/Institute";
+import { getInstituteBySlug } from "@/lib/actions/institute-actions";
+import type {
+  Institute as UiInstitute,
+  Course as UiCourse,
   InstituteSearchParams,
   InstituteSearchResult,
   CourseSearchParams,
   CourseSearchResult,
 } from "@/types/institute";
-import gujaratUniversityData from "./enhanced-gujarat-university.json";
 
-// Define types that exactly match the JSON structure
-type JsonInstitute = typeof gujaratUniversityData;
-type JsonCourse = typeof gujaratUniversityData.courses[0];
+// Helper: escape regex
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// Use the JSON data directly without any casting or conversion
-const gujaratUniversity: JsonInstitute = gujaratUniversityData;
-const allInstitutes: JsonInstitute[] = [gujaratUniversity];
-
-// Simple function to get all institutes (just Gujarat University for now)
-const getAllInstitutes = (): JsonInstitute[] => {
-  return allInstitutes;
+// Helper: normalize URLs (fix broken images when DB stores relative paths)
+const ASSET_BASE = (process.env.NEXT_PUBLIC_ASSET_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '');
+const normalizeUrl = (u?: string): string | undefined => {
+  if (!u) return u;
+  if (/^https?:\/\//i.test(u)) return u;
+  if (u.startsWith('//')) return `https:${u}`;
+  if (!ASSET_BASE) return u; // fallback: return as-is if no base configured
+  return `${ASSET_BASE}/${u.replace(/^\//, '')}`;
 };
+
+// Map AdminInstitute (DB) -> UI Institute type
+function mapAdminToUiInstitute(admin: IAdminInstitute): UiInstitute {
+  console.log("admin", admin);
+  console.log("courses", admin.courses);
+
+  // Merge legacy courses[] and new programmes[].course[]
+  const mergedAdminCourses: any[] = [
+    ...(Array.isArray((admin as any).courses) ? (admin as any).courses : []),
+    ...((Array.isArray((admin as any).programmes)
+      ? (admin as any).programmes.flatMap((p: any) => Array.isArray(p?.course) ? p.course : [])
+      : []) as any[]),
+  ]
+
+  return {
+    id: admin.id,
+    name: admin.name,
+    shortName: admin.shortName || admin.name,
+    slug: admin.slug,
+    establishedYear: admin.establishedYear || 0,
+    type: admin.type || "",
+    status: admin.status || "",
+    logo: normalizeUrl(admin.logo),
+    coverImage: normalizeUrl(admin.coverImage),
+    accreditation: {
+      naac: admin.accreditation?.naac
+        ? {
+            grade: admin.accreditation.naac.grade || "",
+            cgpa: admin.accreditation.naac.cgpa || 0,
+            validUntil: admin.accreditation.naac.validUntil || "",
+            cycleNumber: admin.accreditation.naac.cycleNumber || 0,
+          }
+        : undefined,
+      nirf: admin.accreditation?.nirf
+        ? {
+            overallRank: (admin.accreditation.nirf.overallRank as any) ?? undefined,
+            engineeringRank: undefined,
+            managementRank: (admin.accreditation.nirf.managementRank as any) ?? undefined,
+            year: admin.accreditation.nirf.year || 0,
+          }
+        : undefined,
+      ugc: admin.accreditation?.ugc
+        ? {
+            recognition: admin.accreditation.ugc.recognition || "",
+            section: "",
+          }
+        : undefined,
+      aicte: undefined,
+    },
+    location: {
+      address: admin.location?.address || "",
+      city: admin.location?.city || "",
+      state: admin.location?.state || "",
+      pincode: admin.location?.pincode || "",
+      country: admin.location?.country || "",
+      coordinates: {
+        latitude: admin.location?.coordinates?.latitude || 0,
+        longitude: admin.location?.coordinates?.longitude || 0,
+      },
+      nearbyLandmarks: admin.location?.nearbyLandmarks || [],
+    },
+    contact: {
+      phone: admin.contact?.phone || [],
+      email: admin.contact?.email || "",
+      website: admin.contact?.website ? (admin.contact.website.startsWith('http') ? admin.contact.website : `https://${admin.contact.website}`) : "",
+    },
+    overview: {
+      description: admin.overview?.description || "",
+      vision: admin.overview?.vision || "",
+      mission: admin.overview?.mission || "",
+      motto: admin.overview?.motto || "",
+      founder: admin.overview?.founder || "",
+      chancellor: admin.overview?.chancellor || "",
+      viceChancellor: admin.overview?.viceChancellor || "",
+    },
+    campusDetails: {
+      totalArea: "",
+      builtUpArea: "",
+      campusType: admin.campusDetails?.campusType || "",
+      environment: admin.campusDetails?.environment || "",
+      facilities: {
+        academic: admin.campusDetails?.facilities?.academic || [],
+        residential: admin.campusDetails?.facilities?.residential || [],
+        recreational: admin.campusDetails?.facilities?.recreational || [],
+        support: admin.campusDetails?.facilities?.support || [],
+      },
+    },
+    academics: {
+      totalStudents: admin.academics?.totalStudents || 0,
+      totalFaculty: admin.academics?.totalFaculty || 0,
+      studentFacultyRatio: admin.academics?.studentFacultyRatio || "",
+      internationalStudents: admin.academics?.internationalStudents || 0,
+      totalPrograms: admin.academics?.totalPrograms || 0,
+      institutes: (admin.academics?.schools || []).map((s: { name: string; established?: number; programs?: string[] }) => ({
+        name: s.name,
+        established: s.established || 0,
+        programs: s.programs || [],
+      })),
+    },
+    admissions: {
+      applicationDeadline: "",
+      entranceExams: {},
+      admissionProcess: admin.admissions?.admissionProcess || [],
+      reservationPolicy: (admin.admissions?.reservationPolicy as any) || {
+        sc: "",
+        st: "",
+        obc: "",
+        ews: "",
+        pwd: "",
+      },
+    },
+    placements: {
+      ...(admin.placements || {}),
+    } as any,
+    rankings: {
+      national: admin.rankings?.national || [],
+      international: [],
+    },
+    researchAndInnovation: {
+      researchCenters: admin.researchAndInnovation?.researchCenters || 0,
+      patentsFiled: admin.researchAndInnovation?.patentsFiled || 0,
+      publicationsPerYear: admin.researchAndInnovation?.publicationsPerYear || 0,
+      researchFunding: admin.researchAndInnovation?.researchFunding || "",
+      phdScholars: admin.researchAndInnovation?.phdScholars || 0,
+      incubationCenter: {
+        name: admin.researchAndInnovation?.incubationCenter?.name || "",
+        startupsFunded: admin.researchAndInnovation?.incubationCenter?.startupsFunded || 0,
+        totalFunding: admin.researchAndInnovation?.incubationCenter?.totalFunding || "",
+      },
+      collaborations: admin.researchAndInnovation?.collaborations || [],
+    },
+    alumniNetwork: {
+      totalAlumni: admin.alumniNetwork?.totalAlumni || 0,
+      notableAlumni: admin.alumniNetwork?.notableAlumni || [],
+      alumniInFortune500: admin.alumniNetwork?.alumniInFortune500 || 0,
+      entrepreneursCreated: admin.alumniNetwork?.entrepreneursCreated || 0,
+    },
+    awards: admin.awards || [],
+    courses: (mergedAdminCourses || []).map(c => ({
+      id: (c as any)?._id?.toString?.() || c.seoUrl || c.name,
+      name: c.name,
+      degree: c.degree || "",
+      slug: c.seoUrl || undefined,
+      school: c.school,
+      duration: c.duration || "",
+      level: c.courseLevel || c.level || "",
+      category: c.category || "",
+      description: undefined,
+      objectives: undefined,
+      curriculum: undefined,
+      admissionProcess: undefined,
+      fees: ((): any => {
+        if (typeof c.fees === 'object' && c.fees) {
+          const f: any = c.fees as any;
+          return {
+            tuitionFee: f.tuitionFee?.toString?.() || "",
+            hostelFee: "",
+            messFee: "",
+            otherFees: "",
+            totalAnnualFee: "",
+            totalFee: typeof f.totalFee === 'number' ? f.totalFee : undefined,
+            scholarships: Array.isArray(f.scholarships) ? f.scholarships : [],
+          };
+        }
+        return undefined;
+      })(),
+      facultyProfile: undefined,
+      infrastructure: undefined,
+      careerProspects: undefined,
+      industryConnections: undefined,
+      studentActivities: undefined,
+      specializations: undefined,
+      practicalTraining: undefined,
+      barCouncilRecognition: undefined,
+      totalSeats: c.totalSeats,
+      placements: c.placements ? {
+        averagePackage: c.placements.averagePackage || 0,
+        highestPackage: c.placements.highestPackage || 0,
+        placementRate: c.placements.placementRate || 0,
+        topRecruiters: c.placements.topRecruiters || [],
+      } : undefined,
+      location: c.location ? {
+        city: c.location.city,
+        state: c.location.state,
+        country: undefined,
+        locality: c.location.locality,
+      } : undefined,
+      educationType: c.educationType,
+      brochure: c.brochure ? { url: normalizeUrl(c.brochure.url) || '', name: undefined } : undefined,
+      recognition: c.recognition?.map((r: string) => ({ name: r })) || [],
+      reviewCount: c.reviewCount,
+      questionsCount: c.questionsCount,
+    } as UiCourse)),
+    mediaGallery: admin.mediaGallery ? {
+      photos: ((): any => {
+        const p = admin.mediaGallery!.photos as any;
+        if (!p) return undefined;
+        // If photos is an object of arrays
+        if (typeof p === 'object' && !Array.isArray(p)) {
+          const out: Record<string, any[]> = {};
+          for (const key of Object.keys(p)) {
+            const arr = p[key] || [];
+            out[key] = arr.map((item: any) => {
+              if (typeof item === 'string') return normalizeUrl(item);
+              if (item && typeof item === 'object') {
+                return {
+                  ...item,
+                  thumbUrl: normalizeUrl(item.thumbUrl) || item.thumbUrl,
+                  mediaUrl: normalizeUrl(item.mediaUrl) || item.mediaUrl,
+                  widgetThumbUrl: normalizeUrl(item.widgetThumbUrl) || item.widgetThumbUrl,
+                };
+              }
+              return item;
+            });
+          }
+          return out;
+        }
+        // If photos is an array
+        if (Array.isArray(p)) {
+          return p.map((item: any) => {
+            if (typeof item === 'string') return normalizeUrl(item);
+            if (item && typeof item === 'object') {
+              return {
+                ...item,
+                thumbUrl: normalizeUrl(item.thumbUrl) || item.thumbUrl,
+                mediaUrl: normalizeUrl(item.mediaUrl) || item.mediaUrl,
+                widgetThumbUrl: normalizeUrl(item.widgetThumbUrl) || item.widgetThumbUrl,
+              };
+            }
+            return item;
+          });
+        }
+        return p;
+      })(),
+      videos: admin.mediaGallery.videos?.map(
+        (v: { url: string; title?: string; thumbnail?: string }) => ({
+          url: normalizeUrl(v.url) || v.url,
+          title: v.title,
+          thumbnail: normalizeUrl(v.thumbnail) || v.thumbnail,
+        })
+      ) as any,
+    } : undefined,
+  };
+}
 
 // Cache the function for better performance
 export const getInstituteRecommendations = cache(
   async (params: InstituteSearchParams): Promise<InstituteSearchResult> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await connectToDatabase();
 
     const {
       location,
       type,
-      category,
+      category, // NOTE: not directly modelled; kept for future use
       query,
       page = 1,
       sortBy = "popularity",
       establishedYear,
-      accreditation,
+      accreditation, // NOTE: not fully implemented
     } = params;
 
-    let filteredInstitutes = getAllInstitutes();
-
-    // Apply filters
-    if (location) {
-      filteredInstitutes = filteredInstitutes.filter(
-        (institute: JsonInstitute) =>
-          institute.location.city
-            .toLowerCase()
-            .includes(location.toLowerCase()) ||
-          institute.location.state
-            .toLowerCase()
-            .includes(location.toLowerCase())
-      );
+    const mongoQuery: any = {};
+    if (query && query.trim()) {
+      const r = new RegExp(escapeRegex(query.trim()), "i");
+      mongoQuery.$or = [
+        { name: r },
+        { "overview.description": r },
+      ];
     }
-
-    if (type) {
-      filteredInstitutes = filteredInstitutes.filter(
-        (institute: JsonInstitute) => institute.type.toLowerCase() === type.toLowerCase()
-      );
+    if (location && location.trim()) {
+      const r = new RegExp(escapeRegex(location.trim()), "i");
+      mongoQuery.$or = [...(mongoQuery.$or || []), { "location.city": r }, { "location.state": r }];
     }
-
-    if (query) {
-      filteredInstitutes = filteredInstitutes.filter(
-        (institute: JsonInstitute) =>
-          institute.name.toLowerCase().includes(query.toLowerCase()) ||
-          institute.location.city.toLowerCase().includes(query.toLowerCase()) ||
-          institute.overview.description
-            .toLowerCase()
-            .includes(query.toLowerCase())
-      );
+    if (type && type.trim()) {
+      mongoQuery.type = type;
     }
-
-    // Apply sorting
-    switch (sortBy) {
-      case "ranking":
-        filteredInstitutes.sort((a: JsonInstitute, b: JsonInstitute) => {
-          const aRank = typeof a.rankings.national[0]?.rank === 'string' ? 
-            parseInt(a.rankings.national[0].rank.toString().replace(/[^0-9]/g, '')) || 999 : 
-            a.rankings.national[0]?.rank || 999;
-          const bRank = typeof b.rankings.national[0]?.rank === 'string' ? 
-            parseInt(b.rankings.national[0].rank.toString().replace(/[^0-9]/g, '')) || 999 : 
-            b.rankings.national[0]?.rank || 999;
-          return aRank - bRank;
-        });
-        break;
-      case "established":
-        filteredInstitutes.sort(
-          (a: JsonInstitute, b: JsonInstitute) => b.establishedYear - a.establishedYear
-        );
-        break;
-      case "name":
-        filteredInstitutes.sort((a: JsonInstitute, b: JsonInstitute) => a.name.localeCompare(b.name));
-        break;
-      case "popularity":
-      default:
-        // Use a default sorting since we don't have totalStudents in JSON
-        filteredInstitutes.sort((a: JsonInstitute, b: JsonInstitute) => a.name.localeCompare(b.name));
+    if (establishedYear) {
+      const num = parseInt(establishedYear, 10);
+      if (!isNaN(num)) mongoQuery.establishedYear = { $gte: num };
     }
+    // accreditation filter could check accreditation.naac.grade, etc.
 
-    // Pagination
     const pageSize = 10;
-    const totalPages = Math.ceil(filteredInstitutes.length / pageSize);
-    const startIndex = (page - 1) * pageSize;
-    const paginatedInstitutes = filteredInstitutes.slice(
-      startIndex,
-      startIndex + pageSize
-    );
+    const skip = (page - 1) * pageSize;
 
-    // Generate filter options
-    const allInstitutes = getAllInstitutes();
+    const sort: any = (() => {
+      switch (sortBy) {
+        case "established":
+          return { establishedYear: -1 };
+        case "name":
+          return { name: 1 };
+        case "ranking":
+          // Simplified: fall back to name as rankings are arrays
+          return { name: 1 };
+        case "popularity":
+        default:
+          return { name: 1 };
+      }
+    })();
+
+    const [total, admins] = await Promise.all([
+      AdminInstitute.countDocuments(mongoQuery),
+      AdminInstitute.find(mongoQuery, {
+        id: 1,
+        name: 1,
+        shortName: 1,
+        slug: 1,
+        establishedYear: 1,
+        type: 1,
+        status: 1,
+        logo: 1,
+        coverImage: 1,
+        accreditation: 1,
+        location: 1,
+        contact: 1,
+        overview: 1,
+        campusDetails: 1,
+        academics: 1,
+        admissions: 1,
+        placements: 1,
+        rankings: 1,
+        researchAndInnovation: 1,
+        alumniNetwork: 1,
+        awards: 1,
+        courses: 1,
+        programmes: 1,
+        mediaGallery: 1,
+      })
+        .sort(sort)
+        .skip(skip)
+        .limit(pageSize)
+        .lean<IAdminInstitute[]>(),
+    ]);
+
+    const uiInstitutes: UiInstitute[] = admins.map(mapAdminToUiInstitute);
+
+    // Filters (basic: from current set)
+    const locationsSet = new Set<string>();
+    const typesSet = new Set<string>();
+    for (const a of admins) {
+      if (a.location?.city) locationsSet.add(a.location.city);
+      if (a.type) typesSet.add(a.type);
+    }
     const filters = {
-      locations: Array.from(
-        new Set(allInstitutes.map((i: JsonInstitute) => i.location.city))
-      ).map((city: string) => ({
+      locations: Array.from(locationsSet).map((city) => ({
         value: city.toLowerCase(),
         label: city,
-        count: allInstitutes.filter((i: JsonInstitute) => i.location.city === city).length,
+        count: admins.filter((i) => i.location?.city === city).length,
       })),
-      types: Array.from(new Set(allInstitutes.map((i: JsonInstitute) => i.type))).map(
-        (type: string) => ({
-          value: type.toLowerCase(),
-          label: type,
-          count: allInstitutes.filter((i: JsonInstitute) => i.type === type).length,
-        })
-      ),
-      categories: [
-        {
-          value: "engineering",
-          label: "Engineering",
-          count: allInstitutes.length,
-        },
-        {
-          value: "management",
-          label: "Management",
-          count: Math.floor(allInstitutes.length * 0.3),
-        },
-        {
-          value: "law",
-          label: "Law",
-          count: Math.floor(allInstitutes.length * 0.2),
-        },
-      ],
-      accreditations: [
-        {
-          value: "naac-a+",
-          label: "NAAC A+",
-          count: Math.floor(allInstitutes.length * 0.3),
-        },
-        {
-          value: "naac-a",
-          label: "NAAC A",
-          count: Math.floor(allInstitutes.length * 0.4),
-        },
-        {
-          value: "aicte",
-          label: "AICTE Approved",
-          count: allInstitutes.length,
-        },
-      ],
+      types: Array.from(typesSet).map((t) => ({
+        value: t.toLowerCase(),
+        label: t,
+        count: admins.filter((i) => i.type === t).length,
+      })),
+      categories: [],
+      accreditations: [],
     };
 
+    const totalPages = Math.ceil(total / pageSize);
     return {
-      institutes: paginatedInstitutes as any,
-      total: filteredInstitutes.length,
+      institutes: uiInstitutes,
+      total,
       totalPages,
       currentPage: page,
       filters,
@@ -172,26 +397,61 @@ export const getInstituteRecommendations = cache(
 
 // Server action to get individual institute details
 export const getInstituteDetails = cache(
-  async (slug: string): Promise<JsonInstitute | null> => {
-    await new Promise((resolve) => setTimeout(resolve, 50));
+  async (slug: string): Promise<UiInstitute | null> => {
+    await connectToDatabase();
+    const combined = await getInstituteBySlug(slug);
+    if (!combined) return null;
+    if (combined.admin) return mapAdminToUiInstitute(combined.admin as IAdminInstitute);
 
-    const allInstitutes = getAllInstitutes();
-    return allInstitutes.find((institute: JsonInstitute) => institute.slug === slug) || null;
+    // Fallback: if only account exists, map minimally
+    const acc = combined.account as IAccountInstitute | null;
+    if (!acc) return null;
+    const fallback: UiInstitute = {
+      id: acc._id.toString(),
+      name: acc.name,
+      shortName: acc.name,
+      slug: acc.publicProfileId || slug,
+      establishedYear: acc.establishmentYear || 0,
+      type: "",
+      status: acc.status,
+      logo: acc.logo,
+      coverImage: acc.coverImage,
+      accreditation: {},
+      location: {
+        address: acc.address?.street || "",
+        city: acc.address?.city || "",
+        state: acc.address?.state || "",
+        pincode: acc.address?.zipCode || "",
+        country: acc.address?.country || "",
+        coordinates: { latitude: 0, longitude: 0 },
+        nearbyLandmarks: [],
+      },
+      contact: { phone: [acc.phone].filter(Boolean) as string[], email: acc.email, website: acc.website || "" },
+      overview: { description: acc.description || "", vision: "", mission: "", motto: "", founder: "", chancellor: "", viceChancellor: "" },
+      campusDetails: { totalArea: "", builtUpArea: "", campusType: "", environment: "", facilities: { academic: [], residential: [], recreational: [], support: [] } },
+      academics: { totalStudents: acc.studentCount || 0, totalFaculty: acc.facultyCount || 0, studentFacultyRatio: "", internationalStudents: 0, totalPrograms: acc.courseCount || 0, institutes: [] },
+      admissions: { applicationDeadline: "", entranceExams: {}, admissionProcess: [], reservationPolicy: { sc: "", st: "", obc: "", ews: "", pwd: "" } },
+      placements: {},
+      rankings: { national: [], international: [] },
+      researchAndInnovation: { researchCenters: 0, patentsFiled: 0, publicationsPerYear: 0, researchFunding: "", phdScholars: 0, incubationCenter: { name: "", startupsFunded: 0, totalFunding: "" }, collaborations: [] },
+      alumniNetwork: { totalAlumni: 0, notableAlumni: [], alumniInFortune500: 0, entrepreneursCreated: 0 },
+      awards: [],
+      courses: [],
+      mediaGallery: undefined,
+    };
+    return fallback;
   }
 );
 
 // Server action to get course details
 export const getCourseDetails = cache(
-  async (instituteSlug: string, courseSlug: string): Promise<JsonCourse | null> => {
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
+  async (instituteSlug: string, courseSlug: string): Promise<UiCourse | null> => {
+    await connectToDatabase();
     const institute = await getInstituteDetails(instituteSlug);
     if (!institute) return null;
-
     return (
-      institute.courses.find((course: JsonCourse) => 
-        course.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') === courseSlug
-      ) || null
+      institute.courses.find((course) => (course.slug || course.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')) === courseSlug) ||
+      null
     );
   }
 );
@@ -202,8 +462,7 @@ export const getInstituteCourses = cache(
     instituteSlug: string,
     params: CourseSearchParams = {}
   ): Promise<CourseSearchResult> => {
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
+    await connectToDatabase();
     const institute = await getInstituteDetails(instituteSlug);
     if (!institute) {
       return {
@@ -225,20 +484,20 @@ export const getInstituteCourses = cache(
     // Apply filters
     if (params.degree) {
       filteredCourses = filteredCourses.filter(
-        (course: JsonCourse) => course.degree.toLowerCase() === params.degree?.toLowerCase()
+        (course) => course.degree.toLowerCase() === params.degree?.toLowerCase()
       );
     }
 
     if (params.category) {
       filteredCourses = filteredCourses.filter(
-        (course: JsonCourse) =>
+        (course) =>
           course.category.toLowerCase() === params.category?.toLowerCase()
       );
     }
 
     if (params.query) {
       filteredCourses = filteredCourses.filter(
-        (course: JsonCourse) =>
+        (course) =>
           course.name.toLowerCase().includes(params.query!.toLowerCase()) ||
           (course.name && course.name.toLowerCase().includes(params.query!.toLowerCase()))
       );
@@ -256,33 +515,29 @@ export const getInstituteCourses = cache(
 
     // Generate filter options
     const filters = {
-      degrees: Array.from(new Set(institute.courses.map((c: JsonCourse) => c.degree))).map(
+      degrees: Array.from(new Set(institute.courses.map((c) => c.degree))).map(
         (degree: string) => ({
           value: degree.toLowerCase(),
           label: degree,
-          count: institute.courses.filter((c: JsonCourse) => c.degree === degree).length,
+          count: institute.courses.filter((c) => c.degree === degree).length,
         })
       ),
-      categories: Array.from(
-        new Set(institute.courses.map((c: JsonCourse) => c.category))
-      ).map((category: string) => ({
+      categories: Array.from(new Set(institute.courses.map((c) => c.category))).map((category: string) => ({
         value: category.toLowerCase(),
         label: category,
-        count: institute.courses.filter((c: JsonCourse) => c.category === category).length,
+        count: institute.courses.filter((c) => c.category === category).length,
       })),
-      levels: Array.from(new Set(institute.courses.map((c: JsonCourse) => c.level))).map(
+      levels: Array.from(new Set(institute.courses.map((c) => c.level))).map(
         (level: string) => ({
           value: level.toLowerCase(),
           label: level,
-          count: institute.courses.filter((c: JsonCourse) => c.level === level).length,
+          count: institute.courses.filter((c) => c.level === level).length,
         })
       ),
-      durations: Array.from(
-        new Set(institute.courses.map((c: JsonCourse) => c.duration))
-      ).map((duration: string) => ({
+      durations: Array.from(new Set(institute.courses.map((c) => c.duration))).map((duration: string) => ({
         value: duration.toLowerCase().replace(/\s+/g, "-"),
         label: duration,
-        count: institute.courses.filter((c: JsonCourse) => c.duration === duration).length,
+        count: institute.courses.filter((c) => c.duration === duration).length,
       })),
     };
 
@@ -295,3 +550,4 @@ export const getInstituteCourses = cache(
     };
   }
 );
+

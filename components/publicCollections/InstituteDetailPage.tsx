@@ -36,7 +36,7 @@ interface ApplicationFormData {
   phone: string
   city: string
   course: string
-  eligibilityExams: Array<{ exam: string; score: string }>
+  eligibilityExams: Array<EligibilityEntry>
 }
 
 interface EligibilityEntry {
@@ -54,45 +54,80 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
     phone: '',
     city: '',
     course: '',
-    eligibilityExams: []
+    eligibilityExams: [],
   })
   const [currentExam, setCurrentExam] = useState('')
   const [currentScore, setCurrentScore] = useState('')
-
-  const handleApplyClick = (courseName: string) => {
-    if (session?.user) {
-      // User is authenticated, proceed with normal application flow
-      console.log('User is authenticated, proceeding with application for:', courseName)
-    } else {
-      // User is not authenticated, show modal
-      setSelectedCourse(courseName)
-      setFormData(prev => ({ ...prev, course: courseName }))
-      setShowApplicationModal(true)
-    }
-  }
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('Application form data:', formData)
-    setShowApplicationModal(false)
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      city: '',
-      course: '',
-      eligibilityExams: []
-    })
-    setCurrentExam('')
-    setCurrentScore('')
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
+  const handleApplyClick = (courseName: string) => {
+    if (session?.user) {
+      // Authenticated: implement direct apply flow if needed
+      console.log('User is authenticated, proceeding with application for:', courseName)
+    } else {
+      // Guest: open modal with prefilled course
+      setSelectedCourse(courseName)
+      setFormData(prev => ({ ...prev, course: courseName }))
+      setShowApplicationModal(true)
+    }
+  }
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      // Derive courseId from the selected course display name
+      const selectedCourseObj = institute.courses.find(c => `${c.degree}${c.name ? ` in ${c.name}` : ''}` === formData.course)
+      const courseId = selectedCourseObj?.id
+
+      const res = await fetch('/api/student-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: (session as any)?.user?.id,
+          fullName: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          city: formData.city,
+          courseId,
+          courseName: formData.course,
+          instituteId: institute.id,
+          instituteSlug: institute.slug,
+          isAdminInstitute: true,
+          source: 'institute_detail_page',
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || 'Failed to submit lead')
+      }
+
+      // Success UI feedback
+      console.log('Lead created with id:', data.id)
+      setShowApplicationModal(false)
+
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        city: '',
+        course: '',
+        eligibilityExams: []
+      })
+      setCurrentExam('')
+      setCurrentScore('')
+    } catch (error: any) {
+      console.error('Failed to create lead:', error?.message || error)
+      if (typeof window !== 'undefined') {
+        alert(error?.message || 'Failed to submit')
+      }
+    }
+  }
   const addEligibilityExam = () => {
     if (currentExam.trim() && currentScore.trim()) {
       setFormData(prev => ({
@@ -103,7 +138,6 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
       setCurrentScore('')
     }
   }
-
   const removeEligibilityExam = (index: number) => {
     setFormData(prev => ({
       ...prev,
@@ -129,7 +163,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
     }
     return null
   }
-
+console.log(institute.placements)
   const placementData = getLatestPlacementData()
 
   return (
@@ -418,7 +452,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                                   className="border-blue-300 text-blue-600 hover:bg-blue-50 text-xs px-2"
                                 >
                                   <a href={course.brochure.url} target="_blank" rel="noopener noreferrer">
-                                    Brochure
+                         0           Brochure
                                   </a>
                                 </Button>
                               )}
@@ -850,20 +884,32 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {Object.entries((institute as any).mediaGallery.photos).map(([category, photos]: [string, any]) => 
-                        (Array.isArray(photos) ? photos : []).slice(0, 2).map((photo: any, index: number) => (
-                          <div key={`${category}-${index}`} className="relative group cursor-pointer">
-                            <img
-                              src={photo.widgetThumbUrl || photo.thumbUrl}
-                              alt={photo.altText}
-                              className="w-full h-32 object-cover rounded-lg transition-transform group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                              <span className="text-white text-sm font-medium">{photo.mediaTitle}</span>
-                            </div>
-                            <Badge className="absolute top-2 left-2 text-xs">{category}</Badge>
-                          </div>
-                        ))
+                    {Object.entries(((institute as any).mediaGallery?.photos ?? {})).map(([category, photos]: [string, any]) =>(Array.isArray(photos) ? photos : [])
+.filter(p => p != null)
+.slice(0, 2)
+.map((photo: any, index: number) => {
+  const isString = typeof photo === 'string';
+  const src = isString ? photo : (photo.widgetThumbUrl || photo.thumbUrl || photo.mediaUrl);
+  const alt = isString ? category : (photo.altText || photo.mediaTitle || category);
+
+  return (
+    <div key={`${category}-${index}`} className="relative group cursor-pointer">
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-32 object-cover rounded-lg transition-transform group-hover:scale-105"
+        />
+      ) : (
+        <div className="w-full h-32 bg-gray-100 rounded-lg" />
+      )}
+      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+        <span className="text-white text-sm font-medium">{isString ? category : (photo.mediaTitle || category)}</span>
+      </div>
+      <Badge className="absolute top-2 left-2 text-xs">{category}</Badge>
+    </div>
+  );
+})
                       )}
                     </div>
                   </CardContent>

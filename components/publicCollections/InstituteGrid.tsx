@@ -25,6 +25,7 @@ export function InstituteGrid({
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialInstitutes.length < total)
   const [currentPage, setCurrentPage] = useState(1)
+  const [featured, setFeatured] = useState<null | { name: string; slug?: string; publicProfileId?: string; city?: string; state?: string }>(null)
   // Always use list view with detailed cards
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
@@ -92,6 +93,33 @@ export function InstituteGrid({
     setHasMore(initialInstitutes.length < total)
   }, [initialInstitutes, total])
 
+  // Fetch a single institute by slug (if provided in query)
+  useEffect(() => {
+    const slug = searchParams?.get('slug')?.trim()
+    if (!slug) { setFeatured(null); return }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/public/institutes/${encodeURIComponent(slug)}`)
+        if (!res.ok) { if (!cancelled) setFeatured(null); return }
+        const data = await res.json()
+        const pick = data.admin || data.account || null
+        if (!cancelled) {
+          setFeatured(pick ? {
+            name: pick.name,
+            slug: pick.slug,
+            publicProfileId: pick.publicProfileId,
+            city: pick.location?.city || pick.address?.city,
+            state: pick.location?.state || pick.address?.state,
+          } : null)
+        }
+      } catch {
+        if (!cancelled) setFeatured(null)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [searchParams])
+
   const generateSortUrl = (newSortBy: string) => {
     const params = new URLSearchParams(searchParams?.toString() || '')
     params.set('sortBy', newSortBy)
@@ -110,14 +138,28 @@ export function InstituteGrid({
 
   return (
     <div className="space-y-6">
+      {featured && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center justify-between">
+          <div className="text-sm text-blue-900">
+            <span className="font-medium">Showing results related to:</span>
+            <span className="ml-2">{featured.name}</span>
+            {featured.city || featured.state ? (
+              <span className="ml-2 text-blue-700">({[featured.city, featured.state].filter(Boolean).join(', ')})</span>
+            ) : null}
+          </div>
+          <div className="text-xs text-blue-800">
+            {featured.slug ? `slug: ${featured.slug}` : featured.publicProfileId ? `id: ${featured.publicProfileId}` : null}
+          </div>
+        </div>
+      )}
       {/* Results Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-lg shadow-sm">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
-            {total.toLocaleString()} Institutes Found
+            <span suppressHydrationWarning>{new Intl.NumberFormat('en-IN').format(total)}</span> Institutes Found
           </h2>
           <p className="text-sm text-gray-600">
-            Showing {institutes.length} of {total} results
+            Showing <span suppressHydrationWarning>{new Intl.NumberFormat('en-IN').format(institutes.length)}</span> of <span suppressHydrationWarning>{new Intl.NumberFormat('en-IN').format(total)}</span> results
           </p>
         </div>
         
@@ -173,7 +215,7 @@ export function InstituteGrid({
       {!hasMore && institutes.length > 0 && (
         <div className="text-center text-sm text-gray-500 py-8 border-t">
           <p>You've reached the end of the results</p>
-          <p className="mt-1">{institutes.length} of {total.toLocaleString()} institutes shown</p>
+          <p className="mt-1"><span suppressHydrationWarning>{new Intl.NumberFormat('en-IN').format(institutes.length)}</span> of <span suppressHydrationWarning>{new Intl.NumberFormat('en-IN').format(total)}</span> institutes shown</p>
         </div>
       )}
     </div>

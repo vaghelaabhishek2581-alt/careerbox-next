@@ -639,9 +639,8 @@ export interface IInstitute extends Document {
 }
 
 // Use existing model if available (prevents re-compilation errors)
-const Institute = mongoose.model<IInstitute | any>(
-  "Institute",
-  InstituteSchema
-);
+const Institute =
+  (mongoose.models.Institute as mongoose.Model<IInstitute>) ||
+  mongoose.model<IInstitute>("Institute", InstituteSchema);
 
 export default Institute;

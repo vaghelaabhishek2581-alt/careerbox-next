@@ -32,6 +32,7 @@ export function InstituteCard({
   variant = 'default',
   showCourses = false 
 }: InstituteCardProps) {
+  const nf = new Intl.NumberFormat('en-IN')
   const getAccreditationBadges = () => {
     const badges = []
     
@@ -107,7 +108,9 @@ export function InstituteCard({
             <div className="text-right">
               <div className="text-sm text-gray-600">Est. {institute.establishedYear}</div>
               <div className="text-sm font-medium text-green-600">
-                {getPlacementData()?.averageSalary ? `₹${getPlacementData()?.averageSalary.toLocaleString()}` : 'N/A'} Avg Package
+                <span suppressHydrationWarning>
+                  {getPlacementData()?.averageSalary ? `₹${nf.format(Number(getPlacementData()?.averageSalary))}` : 'N/A'}
+                </span> Avg Package
               </div>
             </div>
           </div>
@@ -203,39 +206,47 @@ export function InstituteCard({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <div className="font-medium text-green-600">
+                    <span suppressHydrationWarning>
                     {typeof placementData.averageSalary === 'number' 
-                      ? `₹${placementData.averageSalary.toLocaleString()}` 
+                      ? `₹${nf.format(placementData.averageSalary)}` 
                       : typeof placementData.averageSalary === 'string' 
                         ? placementData.averageSalary 
                         : 'N/A'}
+                    </span>
                   </div>
                   <div className="text-gray-600">Average Package</div>
                 </div>
                 <div>
                   <div className="font-medium text-blue-600">
+                    <span suppressHydrationWarning>
                     {typeof placementData.highestSalary === 'number' 
-                      ? `₹${placementData.highestSalary.toLocaleString()}` 
+                      ? `₹${nf.format(placementData.highestSalary)}` 
                       : typeof placementData.highestSalary === 'string' 
                         ? placementData.highestSalary 
                         : 'N/A'}
+                    </span>
                   </div>
                   <div className="text-gray-600">Highest Package</div>
                 </div>
                 <div>
                   <div className="font-medium text-purple-600">
+                    <span suppressHydrationWarning>
                     {typeof placementData.overallPlacementRate === 'string' 
                       ? placementData.overallPlacementRate 
                       : typeof placementData.overallPlacementRate === 'number' 
-                        ? `${placementData.overallPlacementRate}%` 
+                        ? `${nf.format(placementData.overallPlacementRate)}%` 
                         : 'N/A'}
+                    </span>
                   </div>
                   <div className="text-gray-600">Placement Rate</div>
                 </div>
                 <div>
                   <div className="font-medium text-orange-600">
+                    <span suppressHydrationWarning>
                     {typeof placementData.companiesVisited === 'number' 
-                      ? placementData.companiesVisited.toString() 
+                      ? nf.format(placementData.companiesVisited) 
                       : placementData.companiesVisited || 'N/A'}
+                    </span>
                   </div>
                   <div className="text-gray-600">Companies</div>
                 </div>
@@ -347,11 +358,13 @@ export function InstituteCard({
           <div className="flex items-center gap-2 text-gray-600">
             <Users className="h-4 w-4" />
             <span>
+              <span suppressHydrationWarning>
               {institute.academics?.totalStudents 
                 ? typeof institute.academics.totalStudents === 'number' 
-                  ? institute.academics.totalStudents.toLocaleString() 
+                  ? nf.format(institute.academics.totalStudents) 
                   : institute.academics.totalStudents
-                : 'N/A'} Students
+                : 'N/A'}
+              </span> Students
             </span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
@@ -365,21 +378,25 @@ export function InstituteCard({
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <div className="font-medium text-green-600">
+                  <span suppressHydrationWarning>
                   {typeof placementData.averageSalary === 'number' 
-                    ? `₹${placementData.averageSalary.toLocaleString()}` 
+                    ? `₹${nf.format(placementData.averageSalary)}` 
                     : typeof placementData.averageSalary === 'string' 
                       ? placementData.averageSalary 
                       : 'N/A'}
+                  </span>
                 </div>
                 <div className="text-gray-600">Average Package</div>
               </div>
               <div>
                 <div className="font-medium text-blue-600">
+                  <span suppressHydrationWarning>
                   {typeof placementData.overallPlacementRate === 'string' 
                     ? placementData.overallPlacementRate 
                     : typeof placementData.overallPlacementRate === 'number' 
-                      ? `${placementData.overallPlacementRate}%` 
+                      ? `${nf.format(placementData.overallPlacementRate)}%` 
                       : 'N/A'}
+                  </span>
                 </div>
                 <div className="text-gray-600">Placement Rate</div>
               </div>

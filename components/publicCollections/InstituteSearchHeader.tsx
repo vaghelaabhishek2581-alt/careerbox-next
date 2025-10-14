@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Search, MapPin, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
+import { useDebounce } from '@/hooks/use-debounce'
 
 interface InstituteSearchHeaderProps {
   totalResults: number
@@ -22,6 +23,11 @@ export function InstituteSearchHeader({
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState(currentQuery)
   const [location, setLocation] = useState(currentLocation)
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
+  const debouncedQuery = useDebounce(searchQuery, 250)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +37,88 @@ export function InstituteSearchHeader({
     if (location.trim()) params.set('location', location.trim())
     if (currentType) params.set('type', currentType)
     
+    router.push(`/recommendation-collections?${params.toString()}`)
+  }
+
+  // Fetch suggestions (debounced)
+  useEffect(() => {
+    let abort = false
+    const run = async () => {
+      const q = debouncedQuery.trim()
+      if (q.length < 2) {
+        setSuggestions([])
+        setOpen(false)
+        return
+      }
+      try {
+        setLoading(true)
+        const res = await fetch('/api/search/suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q }),
+        })
+        if (!res.ok) throw new Error('Failed to fetch suggestions')
+        const data = await res.json()
+        if (!abort) {
+          setSuggestions(data.suggestions || [])
+          setOpen(true)
+        }
+      } catch (err) {
+        if (!abort) {
+          setSuggestions([])
+          setOpen(false)
+        }
+      } finally {
+        if (!abort) setLoading(false)
+      }
+    }
+    run()
+    return () => {
+      abort = true
+    }
+  }, [debouncedQuery])
+
+  // Hide suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  const applySuggestion = (s: any) => {
+    // Fill input with a sensible text before navigating
+    if (s.type === 'course' && s.instituteName) {
+      setSearchQuery(s.instituteName)
+    } else {
+      setSearchQuery(s.label || '')
+    }
+    setOpen(false)
+    // Navigate using the normal search submit behavior
+    const params = new URLSearchParams()
+    if (s.type === 'institute' && s.slug) {
+      // bias the search towards the exact institute label
+      params.set('q', s.label)
+    } else if (s.type === 'course') {
+      // When selecting a course suggestion, show that institute in results
+      // by searching using the institute name
+      if (s.instituteName) {
+        params.set('q', s.instituteName)
+      } else if (s.instituteSlug) {
+        // fallback: use slug text if name missing
+        params.set('q', s.instituteSlug.replace(/-/g, ' '))
+      } else if (s.courseName) {
+        // last resort
+        params.set('q', s.courseName)
+      }
+    } else if (searchQuery.trim()) {
+      params.set('q', searchQuery.trim())
+    }
+    if (location.trim()) params.set('location', location.trim())
+    if (currentType) params.set('type', currentType)
     router.push(`/recommendation-collections?${params.toString()}`)
   }
 
@@ -58,15 +146,40 @@ export function InstituteSearchHeader({
           <div className="bg-white rounded-lg p-4 shadow-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Search Query */}
-              <div className="relative">
+              <div className="relative" ref={containerRef}>
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
                   type="text"
                   placeholder="Search institutes, courses, or specializations..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
                 />
+
+                {/* Suggestions dropdown */}
+                {open && (suggestions.length > 0 || loading) && (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-72 overflow-auto">
+                    {loading && (
+                      <div className="px-3 py-2 text-sm text-gray-500">Loading...</div>
+                    )}
+                    {!loading && suggestions.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-gray-500">No suggestions</div>
+                    )}
+                    {!loading && suggestions.map((s: any, idx: number) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => applySuggestion(s)}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                      >
+                        <div className="text-sm text-gray-900">{s.label}</div>
+                        <div className="text-xs text-gray-500">
+                          {s.type === 'course' ? 'Course' : 'Institute'} {s.source ? `• ${s.source}` : ''}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Location */}
@@ -77,7 +190,7 @@ export function InstituteSearchHeader({
                   placeholder="City, State (e.g., Mumbai, Delhi)"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 

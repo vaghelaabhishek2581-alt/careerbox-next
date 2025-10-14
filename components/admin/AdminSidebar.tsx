@@ -145,6 +145,24 @@ const navigationItems = [
     badge: null,
   },
   {
+    title: "Admin Institutes",
+    icon: CreditCard,
+    items: [
+      {
+        title: "Add Institute",
+        href: "/dashboard/admin/institutes/new",
+        icon: CreditCard,
+        badge: "1,234",
+      },
+      {
+        title: "Get Institutes",
+        href: "/dashboard/admin/institutes",
+        icon: CreditCard,
+        badge: "1,234",
+      },
+    ],
+  },
+  {
     title: "System Health",
     href: "/dashboard/admin/health",
     icon: Activity,
