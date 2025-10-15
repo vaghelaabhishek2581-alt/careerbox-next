@@ -1,10 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Programme } from '@/types/institute'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   BookOpen,
   Clock,
@@ -14,7 +17,9 @@ import {
   CreditCard,
   GraduationCap,
   X,
-  Plus
+  Plus,
+  Search,
+  Filter
 } from 'lucide-react'
 
 interface ProgrammesSectionProps {
@@ -27,22 +32,92 @@ export function ProgrammesSection({ programmes, onApplyClick, autoExpand = false
   const [expandedProgramme, setExpandedProgramme] = useState<string | null>(
     autoExpand && programmes.length > 0 ? programmes[0].name : null
   )
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedLevel, setSelectedLevel] = useState<string>('all')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedDuration, setSelectedDuration] = useState<string>('all')
 
   if (!programmes || programmes.length === 0) {
     return null
   }
 
+  // Extract unique values for filters
+  const allCourses = programmes.flatMap(p => p.course || [])
+  const levels = Array.from(new Set(allCourses.map(c => c.level).filter(Boolean)))
+  const categories = Array.from(new Set(allCourses.map(c => c.category).filter(Boolean)))
+  const durations = Array.from(new Set(allCourses.map(c => c.duration).filter(Boolean)))
+
+  // Filter programmes and courses
+  const filteredProgrammes = useMemo(() => {
+    return programmes.map(programme => {
+      const filteredCourses = (programme.course || []).filter(course => {
+        // Search filter
+        const searchLower = searchQuery.toLowerCase()
+        const matchesSearch = !searchQuery || 
+          course.degree?.toLowerCase().includes(searchLower) ||
+          course.name?.toLowerCase().includes(searchLower) ||
+          course.school?.toLowerCase().includes(searchLower) ||
+          course.category?.toLowerCase().includes(searchLower)
+
+        // Level filter
+        const matchesLevel = selectedLevel === 'all' || course.level === selectedLevel
+
+        // Category filter
+        const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory
+
+        // Duration filter
+        const matchesDuration = selectedDuration === 'all' || course.duration === selectedDuration
+
+        return matchesSearch && matchesLevel && matchesCategory && matchesDuration
+      })
+
+      return {
+        ...programme,
+        course: filteredCourses
+      }
+    }).filter(programme => programme.course && programme.course.length > 0)
+  }, [programmes, searchQuery, selectedLevel, selectedCategory, selectedDuration])
+
+  const totalFilteredCourses = filteredProgrammes.reduce((sum, p) => sum + (p.course?.length || 0), 0)
+
+  const handleResetFilters = () => {
+    setSearchQuery('')
+    setSelectedLevel('all')
+    setSelectedCategory('all')
+    setSelectedDuration('all')
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BookOpen className="h-5 w-5" />
-          Programmes ({programmes.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {programmes.map((programme) => (
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Main Content - Programmes List */}
+      <div className="lg:col-span-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Programmes ({filteredProgrammes.length})
+              </div>
+              <div className="text-sm font-normal text-gray-600">
+                {totalFilteredCourses} courses found
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredProgrammes.length === 0 ? (
+              <div className="text-center py-12">
+                <Filter className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No courses found</h3>
+                <p className="text-sm text-gray-500 mb-4">Try adjusting your filters to see more results</p>
+                <Button variant="outline" onClick={handleResetFilters}>
+                  Reset Filters
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredProgrammes.map((programme) => (
             <div key={programme.id || programme.name} className="border border-gray-200 rounded-xl overflow-hidden">
               {/* Programme Header - Clickable */}
               <button
@@ -258,10 +333,149 @@ export function ProgrammesSection({ programmes, onApplyClick, autoExpand = false
                   ))}
                 </div>
               )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  </div>
+
+  {/* Sidebar - Filters */}
+  <div className="lg:col-span-1">
+    <Card className="sticky top-4">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between text-base">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filters
+          </div>
+          {(searchQuery || selectedLevel !== 'all' || selectedCategory !== 'all' || selectedDuration !== 'all') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="text-xs h-7"
+            >
+              Reset
+            </Button>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Search */}
+        <div className="space-y-2">
+          <Label htmlFor="search" className="text-sm font-medium">Search Courses</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="search"
+              type="text"
+              placeholder="Search by name, degree..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
+
+        {/* Level Filter */}
+        {levels.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="level" className="text-sm font-medium">Level</Label>
+            <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+              <SelectTrigger id="level">
+                <SelectValue placeholder="All Levels" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                {levels.map(level => (
+                  <SelectItem key={level} value={level}>{level}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Category Filter */}
+        {categories.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="category" className="text-sm font-medium">Category</Label>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger id="category">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Duration Filter */}
+        {durations.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="duration" className="text-sm font-medium">Duration</Label>
+            <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+              <SelectTrigger id="duration">
+                <SelectValue placeholder="All Durations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Durations</SelectItem>
+                {durations.map(duration => (
+                  <SelectItem key={duration} value={duration}>{duration}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Active Filters Summary */}
+        {(searchQuery || selectedLevel !== 'all' || selectedCategory !== 'all' || selectedDuration !== 'all') && (
+          <div className="pt-4 border-t">
+            <p className="text-xs font-medium text-gray-600 mb-2">Active Filters:</p>
+            <div className="flex flex-wrap gap-2">
+              {searchQuery && (
+                <Badge variant="secondary" className="text-xs">
+                  Search: {searchQuery}
+                </Badge>
+              )}
+              {selectedLevel !== 'all' && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedLevel}
+                </Badge>
+              )}
+              {selectedCategory !== 'all' && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedCategory}
+                </Badge>
+              )}
+              {selectedDuration !== 'all' && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedDuration}
+                </Badge>
+              )}
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* Results Summary */}
+        <div className="pt-4 border-t">
+          <div className="bg-blue-50 rounded-lg p-3">
+            <p className="text-sm font-medium text-blue-900">
+              {totalFilteredCourses} {totalFilteredCourses === 1 ? 'course' : 'courses'} found
+            </p>
+            <p className="text-xs text-blue-700 mt-1">
+              in {filteredProgrammes.length} {filteredProgrammes.length === 1 ? 'programme' : 'programmes'}
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
+  </div>
+</div>
   )
 }

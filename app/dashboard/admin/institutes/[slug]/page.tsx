@@ -326,12 +326,12 @@ export default function AdminInstituteDetailPage() {
             <Button type="button" variant="secondary" size="sm" onClick={()=> setPath(['rankings','national'], [...(getPath(['rankings','national'], []) as any[]), { agency: '', category: '', rank: '', year: new Date().getFullYear() }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
           </div>
           <div className="space-y-3">
-            {(getPath(['rankings','national'], []) as any[]).map((r: any, idx: number) => (
+            {(getPath(['rankings','national'], []) as any[]).filter(r => r !== null && r !== undefined).map((r: any, idx: number) => (
               <div className="grid grid-cols-1 md:grid-cols-5 gap-2" key={idx}>
-                <div><Label>Agency</Label><Input value={r.agency||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], agency: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
-                <div><Label>Category</Label><Input value={r.category||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], category: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
-                <div><Label>Rank</Label><Input value={r.rank||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], rank: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
-                <div><Label>Year</Label><Input value={r.year||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], year: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
+                <div><Label>Agency</Label><Input value={r?.agency||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], agency: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
+                <div><Label>Category</Label><Input value={r?.category||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], category: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
+                <div><Label>Rank</Label><Input value={r?.rank||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], rank: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
+                <div><Label>Year</Label><Input value={r?.year||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], year: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
                 <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr.splice(idx,1); setPath(['rankings','national'], arr) }}><Trash2 className="w-4 h-4"/></Button></div>
               </div>
             ))}

@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import { getInstituteRecommendations } from "@/lib/actions/institute-recommendations";
+import { getInstituteFilterOptions } from '@/lib/actions/institute-filters';
 import { InstituteFilters } from "@/components/publicCollections/InstituteFilters";
 import { InstituteGrid } from "@/components/publicCollections/InstituteGrid";
 import { InstituteSearchHeader } from "@/components/publicCollections/InstituteSearchHeader";
@@ -107,23 +108,21 @@ export default async function RecommendationCollectionsPage({
   } = resolvedSearchParams;
 
   // Server-side data fetching with caching
-  const instituteData = await getInstituteRecommendations({
-    location,
-    category,
-    type,
-    query,
-    page: parseInt(page),
-    sortBy,
-    accreditation,
-  });
-
-
-
+  const [instituteData, filterOptions] = await Promise.all([
+    getInstituteRecommendations({
+      location,
+      category,
+      type,
+      query,
+      page: parseInt(page),
+      sortBy,
+      accreditation,
+    }),
+    getInstituteFilterOptions(),
+  ]);
   return (
     <>
       {/* Structured Data for SEO */}
-
-
       <div className="min-h-screen bg-gray-50">
         {/* Header Section */}
         <InstituteSearchHeader
@@ -133,8 +132,8 @@ export default async function RecommendationCollectionsPage({
           currentType={type}
         />
 
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
             {/* Filters Sidebar */}
             <aside className="lg:w-80 flex-shrink-0">
               <div className="sticky top-6">
@@ -144,13 +143,15 @@ export default async function RecommendationCollectionsPage({
                     currentCategory={category}
                     currentType={type}
                     currentAccreditation={accreditation}
+                    sortBy={sortBy}
                     availableFilters={instituteData.filters}
+                    filterOptions={filterOptions}
                   />
                 </Suspense>
               </div>
             </aside>
 
-            {/* Main Content */}
+
             <main className="flex-1">
               <Suspense fallback={<LoadingSkeleton />}>
                 <InstituteGrid

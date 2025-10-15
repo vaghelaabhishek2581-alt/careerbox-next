@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { Institute } from '@/types/institute'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select'
 import { ProgrammesSection } from '@/components/publicCollections/ProgrammesSection'
 import { saveUserDetails, loadUserDetails } from '@/lib/utils/localStorage'
@@ -81,7 +82,20 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
   })
   const [currentExam, setCurrentExam] = useState('')
   const [currentScore, setCurrentScore] = useState('')
+  const [programmeSearchQuery, setProgrammeSearchQuery] = useState('')
   
+  // Filter programmes by search query
+  const filteredProgrammes = useMemo(() => {
+    if (!institute.programmes) return []
+    if (!programmeSearchQuery.trim()) return institute.programmes
+    
+    const searchLower = programmeSearchQuery.toLowerCase()
+    return institute.programmes.filter(programme => 
+      programme.name?.toLowerCase().includes(searchLower) ||
+      programme.eligibilityExams?.some(exam => exam.toLowerCase().includes(searchLower))
+    )
+  }, [institute.programmes, programmeSearchQuery])
+
   // Find selected programme
   const selectedProgramme = selectedProgrammeId 
     ? institute.programmes?.find(p => (p.id || p.name) === selectedProgrammeId)
@@ -440,15 +454,27 @@ console.log(institute.placements)
           {/* Programmes Section */}
           {!selectedProgramme && institute.programmes && institute.programmes.length > 0 ? (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Programmes ({institute.programmes.length})
-                </CardTitle>
-              </CardHeader>
+<CardHeader>
+  <CardTitle className="flex items-center justify-between gap-4">
+    <div className="flex items-center gap-2">
+      <BookOpen className="h-5 w-5" />
+      Programmes ({filteredProgrammes.length})
+    </div>
+    <div className="relative w-full max-w-xs">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <Input
+        type="text"
+        placeholder="Search programmes..."
+        value={programmeSearchQuery}
+        onChange={(e) => setProgrammeSearchQuery(e.target.value)}
+        className="pl-9"
+      />
+    </div>
+  </CardTitle>
+</CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {institute.programmes.map((programme) => (
+                  {filteredProgrammes.map((programme) => (
                     <button
                       key={programme.id || programme.name}
                       onClick={() => handleProgrammeClick(programme.id || programme.name)}

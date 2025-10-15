@@ -608,11 +608,11 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
     },
 
     academics: {
-      totalStudents: Number,
-      totalFaculty: Number,
+      totalStudents: String,
+      totalFaculty: String,
       studentFacultyRatio: String,
-      internationalStudents: Number,
-      totalPrograms: Number,
+      internationalStudents: String,
+      totalPrograms: String,
       schools: [
         new Schema(
           {
@@ -719,6 +719,10 @@ AdminInstituteSchema.index({ name: 1 })
 AdminInstituteSchema.index({ type: 1 })
 AdminInstituteSchema.index({ status: 1 })
 AdminInstituteSchema.index({ 'location.city': 1, 'location.state': 1 })
+AdminInstituteSchema.index(
+  { name: 'text', 'programmes.name': 'text', 'programmes.course.name': 'text' },
+  { weights: { name: 10, 'programmes.name': 5, 'programmes.course.name': 2 } }
+)
 
 // ===============================
 // Export Model

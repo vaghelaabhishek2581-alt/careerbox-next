@@ -7,14 +7,22 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { InstituteFilterOptions } from '@/types/institute'
-import { MapPin, Building2, Award, X } from 'lucide-react'
+import { sortByOptions } from '@/lib/filter-data'
+import { MapPin, Building2, Award, X, ListCollapse } from 'lucide-react'
 
 interface InstituteFiltersProps {
-  currentLocation?: string
-  currentType?: string
-  currentCategory?: string
-  currentAccreditation?: string
-  availableFilters: InstituteFilterOptions
+  currentLocation?: string;
+  currentType?: string;
+  currentCategory?: string;
+  currentAccreditation?: string;
+  sortBy?: string;
+  availableFilters: InstituteFilterOptions;
+  filterOptions: {
+    locations: { label: string; value: string }[];
+    types: { label: string; value: string }[];
+    categories: { label: string; value: string }[];
+    accreditations: { label: string; value: string }[];
+  };
 }
 
 export function InstituteFilters({
@@ -22,7 +30,9 @@ export function InstituteFilters({
   currentType,
   currentCategory,
   currentAccreditation,
-  availableFilters
+  sortBy = 'popularity',
+  availableFilters,
+  filterOptions
 }: InstituteFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -55,8 +65,37 @@ export function InstituteFilters({
 
   const hasActiveFilters = currentLocation || currentType || currentCategory || currentAccreditation
 
+  const updateSortBy = (value: string) => {
+    const params = new URLSearchParams(searchParams?.toString() || '')
+    params.set('sortBy', value)
+    router.push(`/recommendation-collections?${params.toString()}`)
+  }
+
   return (
     <div className="space-y-6">
+      {/* Sort By */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ListCollapse className="h-4 w-4" />
+            Sort by
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <select
+            className="w-full p-2 border rounded-md bg-white"
+            value={sortBy}
+            onChange={(e) => updateSortBy(e.target.value)}
+          >
+            {sortByOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </CardContent>
+      </Card>
+
       {/* Active Filters */}
       {hasActiveFilters && (
         <Card>
@@ -140,7 +179,7 @@ export function InstituteFilters({
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {availableFilters.locations.slice(0, 8).map((location) => (
+            {filterOptions.locations.map((location) => (
               <div key={location.value} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -157,7 +196,7 @@ export function InstituteFilters({
                     {location.label}
                   </label>
                 </div>
-                <span className="text-xs text-gray-500">({location.count})</span>
+                <span className="text-xs text-gray-500">({availableFilters.locations.find(l => l.value === location.value)?.count || 0})</span>
               </div>
             ))}
           </div>
@@ -174,7 +213,7 @@ export function InstituteFilters({
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {availableFilters.types.map((type) => (
+            {filterOptions.types.map((type) => (
               <div key={type.value} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -191,7 +230,7 @@ export function InstituteFilters({
                     {type.label}
                   </label>
                 </div>
-                <span className="text-xs text-gray-500">({type.count})</span>
+                <span className="text-xs text-gray-500">({availableFilters.types.find(t => t.value === type.value)?.count || 0})</span>
               </div>
             ))}
           </div>
@@ -205,7 +244,7 @@ export function InstituteFilters({
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {availableFilters.categories.map((category) => (
+            {filterOptions.categories.map((category) => (
               <div key={category.value} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -222,7 +261,7 @@ export function InstituteFilters({
                     {category.label}
                   </label>
                 </div>
-                <span className="text-xs text-gray-500">({category.count})</span>
+                <span className="text-xs text-gray-500">({availableFilters.categories.find(c => c.value === category.value)?.count || 0})</span>
               </div>
             ))}
           </div>
@@ -239,7 +278,7 @@ export function InstituteFilters({
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {availableFilters.accreditations.map((accreditation) => (
+            {filterOptions.accreditations.map((accreditation) => (
               <div key={accreditation.value} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -256,7 +295,7 @@ export function InstituteFilters({
                     {accreditation.label}
                   </label>
                 </div>
-                <span className="text-xs text-gray-500">({accreditation.count})</span>
+                <span className="text-xs text-gray-500">({availableFilters.accreditations.find(a => a.value === accreditation.value)?.count || 0})</span>
               </div>
             ))}
           </div>

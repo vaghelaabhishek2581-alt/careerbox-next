@@ -28,12 +28,60 @@ export async function POST(request: NextRequest) {
       .limit(8)
       .lean()
 
-    // AdminInstitute course suggestions via aggregation
+    // AdminInstitute course suggestions via aggregation (from root courses)
     const adminCoursePromise = AdminInstitute.aggregate([
       { $unwind: '$courses' },
-      { $match: { $or: [ { 'courses.name': rx }, { 'courses.seoUrl': rx } ] } },
-      { $project: { _id: 0, instituteSlug: '$slug', instituteName: '$name', courseName: '$courses.name', courseSlug: '$courses.seoUrl' } },
-      { $limit: 8 },
+      { $match: { $or: [{ 'courses.name': rx }, { 'courses.seoUrl': rx }] } },
+      {
+        $project: {
+          _id: 0,
+          instituteSlug: '$slug',
+          instituteName: '$name',
+          courseName: '$courses.name',
+          courseSlug: '$courses.seoUrl',
+        },
+      },
+      { $limit: 5 },
+    ])
+
+    // AdminInstitute programme suggestions via aggregation
+    const adminProgrammePromise = AdminInstitute.aggregate([
+      { $unwind: '$programmes' },
+      { $match: { 'programmes.name': rx } },
+      {
+        $project: {
+          _id: 0,
+          instituteSlug: '$slug',
+          instituteName: '$name',
+          programmeName: '$programmes.name',
+        },
+      },
+      { $limit: 5 },
+    ])
+
+    // AdminInstitute course suggestions from within programmes
+    const adminProgrammeCoursePromise = AdminInstitute.aggregate([
+      { $unwind: '$programmes' },
+      { $unwind: '$programmes.course' },
+      {
+        $match: {
+          $or: [
+            { 'programmes.course.name': rx },
+            { 'programmes.course.seoUrl': rx },
+          ],
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          instituteSlug: '$slug',
+          instituteName: '$name',
+          courseName: '$programmes.course.name',
+          courseSlug: '$programmes.course.seoUrl',
+          programmeName: '$programmes.name',
+        },
+      },
+      { $limit: 5 },
     ])
 
     // Account Institute suggestions
@@ -44,10 +92,18 @@ export async function POST(request: NextRequest) {
       .limit(8)
       .lean()
 
-    const [adminInst, adminCourses, accountInst] = await Promise.all([
+    const [
+      adminInst,
+      adminCourses,
+      accountInst,
+      adminProgrammes,
+      adminProgrammeCourses,
+    ] = await Promise.all([
       adminInstPromise,
       adminCoursePromise,
       accountInstPromise,
+      adminProgrammePromise,
+      adminProgrammeCoursePromise,
     ])
 
     const suggestions = [
@@ -74,6 +130,26 @@ export async function POST(request: NextRequest) {
         courseSlug: c.courseSlug,
         instituteSlug: c.instituteSlug,
         instituteName: c.instituteName,
+      })),
+      // Programmes from admin
+      ...adminProgrammes.map((p: any) => ({
+        type: 'programme' as const,
+        source: 'admin' as const,
+        label: `${p.programmeName} in ${p.instituteName}`,
+        programmeName: p.programmeName,
+        instituteSlug: p.instituteSlug,
+        instituteName: p.instituteName,
+      })),
+      // Courses from programmes from admin
+      ...adminProgrammeCourses.map((c: any) => ({
+        type: 'course' as const,
+        source: 'admin' as const,
+        label: `${c.courseName} (${c.programmeName}) — ${c.instituteName}`,
+        courseName: c.courseName,
+        courseSlug: c.courseSlug,
+        instituteSlug: c.instituteSlug,
+        instituteName: c.instituteName,
+        programmeName: c.programmeName,
       })),
     ]
 

@@ -4,11 +4,14 @@ import { connectToDatabase } from '@/lib/db/mongoose'
 import AdminInstitute from '@/src/models/AdminInstitute'
 
 // GET /api/admin/institutes/[slug]
-export async function GET(_req: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(
+  _req: NextRequest,
+  context: { params: { slug: string } }
+) {
+  const { slug } = context.params;
   try {
     await connectToDatabase()
-    const slug = params.slug.toLowerCase()
-    const doc = await AdminInstitute.findOne({ slug })
+    const doc = await AdminInstitute.findOne({ slug: slug.toLowerCase() })
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json(doc)
   } catch (err: any) {
@@ -17,10 +20,13 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
 }
 
 // PATCH /api/admin/institutes/[slug]
-export async function PATCH(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  context: { params: { slug: string } }
+) {
+  const { slug } = context.params;
   try {
     await connectToDatabase()
-    const slug = params.slug.toLowerCase()
     const body = await req.json()
     if (body.slug) body.slug = String(body.slug).trim().toLowerCase()
 
@@ -57,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
       })
     }
 
-    const updated = await AdminInstitute.findOneAndUpdate({ slug }, { $set: body }, { new: true })
+    const updated = await AdminInstitute.findOneAndUpdate({ slug: slug.toLowerCase() }, { $set: body }, { new: true })
     if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json(updated)
   } catch (err: any) {
@@ -69,11 +75,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
 }
 
 // DELETE /api/admin/institutes/[slug]
-export async function DELETE(_req: NextRequest, { params }: { params: { slug: string } }) {
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: { slug: string } }
+) {
+  const { slug } = context.params;
   try {
     await connectToDatabase()
-    const slug = params.slug.toLowerCase()
-    const res = await AdminInstitute.findOneAndDelete({ slug })
+    const res = await AdminInstitute.findOneAndDelete({ slug: slug.toLowerCase() })
     if (!res) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json({ ok: true })
   } catch (err: any) {
