@@ -38,19 +38,25 @@ export function InstituteFilters({
   const searchParams = useSearchParams()
 
   const updateFilter = (key: string, value: string, checked: boolean) => {
-    const params = new URLSearchParams(searchParams?.toString() || '')
-    
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    const currentValues = params.get(key)?.split(',').filter(Boolean) || [];
+
+    let newValues: string[];
     if (checked) {
-      params.set(key, value)
+      newValues = [...new Set([...currentValues, value])];
     } else {
-      params.delete(key)
+      newValues = currentValues.filter((v) => v !== value);
     }
-    
-    // Reset to first page when filters change
-    params.delete('page')
-    
-    router.push(`/recommendation-collections?${params.toString()}`)
-  }
+
+    if (newValues.length > 0) {
+      params.set(key, newValues.join(','));
+    } else {
+      params.delete(key);
+    }
+
+    params.delete('page');
+    router.push(`/recommendation-collections?${params.toString()}`);
+  };
 
   const clearAllFilters = () => {
     const params = new URLSearchParams(searchParams?.toString() || '')
@@ -63,7 +69,12 @@ export function InstituteFilters({
     router.push(`/recommendation-collections?${params.toString()}`)
   }
 
-  const hasActiveFilters = currentLocation || currentType || currentCategory || currentAccreditation
+  const activeLocations = currentLocation?.split(',').filter(Boolean) || [];
+  const activeTypes = currentType?.split(',').filter(Boolean) || [];
+  const activeCategories = currentCategory?.split(',').filter(Boolean) || [];
+  const activeAccreditations = currentAccreditation?.split(',').filter(Boolean) || [];
+
+  const hasActiveFilters = activeLocations.length > 0 || activeTypes.length > 0 || activeCategories.length > 0 || activeAccreditations.length > 0;
 
   const updateSortBy = (value: string) => {
     const params = new URLSearchParams(searchParams?.toString() || '')
@@ -74,27 +85,6 @@ export function InstituteFilters({
   return (
     <div className="space-y-6">
       {/* Sort By */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ListCollapse className="h-4 w-4" />
-            Sort by
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <select
-            className="w-full p-2 border rounded-md bg-white"
-            value={sortBy}
-            onChange={(e) => updateSortBy(e.target.value)}
-          >
-            {sortByOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </CardContent>
-      </Card>
 
       {/* Active Filters */}
       {hasActiveFilters && (
@@ -114,56 +104,56 @@ export function InstituteFilters({
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
-              {currentLocation && (
-                <Badge variant="secondary" className="flex items-center gap-1">
+              {activeLocations.map(loc => (
+                <Badge key={loc} variant="secondary" className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
-                  {availableFilters.locations.find(l => l.value === currentLocation)?.label}
+                  {filterOptions.locations.find(l => l.value === loc)?.label || loc}
                   <button
-                    onClick={() => updateFilter('location', currentLocation, false)}
+                    onClick={() => updateFilter('location', loc, false)}
                     className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
-              )}
+              ))}
               
-              {currentType && (
-                <Badge variant="secondary" className="flex items-center gap-1">
+              {activeTypes.map(typ => (
+                <Badge key={typ} variant="secondary" className="flex items-center gap-1">
                   <Building2 className="h-3 w-3" />
-                  {availableFilters.types.find(t => t.value === currentType)?.label}
+                  {filterOptions.types.find(t => t.value === typ)?.label || typ}
                   <button
-                    onClick={() => updateFilter('type', currentType, false)}
+                    onClick={() => updateFilter('type', typ, false)}
                     className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
-              )}
+              ))}
               
-              {currentCategory && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  {availableFilters.categories.find(c => c.value === currentCategory)?.label}
+              {activeCategories.map(cat => (
+                <Badge key={cat} variant="secondary" className="flex items-center gap-1">
+                  {filterOptions.categories.find(c => c.value === cat)?.label || cat}
                   <button
-                    onClick={() => updateFilter('category', currentCategory, false)}
+                    onClick={() => updateFilter('category', cat, false)}
                     className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
-              )}
+              ))}
               
-              {currentAccreditation && (
-                <Badge variant="secondary" className="flex items-center gap-1">
+              {activeAccreditations.map(acc => (
+                <Badge key={acc} variant="secondary" className="flex items-center gap-1">
                   <Award className="h-3 w-3" />
-                  {availableFilters.accreditations.find(a => a.value === currentAccreditation)?.label}
+                  {filterOptions.accreditations.find(a => a.value === acc)?.label || acc}
                   <button
-                    onClick={() => updateFilter('accreditation', currentAccreditation, false)}
+                    onClick={() => updateFilter('accreditation', acc, false)}
                     className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
-              )}
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -184,7 +174,7 @@ export function InstituteFilters({
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id={`location-${location.value}`}
-                    checked={currentLocation === location.value}
+                    checked={activeLocations.includes(location.value)}
                     onCheckedChange={(checked) => 
                       updateFilter('location', location.value, checked as boolean)
                     }
@@ -218,7 +208,7 @@ export function InstituteFilters({
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id={`type-${type.value}`}
-                    checked={currentType === type.value}
+                    checked={activeTypes.includes(type.value)}
                     onCheckedChange={(checked) => 
                       updateFilter('type', type.value, checked as boolean)
                     }
@@ -249,7 +239,7 @@ export function InstituteFilters({
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id={`category-${category.value}`}
-                    checked={currentCategory === category.value}
+                    checked={activeCategories.includes(category.value)}
                     onCheckedChange={(checked) => 
                       updateFilter('category', category.value, checked as boolean)
                     }
@@ -283,7 +273,7 @@ export function InstituteFilters({
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id={`accreditation-${accreditation.value}`}
-                    checked={currentAccreditation === accreditation.value}
+                    checked={activeAccreditations.includes(accreditation.value)}
                     onCheckedChange={(checked) => 
                       updateFilter('accreditation', accreditation.value, checked as boolean)
                     }

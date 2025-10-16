@@ -25,9 +25,14 @@ export function InstituteSearchHeader({
   const [location, setLocation] = useState(currentLocation)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [open, setOpen] = useState(false)
-  const debouncedQuery = useDebounce(searchQuery, 250)
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [open, setOpen] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const debouncedQuery = useDebounce(searchQuery, 250);
+  const debouncedLocation = useDebounce(location, 250);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const locationContainerRef = useRef<HTMLDivElement | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,7 +81,43 @@ export function InstituteSearchHeader({
     return () => {
       abort = true
     }
-  }, [debouncedQuery])
+  }, [debouncedQuery]);
+
+  // Fetch location suggestions (debounced)
+  useEffect(() => {
+    let abort = false;
+    const run = async () => {
+      const loc = debouncedLocation.trim();
+      if (loc.length < 2) {
+        setLocationSuggestions([]);
+        setLocationOpen(false);
+        return;
+      }
+      try {
+        setLocationLoading(true);
+        const res = await fetch('/api/search/location-suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: loc }),
+        });
+        if (!res.ok) throw new Error('Failed to fetch location suggestions');
+        const data = await res.json();
+        if (!abort) {
+          setLocationSuggestions(data.suggestions || []);
+          setLocationOpen(true);
+        }
+      } catch (err) {
+        if (!abort) {
+          setLocationSuggestions([]);
+          setLocationOpen(false);
+        }
+      } finally {
+        if (!abort) setLocationLoading(false);
+      }
+    };
+    run();
+    return () => { abort = true; };
+  }, [debouncedLocation]);
 
   // Hide suggestions on outside click
   useEffect(() => {
@@ -85,9 +126,20 @@ export function InstituteSearchHeader({
         setOpen(false)
       }
     }
-    if (open) document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [open])
+    if (open) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  // Hide location suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (locationContainerRef.current && !locationContainerRef.current.contains(e.target as Node)) {
+        setLocationOpen(false);
+      }
+    };
+    if (locationOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [locationOpen]);
 
   const applySuggestion = (s: any) => {
     // Fill input with a sensible text before navigating
@@ -144,9 +196,9 @@ export function InstituteSearchHeader({
         {/* Search Form */}
         <form onSubmit={handleSearch} className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg p-4 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               {/* Search Query */}
-              <div className="relative" ref={containerRef}>
+              <div className="relative md:col-span-2" ref={containerRef}>
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
                   type="text"
@@ -183,7 +235,7 @@ export function InstituteSearchHeader({
               </div>
 
               {/* Location */}
-              <div className="relative">
+              <div className="relative md:col-span-2" ref={locationContainerRef}>
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
                   type="text"
@@ -192,6 +244,23 @@ export function InstituteSearchHeader({
                   onChange={(e) => setLocation(e.target.value)}
                   className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
                 />
+                {/* Location Suggestions dropdown */}
+                {locationOpen && (locationSuggestions.length > 0 || locationLoading) && (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-72 overflow-auto">
+                    {locationLoading && <div className="px-3 py-2 text-sm text-gray-500">Loading...</div>}
+                    {!locationLoading && locationSuggestions.length === 0 && <div className="px-3 py-2 text-sm text-gray-500">No suggestions</div>}
+                    {!locationLoading && locationSuggestions.map((loc: string, idx: number) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setLocation(loc); setLocationOpen(false); }}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                      >
+                        <div className="text-sm text-gray-900">{loc}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Search Button */}

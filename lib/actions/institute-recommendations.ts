@@ -360,17 +360,34 @@ export const getInstituteRecommendations = cache(
       ];
     }
     if (location && location.trim()) {
-      const r = new RegExp(escapeRegex(location.trim()), "i");
-      mongoQuery.$or = [...(mongoQuery.$or || []), { "location.city": r }, { "location.state": r }];
+      const locations = location.split(',').map(l => new RegExp(escapeRegex(l.trim()), 'i'));
+      if (locations.length > 0) {
+        mongoQuery.$or = [...(mongoQuery.$or || []), { 'location.city': { $in: locations } }, { 'location.state': { $in: locations } }];
+      }
     }
     if (type && type.trim()) {
-      mongoQuery.type = type;
+      const types = type.split(',').filter(Boolean);
+      if (types.length > 0) mongoQuery.type = { $in: types };
     }
     if (establishedYear) {
       const num = parseInt(establishedYear, 10);
       if (!isNaN(num)) mongoQuery.establishedYear = { $gte: num };
     }
-    // accreditation filter could check accreditation.naac.grade, etc.
+    if (category && category.trim()) {
+      const categories = category.split(',').filter(Boolean);
+      if (categories.length > 0) mongoQuery['programmes.course.category'] = { $in: categories };
+    }
+
+    if (accreditation && accreditation.trim()) {
+      const accreditations = accreditation.split(',').filter(Boolean);
+      if (accreditations.length > 0) {
+        mongoQuery.$or = [
+          ...(mongoQuery.$or || []),
+          { 'accreditation.naac.grade': { $in: accreditations } },
+          { 'programmes.course.recognition': { $in: accreditations } },
+        ];
+      }
+    }
 
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
@@ -390,62 +407,58 @@ export const getInstituteRecommendations = cache(
       }
     })();
 
-    const [total, admins] = await Promise.all([
-      AdminInstitute.countDocuments(mongoQuery),
-      AdminInstitute.find(mongoQuery, {
-        id: 1,
-        name: 1,
-        shortName: 1,
-        slug: 1,
-        establishedYear: 1,
-        type: 1,
-        status: 1,
-        logo: 1,
-        coverImage: 1,
-        accreditation: 1,
-        location: 1,
-        contact: 1,
-        overview: 1,
-        campusDetails: 1,
-        academics: 1,
-        admissions: 1,
-        placements: 1,
-        rankings: 1,
-        researchAndInnovation: 1,
-        alumniNetwork: 1,
-        awards: 1,
-        courses: 1,
-        programmes: 1,
-        mediaGallery: 1,
-      })
-        .sort(sort)
-        .skip(skip)
-        .limit(pageSize)
-        .lean<IAdminInstitute[]>(),
-    ]);
+    const aggregationPipeline: any[] = [
+      { $match: mongoQuery },
+      {
+        $facet: {
+          // Branch for paginated results
+          paginatedResults: [
+            { $sort: sort },
+            { $skip: skip },
+            { $limit: pageSize },
+          ],
+          // Branch for total count
+          totalCount: [
+            { $count: 'count' }
+          ],
+          // Branches for filter counts
+          locations: [
+            { $match: { 'location.city': { $ne: null } } },
+            { $group: { _id: '$location.city', count: { $sum: 1 } } },
+            { $project: { _id: 0, value: '$_id', label: '$_id', count: 1 } }
+          ],
+          types: [
+            { $match: { type: { $ne: null } } },
+            { $group: { _id: '$type', count: { $sum: 1 } } },
+            { $project: { _id: 0, value: '$_id', label: '$_id', count: 1 } }
+          ],
+          categories: [
+            { $unwind: '$programmes' },
+            { $unwind: '$programmes.course' },
+            { $match: { 'programmes.course.category': { $ne: null } } },
+            { $group: { _id: '$programmes.course.category', count: { $sum: 1 } } },
+            { $project: { _id: 0, value: '$_id', label: '$_id', count: 1 } }
+          ],
+          accreditations: [
+            { $match: { 'accreditation.naac.grade': { $ne: null } } },
+            { $group: { _id: '$accreditation.naac.grade', count: { $sum: 1 } } },
+            { $project: { _id: 0, value: '$_id', label: '$_id', count: 1 } }
+          ]
+        }
+      }
+    ];
+
+    const results = await AdminInstitute.aggregate(aggregationPipeline).exec();
+    const admins = results[0].paginatedResults;
+    const total = results[0].totalCount[0]?.count || 0;
 
     const uiInstitutes: UiInstitute[] = admins.map(mapAdminToUiInstitute);
 
-    // Filters (basic: from current set)
-    const locationsSet = new Set<string>();
-    const typesSet = new Set<string>();
-    for (const a of admins) {
-      if (a.location?.city) locationsSet.add(a.location.city);
-      if (a.type) typesSet.add(a.type);
-    }
     const filters = {
-      locations: Array.from(locationsSet).map((city) => ({
-        value: city.toLowerCase(),
-        label: city,
-        count: admins.filter((i) => i.location?.city === city).length,
-      })),
-      types: Array.from(typesSet).map((t) => ({
-        value: t.toLowerCase(),
-        label: t,
-        count: admins.filter((i) => i.type === t).length,
-      })),
-      categories: [],
-      accreditations: [],
+      locations: results[0].locations,
+      types: results[0].types,
+      categories: results[0].categories,
+      accreditations: results[0].accreditations,
     };
 
     const totalPages = Math.ceil(total / pageSize);
