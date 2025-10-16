@@ -449,16 +449,33 @@ export const getInstituteRecommendations = cache(
     ];
 
     const results = await AdminInstitute.aggregate(aggregationPipeline).exec();
-    const admins = results[0].paginatedResults;
-    const total = results[0].totalCount[0]?.count || 0;
+    
+    // Handle empty results
+    if (!results || results.length === 0 || !results[0]) {
+      return {
+        institutes: [],
+        total: 0,
+        totalPages: 0,
+        currentPage: page,
+        filters: {
+          locations: [],
+          types: [],
+          categories: [],
+          accreditations: [],
+        },
+      };
+    }
+
+    const admins = results[0].paginatedResults || [];
+    const total = results[0].totalCount?.[0]?.count || 0;
 
     const uiInstitutes: UiInstitute[] = admins.map(mapAdminToUiInstitute);
 
     const filters = {
-      locations: results[0].locations,
-      types: results[0].types,
-      categories: results[0].categories,
-      accreditations: results[0].accreditations,
+      locations: results[0].locations || [],
+      types: results[0].types || [],
+      categories: results[0].categories || [],
+      accreditations: results[0].accreditations || [],
     };
 
     const totalPages = Math.ceil(total / pageSize);

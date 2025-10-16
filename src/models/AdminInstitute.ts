@@ -530,7 +530,7 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
     id: { type: String, required: true, index: true },
     name: { type: String, required: true },
     shortName: String,
-    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    slug: { type: String, required: true, lowercase: true, trim: true },
     establishedYear: Number,
     type: String,
     status: String,
