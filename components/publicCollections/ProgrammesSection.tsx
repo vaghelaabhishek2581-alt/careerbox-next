@@ -25,10 +25,11 @@ import {
 interface ProgrammesSectionProps {
   programmes: Programme[]
   onApplyClick: (courseName: string) => void
+  onCourseClick?: (courseName: string) => void
   autoExpand?: boolean
 }
 
-export function ProgrammesSection({ programmes, onApplyClick, autoExpand = false }: ProgrammesSectionProps) {
+export function ProgrammesSection({ programmes, onApplyClick, onCourseClick, autoExpand = false }: ProgrammesSectionProps) {
   const [expandedProgramme, setExpandedProgramme] = useState<string | null>(
     autoExpand && programmes.length > 0 ? programmes[0].name : null
   )
@@ -191,6 +192,16 @@ export function ProgrammesSection({ programmes, onApplyClick, autoExpand = false
 
                           {/* Action Buttons */}
                           <div className="flex gap-2">
+                            {onCourseClick && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-blue-300 text-blue-600 hover:bg-blue-50 text-xs"
+                                onClick={() => onCourseClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
+                              >
+                                View Details
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs"

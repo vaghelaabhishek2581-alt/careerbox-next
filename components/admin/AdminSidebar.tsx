@@ -38,7 +38,8 @@ import {
   Mail,
   Bell,
   Activity,
-  Globe
+  Globe,
+  UserPlus
 } from "lucide-react";
 
 interface SidebarProps {
@@ -137,6 +138,12 @@ const navigationItems = [
         badge: null,
       },
     ],
+  },
+  {
+    title: "Student Leads",
+    href: "/dashboard/admin/student-leads",
+    icon: UserPlus,
+    badge: null,
   },
   {
     title: "Analytics & Reports",

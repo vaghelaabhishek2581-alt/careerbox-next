@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Institute } from '@/types/institute'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -55,9 +56,13 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
   
   const { data: session } = useSession()
   const { toast } = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
   const [showApplicationModal, setShowApplicationModal] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string>('')
   const [selectedProgrammeId, setSelectedProgrammeId] = useState<string | null>(null)
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [expandedProgramme, setExpandedProgramme] = useState<string | null>(null)
   const [formData, setFormData] = useState<ApplicationFormData>(() => {
     const savedDetails = loadUserDetails()
@@ -84,6 +89,43 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
   const [currentScore, setCurrentScore] = useState('')
   const [programmeSearchQuery, setProgrammeSearchQuery] = useState('')
   
+  // Initialize state from URL parameters
+  useEffect(() => {
+    const programmeSlug = searchParams.get('programme')
+    const courseSlug = searchParams.get('course')
+    
+    if (programmeSlug && institute.programmes) {
+      // Find programme by slug or name
+      const programme = institute.programmes.find(p => 
+        createSlug(p.name) === programmeSlug || p.id === programmeSlug
+      )
+      if (programme) {
+        setSelectedProgrammeId(programme.id || programme.name)
+      }
+    }
+    
+    if (courseSlug && institute.courses) {
+      // Find course by slug and set the course ID for detailed view
+      const course = institute.courses.find(c => {
+        const fullCourseName = `${c.degree}${c.name ? `-${c.name}` : ''}`
+        return createSlug(fullCourseName) === courseSlug
+      })
+      if (course) {
+        const displayName = `${course.degree}${course.name ? ` in ${course.name}` : ''}`
+        setSelectedCourse(displayName)
+        setSelectedCourseId(course.id || displayName)
+      }
+    }
+  }, [searchParams, institute.programmes, institute.courses])
+  
+  // Helper function to create URL-friendly slugs
+  const createSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+  }
+  
   // Filter programmes by search query
   const filteredProgrammes = useMemo(() => {
     if (!institute.programmes) return []
@@ -108,17 +150,63 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
 
   const handleProgrammeClick = (programmeId: string) => {
     setSelectedProgrammeId(programmeId)
+    
+    // Update URL with programme slug
+    const programme = institute.programmes?.find(p => (p.id || p.name) === programmeId)
+    if (programme) {
+      const programmeSlug = createSlug(programme.name)
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('programme', programmeSlug)
+      // Clear course when changing programme
+      params.delete('course')
+      setSelectedCourse('')
+      router.push(`?${params.toString()}`, { scroll: false })
+    }
   }
 
   const handleBackToProgrammes = () => {
     setSelectedProgrammeId(null)
+    setSelectedCourse('')
+    setSelectedCourseId(null)
+    
+    // Remove programme and course from URL
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('programme')
+    params.delete('course')
+    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname
+    router.push(newUrl, { scroll: false })
+  }
+
+  const handleBackToCourses = () => {
+    setSelectedCourseId(null)
+    setSelectedCourse('')
+    
+    // Remove course from URL but keep programme
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('course')
+    router.push(`?${params.toString()}`, { scroll: false })
+  }
+
+  // New function to handle course selection for detailed view
+  const handleCourseClick = (courseName: string) => {
+    const selectedCourseObj = institute.courses.find(c => `${c.degree}${c.name ? ` in ${c.name}` : ''}` === courseName)
+    if (selectedCourseObj) {
+      const courseSlug = createSlug(`${selectedCourseObj.degree}${selectedCourseObj.name ? `-${selectedCourseObj.name}` : ''}`)
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('course', courseSlug)
+      setSelectedCourseId(selectedCourseObj.id || courseName)
+      setSelectedCourse(courseName)
+      router.push(`?${params.toString()}`, { scroll: false })
+    }
   }
 
   const handleApplyClick = async (courseName: string) => {
+    // This function now only handles the application process, not navigation
+    const selectedCourseObj = institute.courses.find(c => `${c.degree}${c.name ? ` in ${c.name}` : ''}` === courseName)
+    
     if (session?.user) {
       // Authenticated: Direct apply without modal
       try {
-        const selectedCourseObj = institute.courses.find(c => `${c.degree}${c.name ? ` in ${c.name}` : ''}` === courseName)
         const courseId = selectedCourseObj?.id
 
         const res = await fetch('/api/student-leads', {
@@ -452,33 +540,33 @@ console.log(institute.placements)
             </Card>
           )}
           {/* Programmes Section */}
-          {!selectedProgramme && institute.programmes && institute.programmes.length > 0 ? (
+          {!selectedProgramme && !selectedCourseId && institute.programmes && institute.programmes.length > 0 ? (
             <Card>
-<CardHeader>
-  <CardTitle className="flex items-center justify-between gap-4">
-    <div className="flex items-center gap-2">
-      <BookOpen className="h-5 w-5" />
-      Programmes ({filteredProgrammes.length})
-    </div>
-    <div className="relative w-full max-w-xs">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-      <Input
-        type="text"
-        placeholder="Search programmes..."
-        value={programmeSearchQuery}
-        onChange={(e) => setProgrammeSearchQuery(e.target.value)}
-        className="pl-9"
-      />
-    </div>
-  </CardTitle>
-</CardHeader>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" />
+                    Programmes ({filteredProgrammes.length})
+                  </div>
+                  <div className="relative w-full max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search programmes..."
+                      value={programmeSearchQuery}
+                      onChange={(e) => setProgrammeSearchQuery(e.target.value)}
+                      className="pl-10 pr-4 py-2 text-sm"
+                    />
+                  </div>
+                </CardTitle>
+              </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredProgrammes.map((programme) => (
                     <button
                       key={programme.id || programme.name}
                       onClick={() => handleProgrammeClick(programme.id || programme.name)}
-                      className="bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border border-blue-200 rounded-xl p-6 text-left transition-all duration-300 hover:shadow-lg group"
+                      className="group p-6 bg-white border border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-lg transition-all duration-300 text-left"
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
@@ -512,21 +600,391 @@ console.log(institute.placements)
                 </div>
               </CardContent>
             </Card>
-) : selectedProgramme ? (
-  <div className="space-y-4">
-    {/* Back Button */}
-    <Button
-      variant="outline"
-      onClick={handleBackToProgrammes}
-      className="flex items-center gap-2"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      Back to All Programmes
-    </Button>
-    
-    <ProgrammesSection programmes={[selectedProgramme]} onApplyClick={handleApplyClick} autoExpand={true} />
-  </div>
-) : null}
+          ) : selectedProgramme && !selectedCourseId ? (
+            <div className="space-y-4">
+              {/* Back Button */}
+              <Button
+                variant="outline"
+                onClick={handleBackToProgrammes}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to All Programmes
+              </Button>
+              
+              <ProgrammesSection 
+                programmes={[selectedProgramme]} 
+                onApplyClick={handleApplyClick} 
+                onCourseClick={handleCourseClick}
+                autoExpand={true} 
+              />
+            </div>
+          ) : selectedCourseId ? (
+            // Level 3: Detailed Course View
+            <div className="space-y-6">
+              <Button
+                variant="outline"
+                onClick={handleBackToCourses}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Courses
+              </Button>
+              
+              {(() => {
+                const selectedCourseObj = institute.courses.find(c => {
+                  const displayName = `${c.degree}${c.name ? ` in ${c.name}` : ''}`
+                  return (c.id || displayName) === selectedCourseId
+                })
+                
+                if (!selectedCourseObj) return null
+                
+                return (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                          <GraduationCap className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">
+                            {selectedCourseObj.degree}
+                          </h2>
+                          {selectedCourseObj.name && (
+                            <p className="text-gray-600">{selectedCourseObj.name}</p>
+                          )}
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Course Details Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Duration */}
+                        {selectedCourseObj.duration && (
+                          <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
+                            <Clock className="h-5 w-5 text-blue-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Duration</p>
+                              <p className="text-lg font-semibold text-gray-900">{selectedCourseObj.duration}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Level */}
+                        {selectedCourseObj.level && (
+                          <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
+                            <Award className="h-5 w-5 text-green-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Level</p>
+                              <p className="text-lg font-semibold text-gray-900">{selectedCourseObj.level}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Course Level */}
+                        {(selectedCourseObj as any).courseLevel && (
+                          <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
+                            <GraduationCap className="h-5 w-5 text-purple-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Course Level</p>
+                              <p className="text-lg font-semibold text-gray-900">{(selectedCourseObj as any).courseLevel}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Category */}
+                        {selectedCourseObj.category && (
+                          <div className="flex items-center gap-3 p-4 bg-pink-50 rounded-lg">
+                            <BookOpen className="h-5 w-5 text-pink-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Category</p>
+                              <p className="text-lg font-semibold text-gray-900">{selectedCourseObj.category}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Fees */}
+                        {selectedCourseObj.fees && (
+                          <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg">
+                            <CreditCard className="h-5 w-5 text-orange-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Total Fees</p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                {typeof selectedCourseObj.fees === 'object' && 'totalFee' in selectedCourseObj.fees && selectedCourseObj.fees.totalFee
+                                  ? `₹${selectedCourseObj.fees.totalFee.toLocaleString()}`
+                                  : typeof selectedCourseObj.fees === 'object' && 'totalAnnualFee' in selectedCourseObj.fees
+                                  ? selectedCourseObj.fees.totalAnnualFee
+                                  : 'Contact Institute'
+                                }
+                              </p>
+                              {typeof selectedCourseObj.fees === 'object' && 'tuitionFee' in selectedCourseObj.fees && selectedCourseObj.fees.tuitionFee && (
+                                <p className="text-xs text-gray-500 mt-1">Tuition: ₹{(selectedCourseObj.fees as any).tuitionFee.toLocaleString()}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Seats */}
+                        {selectedCourseObj.totalSeats && selectedCourseObj.totalSeats > 0 && (
+                          <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-lg">
+                            <Users className="h-5 w-5 text-indigo-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Total Seats</p>
+                              <p className="text-lg font-semibold text-gray-900">{selectedCourseObj.totalSeats}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Education Type */}
+                        {(selectedCourseObj as any).educationType && (
+                          <div className="flex items-center gap-3 p-4 bg-cyan-50 rounded-lg">
+                            <BookOpen className="h-5 w-5 text-cyan-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Education Type</p>
+                              <p className="text-lg font-semibold text-gray-900">{(selectedCourseObj as any).educationType}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Delivery Method */}
+                        {(selectedCourseObj as any).deliveryMethod && (
+                          <div className="flex items-center gap-3 p-4 bg-teal-50 rounded-lg">
+                            <Building2 className="h-5 w-5 text-teal-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Delivery Method</p>
+                              <p className="text-lg font-semibold text-gray-900">{(selectedCourseObj as any).deliveryMethod}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Location Information */}
+                      {(selectedCourseObj as any).location && (
+                        <div className="p-6 bg-gray-50 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                            <MapPin className="h-5 w-5 text-gray-600" />
+                            Location
+                          </h3>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-600">City:</span>
+                              <span className="text-sm text-gray-900">{(selectedCourseObj as any).location.city}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-600">State:</span>
+                              <span className="text-sm text-gray-900">{(selectedCourseObj as any).location.state}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Affiliated University */}
+                      {(selectedCourseObj as any).affiliatedUniversity && (
+                        <div className="p-6 bg-blue-50 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-blue-600" />
+                            Affiliated University
+                          </h3>
+                          <p className="text-gray-700">{(selectedCourseObj as any).affiliatedUniversity}</p>
+                        </div>
+                      )}
+                      
+                      {/* Description */}
+                      {selectedCourseObj.description && (
+                        <div className="p-6 bg-gray-50 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">About This Course</h3>
+                          <p className="text-gray-700 leading-relaxed">{selectedCourseObj.description}</p>
+                        </div>
+                      )}
+                      
+                      {/* Eligibility */}
+                      {(selectedCourseObj.eligibilityCriteria || (selectedCourseObj as any).eligibilityExams) && (
+                        <div className="p-6 bg-blue-50 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Eligibility Criteria</h3>
+                          <div className="space-y-3">
+                            {selectedCourseObj.eligibilityCriteria?.academicRequirement && (
+                              <div>
+                                <h4 className="font-medium text-gray-800 mb-2">Academic Requirements</h4>
+                                <p className="text-sm text-gray-700">{selectedCourseObj.eligibilityCriteria.academicRequirement}</p>
+                              </div>
+                            )}
+                            {selectedCourseObj.eligibilityCriteria?.minimumMarks && (
+                              <div>
+                                <h4 className="font-medium text-gray-800 mb-2">Minimum Marks</h4>
+                                <p className="text-sm text-gray-700">{selectedCourseObj.eligibilityCriteria.minimumMarks}</p>
+                              </div>
+                            )}
+                            {/* Show eligibilityExams from course data */}
+                            {(selectedCourseObj as any).eligibilityExams && (selectedCourseObj as any).eligibilityExams.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-gray-800 mb-2">Eligibility Exams</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {(selectedCourseObj as any).eligibilityExams.map((exam: string, index: number) => (
+                                    <Badge key={index} variant="outline" className="bg-white border-blue-300 text-blue-700">
+                                      {exam}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {/* Show entranceExam from eligibilityCriteria if available */}
+                            {selectedCourseObj.eligibilityCriteria?.entranceExam && selectedCourseObj.eligibilityCriteria.entranceExam.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-gray-800 mb-2">Entrance Exams</h4>
+                                <ul className="space-y-1">
+                                  {selectedCourseObj.eligibilityCriteria.entranceExam.map((exam: string, index: number) => (
+                                    <li key={index} className="flex items-start gap-2">
+                                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                                      <span className="text-sm text-gray-700">{exam}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {selectedCourseObj.eligibilityCriteria?.workExperience && (
+                              <div>
+                                <h4 className="font-medium text-gray-800 mb-2">Work Experience</h4>
+                                <p className="text-sm text-gray-700">{selectedCourseObj.eligibilityCriteria.workExperience}</p>
+                              </div>
+                            )}
+                            {selectedCourseObj.eligibilityCriteria?.ageLimit && (
+                              <div>
+                                <h4 className="font-medium text-gray-800 mb-2">Age Limit</h4>
+                                <p className="text-sm text-gray-700">{selectedCourseObj.eligibilityCriteria.ageLimit}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Placement Information */}
+                      {(selectedCourseObj as any).placements && (
+                        <div className="p-6 bg-green-50 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5 text-green-600" />
+                            Placement Information
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {(selectedCourseObj as any).placements.averagePackage && (
+                              <div className="bg-white p-4 rounded-lg border border-green-200">
+                                <p className="text-sm font-medium text-gray-600">Average Package</p>
+                                <p className="text-lg font-semibold text-green-700">₹{(selectedCourseObj as any).placements.averagePackage.toLocaleString()}</p>
+                              </div>
+                            )}
+                            {(selectedCourseObj as any).placements.highestPackage && (
+                              <div className="bg-white p-4 rounded-lg border border-green-200">
+                                <p className="text-sm font-medium text-gray-600">Highest Package</p>
+                                <p className="text-lg font-semibold text-green-700">₹{(selectedCourseObj as any).placements.highestPackage.toLocaleString()}</p>
+                              </div>
+                            )}
+                            {(selectedCourseObj as any).placements.placementRate && (
+                              <div className="bg-white p-4 rounded-lg border border-green-200">
+                                <p className="text-sm font-medium text-gray-600">Placement Rate</p>
+                                <p className="text-lg font-semibold text-green-700">{(selectedCourseObj as any).placements.placementRate}%</p>
+                              </div>
+                            )}
+                          </div>
+                          {(selectedCourseObj as any).placements.topRecruiters && (selectedCourseObj as any).placements.topRecruiters.length > 0 && (
+                            <div className="mt-4">
+                              <h4 className="font-medium text-gray-800 mb-2">Top Recruiters</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {(selectedCourseObj as any).placements.topRecruiters.map((recruiter: string, index: number) => (
+                                  <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
+                                    {recruiter}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* Show message if no placement data available */}
+                          {!(selectedCourseObj as any).placements.averagePackage && 
+                           !(selectedCourseObj as any).placements.highestPackage && 
+                           !(selectedCourseObj as any).placements.placementRate && (
+                            <div className="text-center py-4">
+                              <p className="text-gray-600">Placement data will be updated soon</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Brochure Download */}
+                      {(selectedCourseObj as any).brochure?.url && (
+                        <div className="p-6 bg-yellow-50 rounded-lg">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                            <BookOpen className="h-5 w-5 text-yellow-600" />
+                            Course Brochure
+                          </h3>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600 mb-2">Download the detailed course brochure</p>
+                              <p className="text-xs text-gray-500">
+                                {(selectedCourseObj as any).brochure.title || 'Course Information Brochure'}
+                              </p>
+                            </div>
+                            <Button
+                              asChild
+                              variant="outline"
+                              className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+                            >
+                              <a 
+                                href={(selectedCourseObj as any).brochure.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2"
+                              >
+                                <BookOpen className="h-4 w-4" />
+                                Download Brochure
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* SEO URL */}
+                      {(selectedCourseObj as any).seoUrl && (
+                        <div className="p-4 bg-gray-100 rounded-lg">
+                          <p className="text-xs text-gray-500 mb-1">More Information</p>
+                          <a 
+                            href={(selectedCourseObj as any).seoUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 underline break-all"
+                          >
+                            View on Official Website
+                          </a>
+                        </div>
+                      )}
+                      
+                      {/* Apply Button */}
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                        <Button
+                          onClick={() => handleApplyClick(`${selectedCourseObj.degree}${selectedCourseObj.name ? ` in ${selectedCourseObj.name}` : ''}`)}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg font-semibold rounded-xl"
+                        >
+                          Apply for This Course
+                        </Button>
+                        {(selectedCourseObj as any).seoUrl && (
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="border-blue-300 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg font-semibold rounded-xl"
+                          >
+                            <a 
+                              href={(selectedCourseObj as any).seoUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              View Details
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })()}
+            </div>
+          ) : null}
 
           {/* Desktop Grid Layout */}
           <div className="hidden lg:grid lg:grid-cols-4 gap-6 lg:gap-8">
