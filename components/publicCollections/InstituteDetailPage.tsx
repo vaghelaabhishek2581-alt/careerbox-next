@@ -362,7 +362,7 @@ console.log(institute.placements)
   const placementData = getLatestPlacementData()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-28">
       {/* Hero Section with Cover Image */}
       <div className="relative">
         {/* Cover Image Background */}

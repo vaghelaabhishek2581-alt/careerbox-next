@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import UserProfileMenu from "@/components/user-profile-menu";
 import {
     Collapsible,
     CollapsibleContent,
@@ -338,6 +339,13 @@ export default function InstituteSidebar({ className, isCollapsed = false, onTog
 
     return (
         <div className={cn("flex flex-col h-full bg-white border-r", className)}>
+            {/* User Profile Menu */}
+            {!isCollapsed && (
+                <div className="p-4 border-b">
+                    <UserProfileMenu />
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
                 {!isCollapsed && (

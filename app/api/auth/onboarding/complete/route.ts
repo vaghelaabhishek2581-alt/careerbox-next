@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Onboarding completed successfully',
       user: result.user,
-      redirectTo: '/user' // Add explicit redirect
+      redirectTo: '/recommendation-collections' // Redirect to public explore page
     })
   } catch (error) {
     console.error('Onboarding completion error:', error)

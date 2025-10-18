@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Briefcase, Users, TrendingUp, Award, Target, BookOpen, Building2, GraduationCap } from 'lucide-react';
+import Footer from '@/components/footer';
 
 export default function LandingPage() {
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function LandingPage() {
             </p>
 
             <div className="hero-content flex flex-col sm:flex-row gap-6 justify-center mb-16">
-              <Link href="/auth/signup">
+              <Link href="/recommendation-collections">
                 <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-6 text-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 rounded-xl">
                   Start Your Journey <ArrowRight className="ml-3 h-6 w-6" />
                 </Button>
@@ -193,7 +194,7 @@ export default function LandingPage() {
               Join thousands of professionals, businesses, and institutions who are already using CareerBox
               to unlock their potential and achieve extraordinary results.
             </p>
-            <Link href="/auth/signup">
+            <Link href="/recommendation-collections">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-50 px-12 py-6 text-xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 rounded-xl">
                 Begin Your Journey <ArrowRight className="ml-3 h-6 w-6" />
               </Button>
@@ -201,58 +202,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="bg-gray-900 text-white py-16">
-          <div className="container mx-auto px-6">
-            <div className="grid lg:grid-cols-4 gap-8 mb-8">
-              <div className="lg:col-span-2">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl"></div>
-                  <span className="text-2xl font-bold">CareerBox</span>
-                </div>
-                <p className="text-gray-400 mb-4 max-w-md leading-relaxed">
-                  Empowering careers, transforming lives. Your pathway to professional excellence starts here.
-                </p>
-                <div className="text-blue-400 font-medium">
-                  "Your Pathway to Professional Excellence"
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Platform</h4>
-                <ul className="space-y-2 text-gray-400">
-                  <li><Link href="/services" className="hover:text-white transition-colors">For Professionals</Link></li>
-                  <li><Link href="/business" className="hover:text-white transition-colors">For Businesses</Link></li>
-                  <li><Link href="/institutes" className="hover:text-white transition-colors">For Institutes</Link></li>
-                  <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Support</h4>
-                <ul className="space-y-2 text-gray-400">
-                  <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                  <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-                  <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                  <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-800 pt-8">
-              <div className="flex flex-col md:flex-row items-center justify-between">
-                <div className="text-gray-400 mb-4 md:mb-0">
-                  © 2024 CareerBox. All rights reserved.
-                </div>
-                <div className="flex space-x-6">
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">Twitter</a>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">LinkedIn</a>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">Facebook</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </footer>
+        <Footer/>
       </div>
     </div>
   );

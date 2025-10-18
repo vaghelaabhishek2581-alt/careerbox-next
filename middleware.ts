@@ -129,8 +129,8 @@ export default withAuth(
       if (token?.needsOnboarding || token?.needsRoleSelection) {
         return NextResponse.redirect(new URL('/onboarding', req.url))
       }
-      // Otherwise redirect to main dashboard instead of role-specific dashboard
-      return NextResponse.redirect(new URL('/dashboard', req.url))
+      // Otherwise redirect to recommendation-collections (public explore page)
+      return NextResponse.redirect(new URL('/recommendation-collections', req.url))
     }
 
     // Allow public access to main dashboard page (unified explore page)

@@ -7,8 +7,10 @@ export function useSessionRefresh() {
   const refreshSession = useCallback(async () => {
     try {
       console.log('🔄 Refreshing session...')
-      await update()
-      console.log('✅ Session refreshed successfully')
+      // Force session update by passing an empty object
+      // This triggers the JWT callback with trigger: 'update'
+      const result = await update({})
+      console.log('✅ Session refreshed successfully', result)
       return true
     } catch (error) {
       console.error('❌ Failed to refresh session:', error)

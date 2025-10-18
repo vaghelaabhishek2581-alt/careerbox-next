@@ -1,0 +1,76 @@
+{
+  "name": "CareerBox - Your Pathway to Professional Excellence",
+  "short_name": "CareerBox",
+  "description": "Empowering Careers, Transforming Lives. Find best colleges, courses, and career guidance in India.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/web/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/web/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/web/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["education", "career", "business"],
+  "screenshots": [
+    {
+      "src": "/cboxLogo.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Find Colleges",
+      "short_name": "Colleges",
+      "description": "Search for colleges and institutes",
+      "url": "/recommendation-collections?type=institutes",
+      "icons": [
+        {
+          "src": "/web/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Career Counselling",
+      "short_name": "Counselling",
+      "description": "Get free career counselling",
+      "url": "/career-counselling",
+      "icons": [
+        {
+          "src": "/web/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

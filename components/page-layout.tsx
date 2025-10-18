@@ -31,9 +31,7 @@ export default function PageLayout({
       className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 ${className}`}
     >
       {/* Add top padding to account for fixed header */}
-      <div className="pt-20">
         {children}
-      </div>
       {showFooter && <Footer />}
     </motion.div>
   );

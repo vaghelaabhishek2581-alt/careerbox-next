@@ -4,8 +4,8 @@ import Logo from "./logo";
 const navigation = {
   platform: [
     { name: "For Professionals", href: "/services" },
-    { name: "For Businesses", href: "/business" },
-    { name: "For Institutes", href: "/institutes" },
+    { name: "For Businesses", href: "/business-services" },
+    { name: "For Institutes", href: "/institutes-services" },
     { name: "About Us", href: "/about" },
   ],
   resources: [

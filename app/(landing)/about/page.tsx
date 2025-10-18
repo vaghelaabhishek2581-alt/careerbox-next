@@ -78,14 +78,14 @@ const structuredData = {
   "founders": [
     {
       "@type": "Person",
-      "name": "Alex Thompson"
+      "name": "Mahesh Patel"
     }
   ],
   "numberOfEmployees": "50-100",
   "industry": "Career Development",
   "address": {
     "@type": "PostalAddress",
-    "addressCountry": "US"
+    "addressCountry": "IN"
   }
 };
 

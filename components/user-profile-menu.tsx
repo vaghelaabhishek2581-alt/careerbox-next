@@ -209,8 +209,8 @@ export default function UserProfileMenu() {
           <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-80 max-h-[600px] p-0">
-        <ScrollArea className="h-full max-h-[600px]">
+      <DropdownMenuContent align="start" className="w-80 p-0">
+        <ScrollArea className="max-h-[calc(100vh-100px)]">
           <div className="p-1">
         {/* Account Switcher Section */}
         <div className="p-3">
@@ -235,10 +235,10 @@ export default function UserProfileMenu() {
                   variant="ghost"
                   size="sm"
                   onClick={handleUserSignOut}
-                  className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  title="Sign out"
                 >
-                  <LogOut className="h-3 w-3 mr-1" />
-                  Sign out
+                  <LogOut className="h-3 w-3" />
                 </Button>
               </div>
               {profile?.personalDetails && (

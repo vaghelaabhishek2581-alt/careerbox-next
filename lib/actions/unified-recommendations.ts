@@ -90,9 +90,14 @@ export const getUnifiedRecommendations = cache(
     const mongoQuery: any = {};
 
     if (query && query.trim()) {
-      // Use text search for better performance if available
+      // Use regex search for name matching
       const searchTerm = query.trim();
-      mongoQuery.$text = { $search: searchTerm };
+      mongoQuery.$or = [
+        ...(mongoQuery.$or || []),
+        { name: { $regex: escapeRegex(searchTerm), $options: 'i' } },
+        { 'location.city': { $regex: escapeRegex(searchTerm), $options: 'i' } },
+        { 'location.state': { $regex: escapeRegex(searchTerm), $options: 'i' } },
+      ];
     }
 
     if (location && location.trim()) {
@@ -181,14 +186,11 @@ export const getUnifiedRecommendations = cache(
       // Fetch institutes
       const aggregationPipeline: any[] = [
         { $match: mongoQuery },
-        // Add text score if using text search
-        ...(query ? [{ $addFields: { searchScore: { $meta: "textScore" } } }] : []),
         { $project: projection }, // Add projection early to reduce data
         {
           $facet: {
             paginatedResults: [
-              // Sort by text score first if searching, then by other criteria
-              ...(query ? [{ $sort: { searchScore: -1, ...sort } }] : [{ $sort: sort }]),
+              { $sort: sort },
               { $skip: skip },
               { $limit: pageSize },
             ],

@@ -1,0 +1,28 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow admin and auth pages
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /dashboard/admin/
+Disallow: /dashboard/business/
+Disallow: /dashboard/institute/
+
+# Allow specific public pages
+Allow: /recommendation-collections
+Allow: /about
+Allow: /services
+Allow: /contact
+Allow: /career-counselling
+
+# Sitemap location
+Sitemap: https://careerbox.in/sitemap.xml
+
+# Crawl-delay for specific bots (optional)
+User-agent: Googlebot
+Crawl-delay: 0
+
+User-agent: Bingbot
+Crawl-delay: 1

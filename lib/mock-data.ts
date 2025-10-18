@@ -100,25 +100,20 @@ export const testimonials: TestimonialData[] = [
 export const teamMembers: TeamMember[] = [
   {
     id: '1',
-    name: 'Alex Thompson',
+    name: 'Mahesh Patel',
     role: 'CEO & Founder',
-    bio: 'Former VP of Talent at Fortune 500 companies. Passionate about democratizing career growth.',
-    linkedin: 'https://linkedin.com/in/alexthompson'
+    bio: 'Passionate about democratizing career growth.',
+    linkedin: 'https://linkedin.com/in/mahesh-patel'
   },
   {
     id: '2',
-    name: 'Maria Garcia',
-    role: 'CTO',
-    bio: 'Ex-Google engineer with 15+ years in EdTech. Leading our technical innovation.',
-    linkedin: 'https://linkedin.com/in/mariagarcia'
+    name: 'Mahesh Patel',
+    role: 'Founder',
+    bio: 'Passionate about democratizing career growth.',
+
+    linkedin: 'https://linkedin.com/in/mahesh-patel'
   },
-  {
-    id: '3',
-    name: 'David Kumar',
-    role: 'VP of Partnerships',
-    bio: 'Former education sector executive. Building bridges between academia and industry.',
-    linkedin: 'https://linkedin.com/in/davidkumar'
-  }
+  
 ];
 
 export const faqs: FAQ[] = [

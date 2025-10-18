@@ -91,15 +91,19 @@ export function InstituteCard({
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             {/* Logo */}
-            {institute.logo && (
-              <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-100 shadow-sm group-hover:border-blue-200 transition-colors">
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-100 shadow-sm group-hover:border-blue-200 transition-colors bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              {institute.logo ? (
                 <img 
                   src={institute.logo} 
                   alt={institute.name}
                   className="w-full h-full object-cover"
                 />
-              </div>
-            )}
+              ) : (
+                <span className="text-2xl font-bold text-white">
+                  {institute.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
             
             <div className="flex-1 min-w-0">
               <Link 
@@ -192,8 +196,18 @@ export function InstituteCard({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-white" />
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
+                  {institute.logo ? (
+                    <img 
+                      src={institute.logo} 
+                      alt={institute.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl font-bold text-white">
+                      {institute.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <Link 
@@ -405,15 +419,19 @@ export function InstituteCard({
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           {/* Logo */}
-          {institute.logo && (
-            <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-100 shadow-sm group-hover:border-blue-200 transition-colors">
+          <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-100 shadow-sm group-hover:border-blue-200 transition-colors bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            {institute.logo ? (
               <img 
                 src={institute.logo} 
                 alt={institute.name}
                 className="w-full h-full object-cover"
               />
-            </div>
-          )}
+            ) : (
+              <span className="text-2xl font-bold text-white">
+                {institute.name.charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <Link 
               href={`/recommendation-collections/${institute.slug}`}

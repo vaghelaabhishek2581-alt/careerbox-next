@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SheetTitle } from "@/components/ui/sheet";
 import {
@@ -12,34 +13,29 @@ import {
   Phone,
   Mail,
   Home,
-  Users,
-  Briefcase,
-  Building2,
-  GraduationCap,
+  Search,
   MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "./logo";
 import UserProfileMenu from "./user-profile-menu";
+import Breadcrumb from "./breadcrumb";
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
-  { name: "About Us", href: "/about", icon: Users },
-  { name: "Services", href: "/services", icon: Briefcase },
-  { name: "For Businesses", href: "/business", icon: Building2 },
-  { name: "For Institutes", href: "/institutes", icon: GraduationCap },
-  {
-    name: "Free Counselling",
-    href: "/career-counselling",
-    icon: MessageCircle,
-  },
   { name: "Contact", href: "/contact", icon: MessageCircle },
 ];
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session, status } = useSession();
 
   useEffect(() => {
@@ -51,18 +47,81 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Search suggestions effect
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (searchQuery.trim().length < 1) {
+        setSearchSuggestions([]);
+        setIsLoadingSuggestions(false);
+        return;
+      }
+
+      setIsLoadingSuggestions(true);
+      try {
+        const response = await fetch(`/api/search-suggestions?q=${encodeURIComponent(searchQuery)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSearchSuggestions(data.suggestions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    };
+
+    const debounce = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(debounce);
+  }, [searchQuery]);
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearch = (query: string) => {
+    if (query.trim()) {
+      router.push(`/recommendation-collections?q=${encodeURIComponent(query.trim())}`);
+      setShowSuggestions(false);
+      setSearchQuery("");
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: any) => {
+    const query = suggestion.name || suggestion.title;
+    let url = `/recommendation-collections?q=${encodeURIComponent(query)}`;
+    
+    // Add type filter based on result type
+    if (suggestion.resultType === 'program') {
+      url += '&type=programs';
+    } else if (suggestion.resultType === 'course') {
+      url += '&type=courses';
+    } else {
+      url += '&type=institutes';
+    }
+    
+    router.push(url);
+    setShowSuggestions(false);
+    setSearchQuery("");
+  };
+
   const shouldHideHeader =
     pathname?.startsWith("/auth/") ||
-    pathname?.startsWith("/onboarding") ||
     pathname?.startsWith("/dashboard/");
 
   if (shouldHideHeader) {
-    return null; // Don't show header on auth, onboarding, and dashboard pages
+    return null; // Don't show header on auth and dashboard pages
   }
 
   return (
     <>
-
       {/* Main Header */}
       <header
         className={cn(
@@ -93,14 +152,114 @@ export default function Header() {
         </div>
       </div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center justify-between h-16 lg:h-20 gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 group">
+            <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
               <Logo />
             </Link>
 
+            {/* Search Bar */}
+            <div className="hidden md:flex flex-1 max-w-xl relative" ref={searchRef}>
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search institutes, programs, courses..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearch(searchQuery);
+                    }
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  className={cn(
+                    "pl-10 pr-24 py-2 w-full rounded-full border-2 transition-all",
+                    isScrolled
+                      ? "border-gray-200 focus:border-blue-500"
+                      : "border-white/30 bg-white/90 backdrop-blur-sm focus:bg-white focus:border-blue-500"
+                  )}
+                />
+                <Button
+                  onClick={() => handleSearch(searchQuery)}
+                  disabled={!searchQuery.trim()}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 rounded-full h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm"
+                >
+                  Search
+                </Button>
+
+                {/* Search Suggestions Dropdown */}
+                {showSuggestions && (isLoadingSuggestions || searchSuggestions.length > 0) && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50">
+                    {isLoadingSuggestions ? (
+                      // Skeleton Loading
+                      <>
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="px-4 py-3 border-b border-gray-100 last:border-b-0 animate-pulse">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gray-200" />
+                              <div className="flex-1">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                                <div className="h-3 bg-gray-200 rounded w-1/2" />
+                              </div>
+                              <div className="h-5 w-16 bg-gray-200 rounded-full" />
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      // Actual Suggestions
+                      searchSuggestions.map((suggestion, index) => (
+                        <div
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            {suggestion.logo ? (
+                              <img
+                                src={suggestion.logo}
+                                alt={suggestion.name}
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white text-sm font-bold">
+                                  {suggestion.name?.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 truncate">{suggestion.name || suggestion.title}</p>
+                              {suggestion.instituteName && (
+                                <p className="text-xs text-gray-500 truncate">{suggestion.instituteName}</p>
+                              )}
+                              {suggestion.location && (
+                                <p className="text-xs text-gray-500">{suggestion.location.city}, {suggestion.location.state}</p>
+                              )}
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                              suggestion.category === 'Institute' ? 'bg-blue-100 text-blue-700' :
+                              suggestion.category === 'Program' ? 'bg-purple-100 text-purple-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {suggestion.category || suggestion.type}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-6">
+            <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
               {navigation.map((item) => {
                 const IconComponent = item.icon;
                 const isActive = pathname === item.href;
@@ -226,6 +385,9 @@ export default function Header() {
           </div>
         </div>
       </header>
+      
+      {/* Breadcrumb */}
+      <Breadcrumb />
     </>
   );
 }

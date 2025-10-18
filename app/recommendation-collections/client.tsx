@@ -227,7 +227,7 @@ export default function RecommendationCollectionsClient({
   }, [isLoadingMore, hasMore, currentPage, type, location, category, instituteType, degree, query, sortBy, accreditation]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-20">
       <div className="container mx-auto px-4 py-6">
         <div className="space-y-6">
           {/* Welcome Header - Only for logged-in users */}
@@ -318,7 +318,7 @@ export default function RecommendationCollectionsClient({
                   </div>
                 )}
               </div>
-              <div className="flex-1 relative">
+              {/* <div className="flex-1 relative">
                 <MapPin className="absolute left-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                 <Input
                   type="text"
@@ -328,7 +328,7 @@ export default function RecommendationCollectionsClient({
                   onKeyPress={handleKeyPress}
                   className="pl-14 h-14 text-lg"
                 />
-              </div>
+              </div> */}
               <Button onClick={handleSearch} disabled={isPending} className="whitespace-nowrap h-14 px-10 text-lg font-semibold">
                 {isPending ? <Loader2 className="h-6 w-6 animate-spin mr-2" /> : <Search className="h-6 w-6 mr-2" />}
                 Search

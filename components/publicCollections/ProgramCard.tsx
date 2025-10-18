@@ -69,28 +69,30 @@ export function ProgramCard({ program, variant = 'default' }: ProgramCardProps) 
                 </div>
               )}
 
-              {/* Stats Row */}
-              <div className="flex flex-wrap items-center gap-3 mt-3">
-                {/* Courses - Only show if > 0 */}
-                {program.courseCount > 0 && (
-                  <div className="flex items-center gap-1 bg-purple-50 px-2 py-1 rounded">
-                    <BookOpen className="h-3 w-3 text-purple-600" />
-                    <span className="text-xs font-medium text-purple-700">
-                      {program.courseCount} Courses
-                    </span>
-                  </div>
-                )}
-                
-                {/* Rating - Only show if > 0 */}
-                {program.placementRating && program.placementRating > 0 && (
-                  <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded">
-                    <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                    <span className="text-xs font-medium text-yellow-700">
-                      {program.placementRating}/5
-                    </span>
-                  </div>
-                )}
-              </div>
+              {/* Stats Row - Only show if there are stats to display */}
+              {(program.courseCount > 0 || (program.placementRating && program.placementRating > 0)) && (
+                <div className="flex flex-wrap items-center gap-3 mt-3">
+                  {/* Courses - Only show if > 0 */}
+                  {program.courseCount > 0 && (
+                    <div className="flex items-center gap-1 bg-purple-50 px-2 py-1 rounded">
+                      <BookOpen className="h-3 w-3 text-purple-600" />
+                      <span className="text-xs font-medium text-purple-700">
+                        {program.courseCount} Courses
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Rating - Only show if > 0 */}
+                  {program.placementRating && program.placementRating > 0 && (
+                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded">
+                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                      <span className="text-xs font-medium text-yellow-700">
+                        {program.placementRating}/5
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Eligibility Exams */}
               {program.eligibilityExams && program.eligibilityExams.length > 0 && (

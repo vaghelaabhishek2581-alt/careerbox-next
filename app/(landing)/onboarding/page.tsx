@@ -153,12 +153,33 @@ export default function OnboardingPage() {
   const [currentExam, setCurrentExam] = useState('')
   const [currentScore, setCurrentScore] = useState('')
   const { toast } = useToast()
+  
   // Handle redirect for unauthenticated users
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signup')
     }
   }, [status, router])
+
+  // Redirect users who don't need onboarding
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      const needsOnboarding = session.user.needsOnboarding
+      const needsRoleSelection = session.user.needsRoleSelection
+      
+      console.log('Onboarding page - checking if redirect needed:', {
+        needsOnboarding,
+        needsRoleSelection,
+        shouldRedirect: !needsOnboarding && !needsRoleSelection
+      })
+
+      // If user doesn't need onboarding, redirect to dashboard
+      if (!needsOnboarding && !needsRoleSelection) {
+        console.log('User does not need onboarding, redirecting to dashboard')
+        router.push('/recommendation-collections')
+      }
+    }
+  }, [status, session, router])
 
   const handleRoleSelection = (role: OnboardingRole) => {
     setSelectedRole(role)
@@ -244,18 +265,29 @@ export default function OnboardingPage() {
       })).unwrap()
 
       if (result) {
-        // Refresh session to get latest user data
-        await refreshSession()
-
         // Show success message
         toast({
           title: 'Onboarding completed!',
-          description: 'Welcome to CareerBox! Redirecting to your dashboard...',
+          description: 'Welcome to CareerBox! Refreshing your session...',
         })
 
-        // Redirect to appropriate dashboard using redirectTo from API response
-        const redirectUrl = result.redirectTo || '/recommendation-collections'
-        router.push(redirectUrl)
+        // Refresh session to get latest user data
+        const refreshed = await refreshSession()
+        
+        if (refreshed) {
+          console.log('Session refreshed, waiting for state to update...')
+          // Small delay to ensure session state is updated
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          // Redirect to appropriate dashboard using redirectTo from API response
+          const redirectUrl = result.redirectTo || '/recommendation-collections'
+          console.log('Redirecting to:', redirectUrl)
+          router.push(redirectUrl)
+        } else {
+          console.error('Failed to refresh session, redirecting anyway...')
+          const redirectUrl = result.redirectTo || '/recommendation-collections'
+          router.push(redirectUrl)
+        }
       }
     } catch (error) {
       toast({

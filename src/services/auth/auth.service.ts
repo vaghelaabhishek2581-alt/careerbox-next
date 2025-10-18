@@ -63,14 +63,16 @@ export const handleUserSignOut = async () => {
       sessionStorage.clear()
     }
 
+    // Sign out without redirect - stay on current page
     await signOut({
-      redirect: true,
-      callbackUrl: '/auth/signup?mode=signin'
+      redirect: false
     })
+    
+    // Optionally reload the page to update the UI
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
   } catch (error) {
     console.error('Sign out error:', error)
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth/signup?mode=signin'
-    }
   }
 }
