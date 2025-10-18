@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     const savedInstitute = await institute.save()
 
-    const response: ApiResponse<Institute> = {
+    const response: ApiResponse<any> = {
       success: true,
       data: savedInstitute.toObject(),
       message: 'Institute profile created successfully'

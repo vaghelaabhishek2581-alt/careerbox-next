@@ -185,6 +185,8 @@ export default function Header() {
     }
   };
 
+  // Header is only shown for logged-in users (layout handles this)
+  // If somehow rendered without session, return null
   if (!session) {
     return null;
   }
@@ -200,10 +202,15 @@ export default function Header() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
-            placeholder="Search jobs, courses, skills..."
+            placeholder="Search institutes, programs, courses..."
             className="pl-10 bg-gray-50"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && searchQuery.trim()) {
+                router.push(`/dashboard?q=${encodeURIComponent(searchQuery.trim())}&type=institutes`);
+              }
+            }}
           />
         </div>
       </div>

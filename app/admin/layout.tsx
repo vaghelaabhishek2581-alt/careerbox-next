@@ -33,7 +33,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Check if user has admin role
   const userRoles = session.user?.roles || [];
   if (!userRoles.includes("admin")) {
-    redirect("/dashboard");
+    redirect("/recommendation-collections");
   }
 
   return (

@@ -13,7 +13,7 @@ export class AuthService {
     const data = response.data
 
     const redirectUrls = {
-      admin: '/dashboard/admin',
+      admin: '/admin',
       organization: '/dashboard/organization',
       business: '/dashboard/business',
       user: '/dashboard/user'
@@ -41,7 +41,7 @@ export class AuthService {
     }
 
     const redirectUrls = {
-      admin: '/dashboard/admin',
+      admin: '/admin',
       organization: '/dashboard/organization',
       business: '/dashboard/business',
       user: '/dashboard/user'

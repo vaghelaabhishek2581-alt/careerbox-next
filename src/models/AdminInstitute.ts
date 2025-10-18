@@ -712,16 +712,26 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
 )
 
 // ===============================
-// Indexes
+// Indexes - Optimized for Performance
 // ===============================
 AdminInstituteSchema.index({ slug: 1 }, { unique: true })
 AdminInstituteSchema.index({ name: 1 })
 AdminInstituteSchema.index({ type: 1 })
 AdminInstituteSchema.index({ status: 1 })
+AdminInstituteSchema.index({ 'location.city': 1 })
+AdminInstituteSchema.index({ 'location.state': 1 })
 AdminInstituteSchema.index({ 'location.city': 1, 'location.state': 1 })
+
+// Compound indexes for common queries
+AdminInstituteSchema.index({ type: 1, 'location.city': 1 })
+AdminInstituteSchema.index({ status: 1, type: 1 })
+AdminInstituteSchema.index({ 'accreditation.nirf.overallRank': 1 })
+AdminInstituteSchema.index({ 'accreditation.naac.grade': 1 })
+
+// Text search index with optimized weights
 AdminInstituteSchema.index(
-  { name: 'text', 'programmes.name': 'text', 'programmes.course.name': 'text' },
-  { weights: { name: 10, 'programmes.name': 5, 'programmes.course.name': 2 } }
+  { name: 'text', 'overview.description': 'text', 'programmes.name': 'text', 'programmes.course.name': 'text' },
+  { weights: { name: 10, 'programmes.name': 5, 'programmes.course.name': 3, 'overview.description': 1 } }
 )
 
 // ===============================

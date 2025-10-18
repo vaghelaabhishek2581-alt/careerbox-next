@@ -35,20 +35,20 @@ const navigationConfig = {
     { name: "Network", href: "/dashboard/user/network", icon: Users },
   ],
   admin: [
-    { name: "Overview", href: "/dashboard/admin", icon: Home },
-    { name: "Users", href: "/dashboard/admin/users", icon: Users },
+    { name: "Overview", href: "/admin", icon: Home },
+    { name: "Users", href: "/admin/users", icon: Users },
     {
       name: "Organizations",
-      href: "/dashboard/admin/organizations",
+      href: "/admin/organizations",
       icon: Building2,
     },
     {
       name: "Businesses",
-      href: "/dashboard/admin/businesses",
+      href: "/admin/businesses",
       icon: Briefcase,
     },
-    { name: "Analytics", href: "/dashboard/admin/analytics", icon: BarChart3 },
-    { name: "Settings", href: "/dashboard/admin/settings", icon: Settings },
+    { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+    { name: "Settings", href: "/admin/settings", icon: Settings },
   ],
   organization: [
     { name: "Overview", href: "/dashboard/organization", icon: Home },

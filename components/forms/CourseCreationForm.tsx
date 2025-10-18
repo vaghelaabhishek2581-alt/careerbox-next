@@ -196,7 +196,7 @@ export default function CourseCreationForm({ onSuccess }: CourseCreationFormProp
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard/institute/courses')
+        router.push('/institute/courses')
       }
     } catch (error) {
       console.error('Failed to create course:', error)

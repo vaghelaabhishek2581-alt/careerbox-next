@@ -3,9 +3,10 @@ import { getInstituteBySlug } from '@/lib/actions/institute-actions'
 
 export async function GET(
   _req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const slug = (params?.slug || '').trim()
+  const { slug: rawSlug } = await params
+  const slug = (rawSlug || '').trim()
   if (!slug) {
     return NextResponse.json({ error: 'Missing slug' }, { status: 400 })
   }

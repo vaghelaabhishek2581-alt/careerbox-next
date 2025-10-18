@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/lib/redux/store'
@@ -58,18 +60,38 @@ export default function PublicDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Welcome back, {user?.name}</h1>
-          <p className="text-muted-foreground">Discover opportunities and track your applications</p>
+          <h1 className="text-3xl font-bold">
+            {user ? `Welcome back, ${user.name}` : 'Explore Opportunities'}
+          </h1>
+          <p className="text-muted-foreground">
+            {user ? 'Discover opportunities and track your applications' : 'Discover top institutes, courses, jobs, and exams in India'}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">Public User</Badge>
-          <Link href="/dashboard/user/upgrade">
-            <Button variant="outline" size="sm">
-              <Crown className="h-4 w-4 mr-2" />
-              Upgrade Account
-            </Button>
-          </Link>
-        </div>
+        {user && (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">Public User</Badge>
+            <Link href="/dashboard/user/upgrade">
+              <Button variant="outline" size="sm">
+                <Crown className="h-4 w-4 mr-2" />
+                Upgrade Account
+              </Button>
+            </Link>
+          </div>
+        )}
+        {!user && (
+          <div className="flex items-center gap-2">
+            <Link href="/auth/signup?mode=signin">
+              <Button variant="outline" size="sm">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/auth/signup">
+              <Button size="sm">
+                Get Started
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -84,19 +106,21 @@ export default function PublicDashboard() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">My Applications</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{applications.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {applications.filter(app => app.status === 'pending').length} pending
-            </p>
-          </CardContent>
-        </Card>
+      <div className={`grid gap-4 ${user ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+        {user && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">My Applications</CardTitle>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{applications.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {applications.filter(app => app.status === 'pending').length} pending
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

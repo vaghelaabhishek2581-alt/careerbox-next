@@ -13,35 +13,35 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Overview", href: "/dashboard/institute", icon: Home },
+  { name: "Overview", href: "/institute", icon: Home },
   {
     name: "Students",
-    href: "/dashboard/institute/students",
+    href: "/institute/students",
     icon: GraduationCap,
   },
   {
     name: "Faculty",
-    href: "/dashboard/institute/faculty",
+    href: "/institute/faculty",
     icon: Users,
   },
   {
     name: "Courses",
-    href: "/dashboard/institute/courses",
+    href: "/institute/courses",
     icon: BookOpen,
   },
   {
     name: "Analytics",
-    href: "/dashboard/institute/analytics",
+    href: "/institute/analytics",
     icon: BarChart2,
   },
   {
     name: "Events",
-    href: "/dashboard/institute/events",
+    href: "/institute/events",
     icon: Calendar,
   },
   {
     name: "Settings",
-    href: "/dashboard/institute/settings",
+    href: "/institute/settings",
     icon: Settings,
   },
 ];

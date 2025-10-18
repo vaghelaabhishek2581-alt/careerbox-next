@@ -254,7 +254,7 @@ export default function OnboardingPage() {
         })
 
         // Redirect to appropriate dashboard using redirectTo from API response
-        const redirectUrl = result.redirectTo || '/dashboard'
+        const redirectUrl = result.redirectTo || '/recommendation-collections'
         router.push(redirectUrl)
       }
     } catch (error) {

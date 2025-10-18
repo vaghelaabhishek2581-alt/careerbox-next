@@ -136,7 +136,7 @@ export default function InstituteProfileForm() {
         facultyCount: data.facultyCount ? Number(data.facultyCount) : undefined,
       }
       await dispatch(createInstitute(instituteData)).unwrap()
-      router.push('/dashboard/institute')
+      router.push('/institute')
     } catch (error) {
       console.error('Failed to create institute profile:', error)
     } finally {

@@ -528,7 +528,7 @@
 //       message: `${registrationIntent.organizationName} (${registrationIntent.type}) has purchased a ${subscriptionPlan} plan for ₹${order.amount / 100}.`,
 //       data: {
 //         registrationIntentId: registrationIntentId,
-//         actionUrl: `/dashboard/admin/subscriptions/${subscription._id}`,
+//         actionUrl: `/admin/subscriptions/${subscription._id}`,
 //         metadata: {
 //           userId: userId,
 //           organizationId: organizationEntity._id.toString(),
@@ -566,7 +566,7 @@
 //           hour: '2-digit',
 //           minute: '2-digit'
 //         }),
-//         dashboardUrl: `${process.env.FRONTEND_ORIGIN || 'http://localhost:3000'}/dashboard/admin/subscriptions/${subscription._id}`
+//         dashboardUrl: `${process.env.FRONTEND_ORIGIN || 'http://localhost:3000'}/admin/subscriptions/${subscription._id}`
 //       }
 //     });
 
@@ -876,7 +876,7 @@ async function updateUserAfterPayment(userId: string, organizationType: Organiza
  * Send notifications in parallel
  */
 async function sendNotifications(intent: any, userId: string, organizationId: ObjectId, orderAmount: number, orderCurrency: string, paymentIds: { orderId: string, paymentId: string }) {
-  const dashboardUrl = intent.type === 'institute' ? '/dashboard/institute' : '/dashboard/business';
+  const dashboardUrl = intent.type === 'institute' ? '/institute' : '/business';
   const amount = orderAmount / 100; // Convert paise to rupees
 
   const userNotificationPromise = NotificationService.createNotification({
@@ -913,7 +913,7 @@ async function sendNotifications(intent: any, userId: string, organizationId: Ob
     message: `${intent.organizationName} (${intent.type}) has purchased a subscription for ₹${amount}.`,
     data: {
       registrationIntentId: intent._id.toString(),
-      actionUrl: `/dashboard/admin/organizations/${organizationId}`,
+      actionUrl: `/admin/organizations/${organizationId}`,
       metadata: {
         userId,
         organizationId: organizationId.toString(),
@@ -948,7 +948,7 @@ async function sendNotifications(intent: any, userId: string, organizationId: Ob
         hour: '2-digit',
         minute: '2-digit'
       }),
-      dashboardUrl: `${process.env.FRONTEND_ORIGIN || 'http://localhost:3000'}/dashboard/admin/organizations/${organizationId}`
+      dashboardUrl: `${process.env.FRONTEND_ORIGIN || 'http://localhost:3000'}/admin/organizations/${organizationId}`
     }
   });
 

@@ -3,13 +3,26 @@ import { NextResponse } from 'next/server'
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/auth/:path*',
+    // Main dashboard is public (unified explore page)
+    '/dashboard',
+    // Protected dashboard sub-routes that need authentication
+    '/dashboard/:path+',
     '/onboarding/:path*',
     '/profile/:path*',
+    // Protected routes without /dashboard prefix
     '/admin/:path*',
     '/business/:path*',
-    '/institute/:path*'
+    '/institute/:path*',
+    '/notifications/:path*',
+    '/settings/:path*',
+    '/user/:path*',
+    // Auth pages (redirects if already authenticated)
+    '/auth/signup',
+    '/auth/signin',
+    '/auth/error',
+    '/auth/verify-email',
+    '/auth/forgot-password',
+    '/auth/reset-password'
   ]
 }
 
@@ -21,10 +34,17 @@ export default withAuth(
     const isOnboarding = req.nextUrl.pathname.startsWith('/onboarding')
     const isDashboard = req.nextUrl.pathname.startsWith('/dashboard')
     const isMainDashboard = req.nextUrl.pathname === '/dashboard'
-    const isUserRoute = req.nextUrl.pathname.startsWith('/dashboard/user')
-    const isAdminRoute = req.nextUrl.pathname.startsWith('/dashboard/admin')
-    const isBusinessRoute = req.nextUrl.pathname.startsWith('/dashboard/business')
-    const isInstituteRoute = req.nextUrl.pathname.startsWith('/dashboard/institute')
+    
+    // Check for new protected routes (without /dashboard prefix)
+    const isUserRoute = req.nextUrl.pathname.startsWith('/user') || req.nextUrl.pathname.startsWith('/dashboard/user')
+    const isAdminRoute = req.nextUrl.pathname.startsWith('/admin') || req.nextUrl.pathname.startsWith('/admin')
+    const isBusinessRoute = req.nextUrl.pathname.startsWith('/business') || req.nextUrl.pathname.startsWith('/dashboard/business')
+    const isInstituteRoute = req.nextUrl.pathname.startsWith('/institute') || req.nextUrl.pathname.startsWith('/dashboard/institute')
+    const isNotificationsRoute = req.nextUrl.pathname.startsWith('/notifications')
+    const isSettingsRoute = req.nextUrl.pathname.startsWith('/settings')
+    
+    // Check if it's any protected route
+    const isProtectedRoute = isUserRoute || isAdminRoute || isBusinessRoute || isInstituteRoute || isNotificationsRoute || isSettingsRoute
 
     // Log for debugging
     if (process.env.NODE_ENV === 'development') {
@@ -41,8 +61,14 @@ export default withAuth(
       })
     }
 
-    // Role-based access control for dashboard routes
-    if (isAuth && isDashboard && !isMainDashboard) {
+    // Redirect unauthenticated users trying to access protected routes
+    if (!isAuth && isProtectedRoute) {
+      console.log('Unauthenticated access to protected route - redirecting to signin')
+      return NextResponse.redirect(new URL('/auth/signup?mode=signin', req.url))
+    }
+
+    // Role-based access control for protected routes
+    if (isAuth && isProtectedRoute) {
       const userRole = token?.activeRole || token?.role || 'user'
       const userRoles = token?.roles || [token?.role || 'user']
 
@@ -62,6 +88,12 @@ export default withAuth(
       if (isInstituteRoute && (!userRoles.includes('institute') || !token?.subscriptionActive)) {
         console.log('Access denied to institute route - redirecting to dashboard')
         return NextResponse.redirect(new URL('/dashboard', req.url))
+      }
+
+      // Notifications and Settings routes - accessible to all authenticated users
+      if (isNotificationsRoute || isSettingsRoute) {
+        // Allow access for all authenticated users
+        return NextResponse.next()
       }
 
       // User routes - accessible to all authenticated users
@@ -101,13 +133,19 @@ export default withAuth(
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
-    // Redirect unauthenticated users to login
+    // Allow public access to main dashboard page (unified explore page)
+    if (isMainDashboard && !isAuth) {
+      console.log('Allowing public access to main dashboard')
+      return NextResponse.next()
+    }
+
+    // Redirect unauthenticated users to login for other dashboard routes and onboarding
     if ((isDashboard || isOnboarding) && !isAuth) {
       return NextResponse.redirect(new URL('/auth/signup?mode=signin', req.url))
     }
 
-    // Handle onboarding flow for authenticated users
-    if (isAuth) {
+    // Handle onboarding flow for authenticated users on protected routes
+    if (isAuth && isProtectedRoute) {
       const needsOnboarding =
         token?.needsOnboarding || token?.needsRoleSelection
 
@@ -145,11 +183,33 @@ export default withAuth(
           return true
         }
 
-        // For dashboard and onboarding routes, require authentication
-        if (
-          pathname.startsWith('/dashboard') ||
-          pathname.startsWith('/onboarding')
-        ) {
+        // Allow public access to main dashboard page (unified explore page)
+        if (pathname === '/dashboard') {
+          return true
+        }
+
+        // Protected routes that require authentication
+        const protectedRoutes = [
+          '/admin',
+          '/business',
+          '/institute',
+          '/notifications',
+          '/settings',
+          '/user',
+          '/onboarding',
+          '/profile'
+        ]
+
+        // Check if the pathname starts with any protected route
+        const isProtected = protectedRoutes.some(route => pathname.startsWith(route))
+        
+        // For dashboard sub-routes (not main dashboard), require authentication
+        if (pathname.startsWith('/dashboard/')) {
+          return !!token
+        }
+
+        // For other protected routes, require authentication
+        if (isProtected) {
           return !!token
         }
 

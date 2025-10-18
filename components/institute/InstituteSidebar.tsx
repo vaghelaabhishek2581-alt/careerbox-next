@@ -54,13 +54,13 @@ interface SidebarProps {
 const navigationItems = [
     {
         title: "Overview",
-        href: "/dashboard/institute",
+        href: "/institute",
         icon: Home,
         badge: null,
     },
     {
         title: "Institute Profile",
-        href: "/dashboard/institute/profile",
+        href: "/institute/profile",
         icon: Building2,
         badge: null,
     },
@@ -70,25 +70,25 @@ const navigationItems = [
         items: [
             {
                 title: "Students",
-                href: "/dashboard/institute/students",
+                href: "/institute/students",
                 icon: Users,
                 badge: "1,234",
             },
             {
                 title: "Courses",
-                href: "/dashboard/institute/courses",
+                href: "/institute/courses",
                 icon: BookOpen,
                 badge: "45",
             },
             {
                 title: "Faculty",
-                href: "/dashboard/institute/faculty",
+                href: "/institute/faculty",
                 icon: GraduationCap,
                 badge: "89",
             },
             {
                 title: "Applications",
-                href: "/dashboard/institute/applications",
+                href: "/institute/applications",
                 icon: FileText,
                 badge: "156",
             },
@@ -100,31 +100,31 @@ const navigationItems = [
         items: [
             {
                 title: "Registration Details",
-                href: "/dashboard/institute/registration",
+                href: "/institute/registration",
                 icon: FileText,
                 badge: null,
             },
             {
                 title: "Documents",
-                href: "/dashboard/institute/documents",
+                href: "/institute/documents",
                 icon: Shield,
                 badge: "12/21",
             },
             {
                 title: "Locations",
-                href: "/dashboard/institute/locations",
+                href: "/institute/locations",
                 icon: MapPin,
                 badge: null,
             },
             {
                 title: "Facilities",
-                href: "/dashboard/institute/facilities",
+                href: "/institute/facilities",
                 icon: Building2,
                 badge: null,
             },
             {
                 title: "Highlights",
-                href: "/dashboard/institute/highlights",
+                href: "/institute/highlights",
                 icon: Star,
                 badge: null,
             },
@@ -136,19 +136,19 @@ const navigationItems = [
         items: [
             {
                 title: "Rankings",
-                href: "/dashboard/institute/rankings",
+                href: "/institute/rankings",
                 icon: TrendingUp,
                 badge: null,
             },
             {
                 title: "Awards",
-                href: "/dashboard/institute/awards",
+                href: "/institute/awards",
                 icon: Award,
                 badge: null,
             },
             {
                 title: "Scholarships",
-                href: "/dashboard/institute/scholarships",
+                href: "/institute/scholarships",
                 icon: Star,
                 badge: null,
             },
@@ -156,13 +156,13 @@ const navigationItems = [
     },
     {
         title: "Analytics",
-        href: "/dashboard/institute/analytics",
+        href: "/institute/analytics",
         icon: BarChart3,
         badge: null,
     },
     {
         title: "Placement",
-        href: "/dashboard/institute/placement",
+        href: "/institute/placement",
         icon: Briefcase,
         badge: null,
     },
@@ -172,19 +172,19 @@ const navigationItems = [
         items: [
             {
                 title: "Messages",
-                href: "/dashboard/institute/messages",
+                href: "/institute/messages",
                 icon: MessageSquare,
                 badge: "12",
             },
             {
                 title: "Notifications",
-                href: "/dashboard/institute/notifications",
+                href: "/institute/notifications",
                 icon: Bell,
                 badge: "5",
             },
             {
                 title: "Announcements",
-                href: "/dashboard/institute/announcements",
+                href: "/institute/announcements",
                 icon: Globe,
                 badge: null,
             },
@@ -192,19 +192,19 @@ const navigationItems = [
     },
     {
         title: "Events",
-        href: "/dashboard/institute/events",
+        href: "/institute/events",
         icon: Calendar,
         badge: null,
     },
     {
         title: "Billing",
-        href: "/dashboard/institute/billing",
+        href: "/institute/billing",
         icon: CreditCard,
         badge: null,
     },
     {
         title: "Settings",
-        href: "/dashboard/institute/settings",
+        href: "/institute/settings",
         icon: Settings,
         badge: null,
     },
@@ -228,7 +228,7 @@ export default function InstituteSidebar({ className, isCollapsed = false, onTog
 
     const isActive = (href: string) => {
         if (!pathname) return false;
-        if (href === "/dashboard/institute") {
+        if (href === "/institute") {
             return pathname === href;
         }
         return pathname.startsWith(href);

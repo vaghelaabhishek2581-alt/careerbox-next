@@ -51,7 +51,7 @@ export function InstituteDetailPageWithProgrammes({ institute }: InstituteDetail
   
   const router = useRouter()
   const searchParams = useSearchParams()
-  const selectedProgrammeId = searchParams.get('programme')
+  const selectedProgrammeId = searchParams?.get('programme') || null
   
   const { data: session } = useSession()
   const [showApplicationModal, setShowApplicationModal] = useState(false)

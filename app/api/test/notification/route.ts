@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       title: 'Test Notification',
       message: 'This is a test notification to verify the real-time notification system is working properly.',
       data: {
-        actionUrl: '/dashboard',
+        actionUrl: '/recommendation-collections',
         metadata: {
           testType: 'socket_notification_test',
           timestamp: new Date().toISOString()

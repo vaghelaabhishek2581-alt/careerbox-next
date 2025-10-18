@@ -241,7 +241,7 @@ export const authOptions: AuthOptions = {
       }
       // For all other cases (e.g., after login), default to a safe page.
       // Your middleware should handle routing to onboarding/dashboard based on session flags.
-      return `${baseUrl}/dashboard`
+      return `${baseUrl}/recommendation-collections`
     }
   },
 

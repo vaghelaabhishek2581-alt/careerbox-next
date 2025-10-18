@@ -45,8 +45,8 @@ export default function AdminInstituteNewPage() {
   const [submitting, setSubmitting] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
   const [bulkBusy, setBulkBusy] = useState(false)
-  const [bulkFileName, setBulkFileName] = useState('')
-  const [bulkFile, setBulkFile] = useState<File | null>(null)
+  const [bulkFileNames, setBulkFileNames] = useState<string[]>([])
+  const [bulkFiles, setBulkFiles] = useState<File[]>([])
   const [dragActive, setDragActive] = useState(false)
 
   // Root fields
@@ -186,10 +186,16 @@ export default function AdminInstituteNewPage() {
   function updateProgramme(idx: number, next: any) { const arr=[...programmes]; arr[idx] = { ...arr[idx], ...next }; setProgrammes(arr) }
   function removeProgramme(idx: number) { const arr=[...programmes]; arr.splice(idx,1); setProgrammes(arr) }
 
-  function onBulkFileSelected(file: File | undefined) {
-    if (!file) return
-    setBulkFile(file)
-    setBulkFileName(file.name)
+  function onBulkFilesSelected(files: FileList | File[] | undefined) {
+    if (!files || files.length === 0) return
+    const fileArray = Array.from(files)
+    setBulkFiles(prev => [...prev, ...fileArray])
+    setBulkFileNames(prev => [...prev, ...fileArray.map(f => f.name)])
+  }
+
+  function removeBulkFile(index: number) {
+    setBulkFiles(prev => prev.filter((_, i) => i !== index))
+    setBulkFileNames(prev => prev.filter((_, i) => i !== index))
   }
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
@@ -208,31 +214,56 @@ export default function AdminInstituteNewPage() {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-    const file = e.dataTransfer?.files?.[0]
-    if (file) onBulkFileSelected(file)
+    const files = e.dataTransfer?.files
+    if (files && files.length > 0) onBulkFilesSelected(files)
+  }
+
+  // Helper function to recursively replace "N/A" with null
+  function replaceNAWithNull(obj: any): any {
+    if (obj === null || obj === undefined) return obj
+    if (obj === "N/A" || obj === "n/a") return null
+    if (Array.isArray(obj)) return obj.map(replaceNAWithNull)
+    if (typeof obj === 'object') {
+      const result: any = {}
+      for (const key in obj) {
+        result[key] = replaceNAWithNull(obj[key])
+      }
+      return result
+    }
+    return obj
   }
 
   async function onBulkSubmit() {
-    if (!bulkFile) return
+    if (!bulkFiles || bulkFiles.length === 0) return
     try {
       setBulkBusy(true)
-      const text = await bulkFile.text()
-      const json = JSON.parse(text)
-      const payload = Array.isArray(json) ? json : [json]
+      let allRecords: any[] = []
+      
+      // Process each file
+      for (const file of bulkFiles) {
+        const text = await file.text()
+        const json = JSON.parse(text)
+        const records = Array.isArray(json) ? json : [json]
+        // Replace all "N/A" values with null
+        const cleanedRecords = records.map(replaceNAWithNull)
+        allRecords = [...allRecords, ...cleanedRecords]
+      }
+      
       const res = await fetch('/api/admin/institutes/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(allRecords),
       })
       if (!res.ok) throw new Error(await res.text())
-      toast({ title: 'Bulk upload complete', description: `${payload.length} record(s) processed` })
+      toast({ title: 'Bulk upload complete', description: `${allRecords.length} record(s) from ${bulkFiles.length} file(s) processed` })
       setBulkOpen(false)
+      // Reset files
+      setBulkFiles([])
+      setBulkFileNames([])
     } catch (e: any) {
       toast({ title: 'Bulk upload failed', description: e.message, variant: 'destructive' })
     } finally {
       setBulkBusy(false)
-      setBulkFileName('')
-      setBulkFile(null)
     }
   }
 
@@ -389,7 +420,7 @@ export default function AdminInstituteNewPage() {
       })
       if (!res.ok) throw new Error(await res.text())
       toast({ title: 'Institute created' })
-      router.push('/dashboard/admin/institutes')
+      router.push('/admin/institutes')
     } catch (e: any) {
       toast({ title: 'Create failed', description: e.message, variant: 'destructive' })
     } finally {
@@ -408,16 +439,17 @@ export default function AdminInstituteNewPage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Bulk Upload Institutes (JSON file)</DialogTitle>
+                <DialogTitle>Bulk Upload Institutes (Multiple JSON files)</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
-                <Label htmlFor="bulkFile">Choose JSON File</Label>
+                <Label htmlFor="bulkFile">Choose JSON Files</Label>
                 <input
                   id="bulkFile"
                   type="file"
                   accept="application/json"
+                  multiple
                   className="hidden"
-                  onChange={(e)=> onBulkFileSelected(e.target.files?.[0])}
+                  onChange={(e)=> onBulkFilesSelected(e.target.files || undefined)}
                 />
                 <div
                   className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer select-none transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-muted'}`}
@@ -426,17 +458,40 @@ export default function AdminInstituteNewPage() {
                   onDrop={handleDrop}
                   onClick={() => document.getElementById('bulkFile')?.click()}
                 >
-                  <div className="text-sm">Drag & drop your .json file here, or click to browse</div>
-                  <div className="text-xs text-gray-500 mt-1">Only JSON files are accepted</div>
+                  <div className="text-sm">Drag & drop your .json files here, or click to browse</div>
+                  <div className="text-xs text-gray-500 mt-1">Multiple JSON files are accepted</div>
                 </div>
-                {bulkFileName && <div className="text-sm text-gray-600">Selected: {bulkFileName}</div>}
+                {bulkFileNames.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Selected Files ({bulkFileNames.length}):</Label>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {bulkFileNames.map((name, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                          <span className="truncate flex-1">{name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeBulkFile(idx)
+                            }}
+                            className="h-6 w-6 p-0 ml-2"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="text-xs text-gray-500">
-                  Upload a JSON file containing either a single institute object or an array of institute objects. Each should match the AdminInstitute schema (e.g., includes name and slug).
+                  Upload JSON files containing either a single institute object or an array of institute objects. Each should match the AdminInstitute schema (e.g., includes name and slug). All "N/A" values will be automatically converted to null.
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" onClick={onBulkSubmit} disabled={bulkBusy || !bulkFile}><Upload className="w-4 h-4 mr-2"/>Save</Button>
-                <Button type="button" variant="ghost" onClick={()=> setBulkOpen(false)} disabled={bulkBusy}>Close</Button>
+                <Button type="button" onClick={onBulkSubmit} disabled={bulkBusy || bulkFiles.length === 0}><Upload className="w-4 h-4 mr-2"/>Upload {bulkFiles.length > 0 && `(${bulkFiles.length})`}</Button>
+                <Button type="button" variant="ghost" onClick={()=> { setBulkOpen(false); setBulkFiles([]); setBulkFileNames([]) }} disabled={bulkBusy}>Close</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

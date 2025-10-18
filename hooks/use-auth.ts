@@ -33,7 +33,7 @@ export function useAuth (options: UseAuthOptions = {}) {
 
     // If role is required and user doesn't have it, redirect
     if (options.requiredRole && userRole !== options.requiredRole) {
-      router.push(options.redirectTo || '/dashboard')
+      router.push(options.redirectTo || '/recommendation-collections')
       return
     }
 

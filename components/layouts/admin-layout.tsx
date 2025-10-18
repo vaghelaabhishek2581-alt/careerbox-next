@@ -13,31 +13,31 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Overview", href: "/dashboard/admin", icon: Home },
-  { name: "Users", href: "/dashboard/admin/users", icon: Users },
+  { name: "Overview", href: "/admin", icon: Home },
+  { name: "Users", href: "/admin/users", icon: Users },
   {
     name: "Organizations",
-    href: "/dashboard/admin/organizations",
+    href: "/admin/organizations",
     icon: Building2,
   },
   {
     name: "Businesses",
-    href: "/dashboard/admin/businesses",
+    href: "/admin/businesses",
     icon: Briefcase,
   },
   {
     name: "Analytics",
-    href: "/dashboard/admin/analytics",
+    href: "/admin/analytics",
     icon: BarChart2,
   },
   {
     name: "Roles & Permissions",
-    href: "/dashboard/admin/roles",
+    href: "/admin/roles",
     icon: Shield,
   },
   {
     name: "Settings",
-    href: "/dashboard/admin/settings",
+    href: "/admin/settings",
     icon: Settings,
   },
 ];

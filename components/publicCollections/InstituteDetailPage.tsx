@@ -91,6 +91,8 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
   
   // Initialize state from URL parameters
   useEffect(() => {
+    if (!searchParams) return;
+    
     const programmeSlug = searchParams.get('programme')
     const courseSlug = searchParams.get('course')
     
@@ -155,7 +157,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
     const programme = institute.programmes?.find(p => (p.id || p.name) === programmeId)
     if (programme) {
       const programmeSlug = createSlug(programme.name)
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(searchParams?.toString() || '')
       params.set('programme', programmeSlug)
       // Clear course when changing programme
       params.delete('course')
@@ -170,7 +172,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
     setSelectedCourseId(null)
     
     // Remove programme and course from URL
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams?.toString() || '')
     params.delete('programme')
     params.delete('course')
     const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname
@@ -182,7 +184,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
     setSelectedCourse('')
     
     // Remove course from URL but keep programme
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams?.toString() || '')
     params.delete('course')
     router.push(`?${params.toString()}`, { scroll: false })
   }
@@ -192,7 +194,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
     const selectedCourseObj = institute.courses.find(c => `${c.degree}${c.name ? ` in ${c.name}` : ''}` === courseName)
     if (selectedCourseObj) {
       const courseSlug = createSlug(`${selectedCourseObj.degree}${selectedCourseObj.name ? `-${selectedCourseObj.name}` : ''}`)
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(searchParams?.toString() || '')
       params.set('course', courseSlug)
       setSelectedCourseId(selectedCourseObj.id || courseName)
       setSelectedCourse(courseName)

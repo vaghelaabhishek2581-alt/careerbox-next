@@ -1,4 +1,5 @@
 import WebLayout from "@/components/layouts/web-layout";
+import Header from "@/components/dashboard/Header";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -77,6 +78,9 @@ export default function RecommendationCollectionsLayout({
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       <meta name="apple-mobile-web-app-title" content="CareerBox" />
+
+      {/* Header */}
+      <Header />
 
       {/* Main Content */}
       <div className="recommendation-collections-layout">{children}</div>

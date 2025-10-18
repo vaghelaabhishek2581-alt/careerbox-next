@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
         message: `Your business registration request for "${validatedData.organizationName}" has been submitted and is under review.`,
         data: {
           registrationIntentId: registrationIntent._id.toString(),
-          actionUrl: '/dashboard/notifications',
+          actionUrl: '/notifications',
           metadata: {
             organizationName: validatedData.organizationName,
             type: 'business'
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
         message: `New business registration request from ${validatedData.contactName} for "${validatedData.organizationName}" requires review.`,
         data: {
           registrationIntentId: registrationIntent._id.toString(),
-          actionUrl: '/dashboard/admin/registrations',
+          actionUrl: '/admin/registrations',
           metadata: {
             organizationName: validatedData.organizationName,
             contactName: validatedData.contactName,

@@ -5,7 +5,7 @@ import { EmailLog } from "@/src/models/EmailLog";
 
 export async function GET(
   request: NextRequest,
-  context: { params: { logId: string } }
+  context: { params: Promise<{ logId: string }> }
 ) {
   try {
     // Authentication check with admin role requirement
@@ -24,8 +24,8 @@ export async function GET(
 
     await connectToDatabase();
 
-    // Await params before using
-    const { logId } = context.params;
+    // Await params before using (Next.js 15 requirement)
+    const { logId } = await context.params;
 
     // Find the email log with full content
     const emailLog = (await EmailLog.findById(logId).lean()) as any;

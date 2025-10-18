@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Overview", href: "/dashboard", icon: Home },
-  { name: "Courses", href: "/dashboard/courses", icon: BookOpen },
-  { name: "Events", href: "/dashboard/events", icon: Calendar },
-  { name: "Messages", href: "/dashboard/messages", icon: MessageSquare },
-  { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "Overview", href: "/", icon: Home },
+  { name: "Courses", href: "/courses", icon: BookOpen },
+  { name: "Events", href: "/events", icon: Calendar },
+  { name: "Messages", href: "/messages", icon: MessageSquare },
+  { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 interface PublicLayoutProps {

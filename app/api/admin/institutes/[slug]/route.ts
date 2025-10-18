@@ -6,9 +6,9 @@ import AdminInstitute from '@/src/models/AdminInstitute'
 // GET /api/admin/institutes/[slug]
 export async function GET(
   _req: NextRequest,
-  context: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = context.params;
+  const { slug } = await context.params;
   try {
     await connectToDatabase()
     const doc = await AdminInstitute.findOne({ slug: slug.toLowerCase() })
@@ -22,9 +22,9 @@ export async function GET(
 // PATCH /api/admin/institutes/[slug]
 export async function PATCH(
   req: NextRequest,
-  context: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = context.params;
+  const { slug } = await context.params;
   try {
     await connectToDatabase()
     const body = await req.json()
@@ -77,9 +77,9 @@ export async function PATCH(
 // DELETE /api/admin/institutes/[slug]
 export async function DELETE(
   _req: NextRequest,
-  context: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = context.params;
+  const { slug } = await context.params;
   try {
     await connectToDatabase()
     const res = await AdminInstitute.findOneAndDelete({ slug: slug.toLowerCase() })

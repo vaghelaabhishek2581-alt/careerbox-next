@@ -136,7 +136,7 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Recent Leads</CardTitle>
-                  <Link href="/dashboard/admin/leads">
+                  <Link href="/admin/leads">
                     <Button variant="outline" size="sm">
                       View All
                     </Button>
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
                       }>
                         {lead.status}
                       </Badge>
-                      <Link href={`/dashboard/admin/leads/${lead.id}`}>
+                      <Link href={`/admin/leads/${lead.id}`}>
                         <Button variant="outline" size="sm">
                           Manage
                         </Button>

@@ -36,35 +36,35 @@ const ROLE_CONFIG = {
     label: "Student Account",
     description: "Access courses, exams, and applications",
     color: "bg-blue-500",
-    dashboardPath: "/dashboard/user"
+    dashboardPath: "/user"
   },
   professional: {
     icon: User,
     label: "Professional Account", 
     description: "Manage your career and job applications",
     color: "bg-green-500",
-    dashboardPath: "/dashboard/user"
+    dashboardPath: "/user"
   },
   business: {
     icon: Briefcase,
     label: "Business Account",
     description: "Post jobs and manage candidates",
     color: "bg-purple-500",
-    dashboardPath: "/dashboard/business"
+    dashboardPath: "/business"
   },
   institute: {
     icon: Building2,
     label: "Institute Account",
     description: "Manage courses and students",
     color: "bg-orange-500",
-    dashboardPath: "/dashboard/institute"
+    dashboardPath: "/institute"
   },
   admin: {
     icon: Shield,
     label: "Admin Account",
     description: "System administration and management",
     color: "bg-red-500",
-    dashboardPath: "/dashboard/admin"
+    dashboardPath: "/admin"
   }
 };
 
@@ -151,7 +151,7 @@ export default function AccountSwitcher({ profile, compact = false }: AccountSwi
 
   const handleAddAccount = () => {
     // Navigate to role selection or account linking page
-    router.push('/dashboard/settings/accounts');
+    router.push('/settings/accounts');
   };
 
   if (compact) {

@@ -177,8 +177,8 @@ export default function AdminInstitutesPage() {
               </thead>
               <tbody>
                 {items.map((it) => (
-                  <tr key={it.slug} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/dashboard/admin/institutes/${encodeURIComponent(it.slug)}`)}>
-                    <td className="py-2 pr-4 text-red-700 underline" onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/admin/institutes/${encodeURIComponent(it.slug)}`) }}>{it.name}</td>
+                  <tr key={it.slug} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/admin/institutes/${encodeURIComponent(it.slug)}`)}>
+                    <td className="py-2 pr-4 text-red-700 underline" onClick={(e) => { e.stopPropagation(); router.push(`/admin/institutes/${encodeURIComponent(it.slug)}`) }}>{it.name}</td>
                     <td className="py-2 pr-4">{it.slug}</td>
                     <td className="py-2 pr-4">{it.type || '-'}</td>
                     <td className="py-2 pr-4">{it.status || '-'}</td>

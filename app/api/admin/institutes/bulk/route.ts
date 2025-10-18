@@ -13,6 +13,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Expected an array of institutes' }, { status: 400 })
     }
 
+    // Helper: recursively replace "N/A" with null
+    const replaceNAWithNull = (obj: any): any => {
+      if (obj === null || obj === undefined) return obj
+      if (obj === "N/A" || obj === "n/a") return null
+      if (Array.isArray(obj)) return obj.map(replaceNAWithNull)
+      if (typeof obj === 'object') {
+        const result: any = {}
+        for (const key in obj) {
+          result[key] = replaceNAWithNull(obj[key])
+        }
+        return result
+      }
+      return obj
+    }
+
     // Helper: ensure each course subdocument has a Mongo ObjectId (both legacy courses[] and new programmes[].course[])
     const ensureCourseIds = (doc: any) => {
       const normalizeId = (val: any) => {
@@ -63,7 +78,9 @@ export async function POST(req: NextRequest) {
 
     // Upsert by slug when provided; else by id; else insert
     const ops = payload.map((doc: any) => {
-      const normalized: any = ensureCourseIds({ ...doc })
+      // First replace N/A with null, then ensure course IDs
+      const cleanedDoc = replaceNAWithNull(doc)
+      const normalized: any = ensureCourseIds({ ...cleanedDoc })
       if (normalized.slug) normalized.slug = String(normalized.slug).trim().toLowerCase()
       const key: any = normalized.slug ? { slug: normalized.slug } : (normalized.id ? { id: normalized.id } : null)
       if (key) {

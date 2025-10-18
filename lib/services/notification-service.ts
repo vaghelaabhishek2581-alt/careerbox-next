@@ -109,7 +109,7 @@ const templates: Record<string, (data: any) => NotificationTemplate> = {
             ${data.message}
           </div>
           <div style="margin: 20px 0;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/admin"
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin"
                style="background-color: #6366f1; color: white; padding: 12px 24px; 
                       text-decoration: none; border-radius: 6px;">
               Go to Admin Dashboard
@@ -158,7 +158,7 @@ export async function sendNotification(
 
     // Save notification to database if in-app notification is enabled
     if (options.inApp) {
-      await Notification.insertOne(notification);
+      await Notification.create(notification);
     }
 
     // Send email if enabled

@@ -160,7 +160,7 @@ export async function POST(
             emailTemplate: 'registration_approved',
             data: {
               ...notificationData.data,
-              actionUrl: intent.type === 'institute' ? '/dashboard/institute' : '/dashboard/business',
+              actionUrl: intent.type === 'institute' ? '/institute' : '/business',
               subscriptionPlan: subscriptionPlan || 'free'
             }
           }
@@ -189,7 +189,7 @@ export async function POST(
             emailTemplate: 'payment_required',
             data: {
               ...notificationData.data,
-              actionUrl: `/dashboard/user/payment/${intentId}`,
+              actionUrl: `/user/payment/${intentId}`,
               subscriptionPlan: subscriptionPlan || 'basic'
             }
           }

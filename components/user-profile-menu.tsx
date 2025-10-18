@@ -111,16 +111,16 @@ export default function UserProfileMenu() {
       { name: "Students", href: "/dashboard/institute/students", icon: GraduationCap },
     ],
     admin: [
-      { name: "System Health", href: "/dashboard/admin/health", icon: Activity },
-      { name: "User Management", href: "/dashboard/admin/users", icon: Users },
-      { name: "Career Counseling", href: "/dashboard/admin/counseling", icon: HeadphonesIcon },
-      { name: "Student Inquiries", href: "/dashboard/admin/inquiries", icon: HelpCircle },
-      { name: "Registration Intents", href: "/dashboard/admin/registrations", icon: FileText },
-      { name: "Payment Management", href: "/dashboard/admin/payments", icon: CreditCard },
-      { name: "Email Templates", href: "/dashboard/admin/emails", icon: Mail },
-      { name: "System Analytics", href: "/dashboard/admin/analytics", icon: BarChart2 },
-      { name: "Security & Audit", href: "/dashboard/admin/security", icon: Shield },
-      { name: "Database Management", href: "/dashboard/admin/database", icon: Database },
+      { name: "System Health", href: "/admin/health", icon: Activity },
+      { name: "User Management", href: "/admin/users", icon: Users },
+      { name: "Career Counseling", href: "/admin/counseling", icon: HeadphonesIcon },
+      { name: "Student Inquiries", href: "/admin/inquiries", icon: HelpCircle },
+      { name: "Registration Intents", href: "/admin/registrations", icon: FileText },
+      { name: "Payment Management", href: "/admin/payments", icon: CreditCard },
+      { name: "Email Templates", href: "/admin/emails", icon: Mail },
+      { name: "System Analytics", href: "/admin/analytics", icon: BarChart2 },
+      { name: "Security & Audit", href: "/admin/security", icon: Shield },
+      { name: "Database Management", href: "/admin/database", icon: Database },
     ],
   };
 
@@ -229,7 +229,18 @@ export default function UserProfileMenu() {
             </Avatar>
             <div className="flex-1">
               <p className="font-medium">{session.user?.name}</p>
-              <p className="text-xs text-gray-500">{session.user?.email}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-gray-500">{session.user?.email}</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleUserSignOut}
+                  className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <LogOut className="h-3 w-3 mr-1" />
+                  Sign out
+                </Button>
+              </div>
               {profile?.personalDetails && (
                 <p className="text-xs text-gray-400">
                   {profile.personalDetails.firstName} {profile.personalDetails.lastName}
@@ -472,15 +483,6 @@ export default function UserProfileMenu() {
             );
           })}
         </div>
-
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-red-600 focus:text-red-600 cursor-pointer"
-          onClick={handleUserSignOut}
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign out
-        </DropdownMenuItem>
           </div>
         </ScrollArea>
       </DropdownMenuContent>

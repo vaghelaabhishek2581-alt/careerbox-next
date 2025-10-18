@@ -51,7 +51,7 @@ interface SidebarProps {
 const navigationItems = [
   {
     title: "Overview",
-    href: "/dashboard/admin",
+    href: "/admin",
     icon: Home,
     badge: null,
   },
@@ -61,19 +61,19 @@ const navigationItems = [
     items: [
       {
         title: "All Users",
-        href: "/dashboard/admin/users",
+        href: "/admin/users",
         icon: Users,
         badge: "2,456",
       },
       {
         title: "Role Management",
-        href: "/dashboard/admin/users/roles",
+        href: "/admin/users/roles",
         icon: UserCheck,
         badge: null,
       },
       {
         title: "Suspended Users",
-        href: "/dashboard/admin/users/suspended",
+        href: "/admin/users/suspended",
         icon: AlertTriangle,
         badge: "12",
       },
@@ -85,25 +85,25 @@ const navigationItems = [
     items: [
       {
         title: "Pending Reviews",
-        href: "/dashboard/admin/registrations/pending",
+        href: "/admin/registrations/pending",
         icon: FileText,
         badge: "23",
       },
       {
         title: "Institute Applications",
-        href: "/dashboard/admin/registrations/institutes",
+        href: "/admin/registrations/institutes",
         icon: Building2,
         badge: "156",
       },
       {
         title: "Business Applications",
-        href: "/dashboard/admin/registrations/businesses",
+        href: "/admin/registrations/businesses",
         icon: Briefcase,
         badge: "89",
       },
       {
         title: "All Applications",
-        href: "/dashboard/admin/registrations",
+        href: "/admin/registrations",
         icon: Database,
         badge: null,
       },
@@ -115,25 +115,25 @@ const navigationItems = [
     items: [
       {
         title: "Active Subscriptions",
-        href: "/dashboard/admin/subscriptions/active",
+        href: "/admin/subscriptions/active",
         icon: CreditCard,
         badge: "1,234",
       },
       {
         title: "Expired Subscriptions",
-        href: "/dashboard/admin/subscriptions/expired",
+        href: "/admin/subscriptions/expired",
         icon: AlertTriangle,
         badge: "45",
       },
       {
         title: "Grant Free Access",
-        href: "/dashboard/admin/subscriptions/grant",
+        href: "/admin/subscriptions/grant",
         icon: Shield,
         badge: null,
       },
       {
         title: "Billing Reports",
-        href: "/dashboard/admin/subscriptions/reports",
+        href: "/admin/subscriptions/reports",
         icon: BarChart3,
         badge: null,
       },
@@ -141,13 +141,13 @@ const navigationItems = [
   },
   {
     title: "Student Leads",
-    href: "/dashboard/admin/student-leads",
+    href: "/admin/student-leads",
     icon: UserPlus,
     badge: null,
   },
   {
     title: "Analytics & Reports",
-    href: "/dashboard/admin/analytics",
+    href: "/admin/analytics",
     icon: BarChart3,
     badge: null,
   },
@@ -157,13 +157,13 @@ const navigationItems = [
     items: [
       {
         title: "Add Institute",
-        href: "/dashboard/admin/institutes/new",
+        href: "/admin/institutes/new",
         icon: CreditCard,
         badge: "1,234",
       },
       {
         title: "Get Institutes",
-        href: "/dashboard/admin/institutes",
+        href: "/admin/institutes",
         icon: CreditCard,
         badge: "1,234",
       },
@@ -171,7 +171,7 @@ const navigationItems = [
   },
   {
     title: "System Health",
-    href: "/dashboard/admin/health",
+    href: "/admin/health",
     icon: Activity,
     badge: null,
   },
@@ -181,19 +181,19 @@ const navigationItems = [
     items: [
       {
         title: "Email Templates",
-        href: "/dashboard/admin/email-templates",
+        href: "/admin/email-templates",
         icon: Mail,
         badge: null,
       },
       {
         title: "Notifications",
-        href: "/dashboard/admin/notifications",
+        href: "/admin/notifications",
         icon: Bell,
         badge: "5",
       },
       {
         title: "Announcements",
-        href: "/dashboard/admin/announcements",
+        href: "/admin/announcements",
         icon: Globe,
         badge: null,
       },
@@ -201,7 +201,7 @@ const navigationItems = [
   },
   {
     title: "Platform Settings",
-    href: "/dashboard/admin/settings",
+    href: "/admin/settings",
     icon: Settings,
     badge: null,
   },
@@ -226,7 +226,7 @@ export default function AdminSidebar({ className, isCollapsed = false, onToggle 
 
   const isActive = (href: string) => {
     if (!pathname) return false;
-    if (href === "/dashboard/admin") {
+    if (href === "/admin") {
       return pathname === href;
     }
     return pathname.startsWith(href);

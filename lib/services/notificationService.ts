@@ -239,7 +239,7 @@ const emailTemplates: Record<string, (variables: any) => EmailTemplate> = {
               
               ${vars.description ? `<p><strong>Description:</strong> ${vars.description}</p>` : ''}
               
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/admin/registrations" class="button">Review Application</a>
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/registrations" class="button">Review Application</a>
               
               <p>Please review and take appropriate action on this registration request.</p>
             </div>
