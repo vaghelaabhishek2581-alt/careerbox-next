@@ -170,17 +170,20 @@ export const getUnifiedRecommendations = cache(
         coverImage: 1,
         'accreditation.naac': 1,
         'accreditation.nirf': 1,
+        'accreditation.aicte': 1,
         'location.city': 1,
         'location.state': 1,
         'contact.phone': 1,
         'contact.email': 1,
         'contact.website': 1,
-        'overview.description': 1,
+        // Include full objects needed by InstituteCard
+        overview: 1,
+        campusDetails: 1,
+        placements: 1,
+        faculty_student_ratio: 1,
+        programmes: 1,
         'academics.totalPrograms': 1,
-        'academics.totalStudents': 1,
-        'placements.averagePackage': 1,
-        'placements.highestPackage': 1,
-        'placements.placementRate': 1
+        'academics.totalStudents': 1
       };
 
       // Fetch institutes

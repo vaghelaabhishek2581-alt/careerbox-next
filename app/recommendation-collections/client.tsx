@@ -27,6 +27,7 @@ import { InstituteCard } from "@/components/publicCollections/InstituteCard";
 import { ProgramCard } from "@/components/publicCollections/ProgramCard";
 import { CourseCard } from "@/components/publicCollections/CourseCard";
 import { getUnifiedRecommendations } from "@/lib/actions/unified-recommendations";
+import SearchSuggestions from "@/components/SearchSuggestions";
 
 interface RecommendationCollectionsClientProps {
   initialData: any;
@@ -48,17 +49,12 @@ export default function RecommendationCollectionsClient({
   initialParams 
 }: RecommendationCollectionsClientProps) {
   const { data: session } = useSession();
-  const searchContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [showFilters, setShowFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(initialParams.query || '');
   const [locationQuery, setLocationQuery] = useState(initialParams.location || '');
-  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   
   // Get the correct data array based on type
@@ -101,7 +97,7 @@ export default function RecommendationCollectionsClient({
     });
   };
 
-  const handleSearch = () => {
+  const handleSearch = (searchQuery?: string) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams?.toString() || '');
       if (searchQuery) params.set('q', searchQuery);
@@ -111,63 +107,6 @@ export default function RecommendationCollectionsClient({
       router.push(`/recommendation-collections?${params.toString()}`);
     });
   };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-      setShowSuggestions(false);
-    }
-  };
-
-  // Click outside handler to close suggestions
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-
-    if (showSuggestions) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showSuggestions]);
-
-  // Search suggestions with debounce - Optimized
-  useEffect(() => {
-    // Only fetch if query is at least 3 characters
-    if (searchQuery.length < 3) {
-      setSearchSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    const fetchSuggestions = async () => {
-      setIsSearching(true);
-      try {
-        const result = await getUnifiedRecommendations({
-          type,
-          query: searchQuery,
-          page: 1
-        });
-        const suggestions = getDataArray(result, type).slice(0, 5);
-        setSearchSuggestions(suggestions);
-        if (suggestions.length > 0) {
-          setShowSuggestions(true);
-        }
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-        setSearchSuggestions([]);
-        setShowSuggestions(false);
-      } finally {
-        setIsSearching(false);
-      }
-    };
-
-    // Increased debounce to 700ms for better performance
-    const timer = setTimeout(fetchSuggestions, 700);
-    return () => clearTimeout(timer);
-  }, [searchQuery, type]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -245,98 +184,22 @@ export default function RecommendationCollectionsClient({
           {/* Search Header */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-[2] relative" ref={searchContainerRef}>
-                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search institutes, programs, courses..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  onFocus={() => searchSuggestions.length > 0 && setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  className="pl-14 h-14 text-lg"
-                />
-                {/* Loading indicator */}
-                {isSearching && searchQuery.length >= 3 && (
-                  <div className="absolute right-5 top-1/2 transform -translate-y-1/2">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                  </div>
-                )}
-                {/* Autocomplete Suggestions */}
-                {showSuggestions && searchSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
-                    {searchSuggestions.map((item, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const value = item.name || item.degree || '';
-                          setSearchQuery(value);
-                          setShowSuggestions(false);
-                          setSearchSuggestions([]);
-                          setTimeout(() => handleSearch(), 50);
-                        }}
-                        className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors"
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* Always show logo or placeholder */}
-                          <div className="w-12 h-12 rounded-lg flex-shrink-0 border border-gray-200 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center overflow-hidden">
-                            {item.logo ? (
-                              <img src={item.logo} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <Building2 className="h-6 w-6 text-blue-600" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">
-                              {item.name || item.degree}
-                            </div>
-                            {item.institute && (
-                              <div className="text-sm text-gray-600 truncate mt-0.5">
-                                {item.institute.name}
-                              </div>
-                            )}
-                            {item.location && (
-                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {item.location.city}, {item.location.state}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {/* No results message */}
-                {!isSearching && searchQuery.length >= 3 && searchSuggestions.length === 0 && showSuggestions && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 p-4 text-center text-gray-500 text-sm">
-                    No suggestions found. Press Enter to search.
-                  </div>
-                )}
-              </div>
-              {/* <div className="flex-1 relative">
-                <MapPin className="absolute left-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Location (e.g., Mumbai, Delhi)"
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="pl-14 h-14 text-lg"
-                />
-              </div> */}
-              <Button onClick={handleSearch} disabled={isPending} className="whitespace-nowrap h-14 px-10 text-lg font-semibold">
+              <SearchSuggestions
+                variant="page"
+                placeholder="Search institutes, programs, courses..."
+                className="flex-[2]"
+                inputClassName="h-14 text-lg"
+                currentType={type}
+                onSearch={handleSearch}
+              />
+              <Button onClick={() => handleSearch()} disabled={isPending} className="whitespace-nowrap h-14 px-10 text-lg font-semibold">
                 {isPending ? <Loader2 className="h-6 w-6 animate-spin mr-2" /> : <Search className="h-6 w-6 mr-2" />}
                 Search
               </Button>
             </div>
 
             {/* Active Filters */}
-            {(location || instituteType || category || accreditation || degree) && (
+            {(query || location || instituteType || category || accreditation || degree) && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-gray-700">Active Filters</h3>
@@ -344,20 +207,31 @@ export default function RecommendationCollectionsClient({
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const params = new URLSearchParams(searchParams?.toString() || '');
-                      params.delete('location');
-                      params.delete('instituteType');
-                      params.delete('category');
-                      params.delete('accreditation');
-                      params.delete('degree');
-                      router.push(`/recommendation-collections?${params.toString()}`);
+                      router.push('/recommendation-collections');
                     }}
-                    className="text-xs text-gray-500 hover:text-gray-700 h-7"
+                    className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 h-7"
                   >
-                    Clear All
+                    <X className="h-3 w-3 mr-1" />
+                    Clear All Filters
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {query && (
+                    <Badge variant="secondary" className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 border-blue-200">
+                      <Search className="h-3 w-3" />
+                      Search: {query}
+                      <button
+                        onClick={() => {
+                          const params = new URLSearchParams(searchParams?.toString() || '');
+                          params.delete('q');
+                          router.push(`/recommendation-collections?${params.toString()}`);
+                        }}
+                        className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
                   {location?.split(',').map((loc) => (
                     <Badge key={loc} variant="secondary" className="flex items-center gap-1 px-3 py-1">
                       <MapPin className="h-3 w-3" />

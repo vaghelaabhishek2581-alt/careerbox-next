@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Building2, Plus, Upload, Search, Pencil, Trash2, RefreshCw } from 'lucide-react'
+import { Building2, Plus, Upload, Search, Pencil, Trash2, RefreshCw, ChevronDown, Zap } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/src/hooks/use-toast'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface AdminInstituteItem {
   _id?: string
@@ -33,6 +35,11 @@ export default function AdminInstitutesPage() {
   const [limit, setLimit] = useState(20)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
+  const [rebuildingIndex, setRebuildingIndex] = useState(false)
+
+  // Bulk selection
+  const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set())
+  const [isAllSelected, setIsAllSelected] = useState(false)
 
   // Single create form
   const [form, setForm] = useState<AdminInstituteItem>({ name: '', slug: '' })
@@ -66,6 +73,8 @@ export default function AdminInstitutesPage() {
 
   useEffect(() => {
     load()
+    setSelectedSlugs(new Set())
+    setIsAllSelected(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString])
 
@@ -119,6 +128,85 @@ export default function AdminInstitutesPage() {
     }
   }
 
+  async function bulkDelete() {
+    if (selectedSlugs.size === 0) {
+      toast({ title: 'No selection', description: 'Please select institutes to delete', variant: 'destructive' })
+      return
+    }
+    
+    if (!confirm(`Delete ${selectedSlugs.size} institute(s)?`)) return
+    
+    try {
+      const promises = Array.from(selectedSlugs).map(slug =>
+        fetch(`/api/admin/institutes/${encodeURIComponent(slug)}`, { method: 'DELETE' })
+      )
+      await Promise.all(promises)
+      toast({ title: 'Success', description: `Deleted ${selectedSlugs.size} institute(s)` })
+      setSelectedSlugs(new Set())
+      setIsAllSelected(false)
+      load()
+    } catch (e: any) {
+      toast({ title: 'Bulk delete failed', description: e.message, variant: 'destructive' })
+    }
+  }
+
+  async function deleteAllInstitutes() {
+    const confirmText = `DELETE ALL ${total} INSTITUTES`
+    const userInput = prompt(`This will delete ALL ${total} institutes from the database!\n\nType "${confirmText}" to confirm:`)
+    
+    if (userInput !== confirmText) {
+      if (userInput !== null) {
+        toast({ title: 'Cancelled', description: 'Confirmation text did not match', variant: 'destructive' })
+      }
+      return
+    }
+    
+    try {
+      setLoading(true)
+      // Fetch all institutes
+      const res = await fetch(`/api/admin/institutes?limit=1000`)
+      if (!res.ok) throw new Error('Failed to fetch institutes')
+      const data = await res.json()
+      const allSlugs = data.items.map((it: AdminInstituteItem) => it.slug)
+      
+      // Delete all
+      const promises = allSlugs.map((slug: string) =>
+        fetch(`/api/admin/institutes/${encodeURIComponent(slug)}`, { method: 'DELETE' })
+      )
+      await Promise.all(promises)
+      
+      toast({ title: 'Success', description: `Deleted all ${allSlugs.length} institutes` })
+      setSelectedSlugs(new Set())
+      setIsAllSelected(false)
+      load()
+    } catch (e: any) {
+      toast({ title: 'Delete all failed', description: e.message, variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function toggleSelectAll() {
+    if (isAllSelected) {
+      setSelectedSlugs(new Set())
+      setIsAllSelected(false)
+    } else {
+      setSelectedSlugs(new Set(items.map(it => it.slug)))
+      setIsAllSelected(true)
+    }
+  }
+
+  function toggleSelect(slug: string) {
+    const newSelected = new Set(selectedSlugs)
+    if (newSelected.has(slug)) {
+      newSelected.delete(slug)
+    } else {
+      newSelected.add(slug)
+    }
+    setSelectedSlugs(newSelected)
+    setIsAllSelected(newSelected.size === items.length && items.length > 0)
+  }
+
   async function saveEdit() {
     if (!editData) return
     try {
@@ -134,6 +222,25 @@ export default function AdminInstitutesPage() {
       load()
     } catch (e: any) {
       toast({ title: 'Update failed', description: e.message, variant: 'destructive' })
+    }
+  }
+
+  async function rebuildSearchIndex() {
+    if (!confirm(`Rebuild search index for all ${total} institutes?\n\nThis will clear and recreate all search suggestions.`)) return
+    
+    try {
+      setRebuildingIndex(true)
+      const res = await fetch('/api/admin/rebuild-suggestions', { method: 'POST' })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      toast({ 
+        title: 'Index Rebuilt', 
+        description: `Created ${data.stats?.suggestionsCreated} suggestions from ${data.stats?.institutesProcessed} institutes` 
+      })
+    } catch (e: any) {
+      toast({ title: 'Rebuild failed', description: e.message, variant: 'destructive' })
+    } finally {
+      setRebuildingIndex(false)
     }
   }
 
@@ -160,12 +267,52 @@ export default function AdminInstitutesPage() {
               <Input placeholder="Search name, slug, city, state" className="pl-8" value={q} onChange={(e)=> setQ(e.target.value)} />
             </div>
             <Input type="number" className="w-24" value={limit} onChange={(e)=> setLimit(Math.max(1, Math.min(100, Number(e.target.value)||20)))} />
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  {selectedSlugs.size > 0 ? `Actions (${selectedSlugs.size})` : 'Actions'}
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {selectedSlugs.size > 0 && (
+                  <>
+                    <DropdownMenuItem onClick={bulkDelete} className="text-red-600">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Selected ({selectedSlugs.size})
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onClick={deleteAllInstitutes} className="text-red-600 font-bold">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All ({total})
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button 
+              variant="secondary" 
+              onClick={rebuildSearchIndex} 
+              disabled={rebuildingIndex || loading}
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              {rebuildingIndex ? 'Rebuilding...' : 'Rebuild Search Index'}
+            </Button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left border-b">
+                  <th className="py-2 pr-4 w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Select all"
+                    />
+                  </th>
                   <th className="py-2 pr-4">Name</th>
                   <th className="py-2 pr-4">Slug</th>
                   <th className="py-2 pr-4">Type</th>
@@ -177,15 +324,22 @@ export default function AdminInstitutesPage() {
               </thead>
               <tbody>
                 {items.map((it) => (
-                  <tr key={it.slug} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/admin/institutes/${encodeURIComponent(it.slug)}`)}>
-                    <td className="py-2 pr-4 text-red-700 underline" onClick={(e) => { e.stopPropagation(); router.push(`/admin/institutes/${encodeURIComponent(it.slug)}`) }}>{it.name}</td>
+                  <tr key={it.slug} className="border-b hover:bg-gray-50">
+                    <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedSlugs.has(it.slug)}
+                        onCheckedChange={() => toggleSelect(it.slug)}
+                        aria-label={`Select ${it.name}`}
+                      />
+                    </td>
+                    <td className="py-2 pr-4 text-blue-600 underline cursor-pointer" onClick={() => router.push(`/admin/institutes/${encodeURIComponent(it.slug)}`)}>{it.name}</td>
                     <td className="py-2 pr-4">{it.slug}</td>
                     <td className="py-2 pr-4">{it.type || '-'}</td>
                     <td className="py-2 pr-4">{it.status || '-'}</td>
                     <td className="py-2 pr-4">{it.location?.city || '-'}</td>
                     <td className="py-2 pr-4">{it.location?.state || '-'}</td>
                     <td className="py-2 pr-4">
-                      <Button variant="destructive" size="sm" className="ml-2" onClick={(e) => { e.stopPropagation(); deleteItem(it.slug) }}>
+                      <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); deleteItem(it.slug) }}>
                         <Trash2 className="w-4 h-4"/>
                       </Button>
                     </td>
@@ -193,7 +347,7 @@ export default function AdminInstitutesPage() {
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td className="py-6 text-center text-gray-500" colSpan={7}>{loading ? 'Loading...' : 'No results'}</td>
+                    <td className="py-6 text-center text-gray-500" colSpan={8}>{loading ? 'Loading...' : 'No results'}</td>
                   </tr>
                 )}
               </tbody>

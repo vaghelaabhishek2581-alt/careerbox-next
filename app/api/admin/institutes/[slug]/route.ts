@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import AdminInstitute from '@/src/models/AdminInstitute'
+import { populateSuggestionsFromInstitute, deleteSuggestionsByPublicId, upsertSuggestions } from '@/lib/utils/populate-suggestions'
 
 // GET /api/admin/institutes/[slug]
 export async function GET(
@@ -65,6 +66,16 @@ export async function PATCH(
 
     const updated = await AdminInstitute.findOneAndUpdate({ slug: slug.toLowerCase() }, { $set: body }, { new: true })
     if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    
+    // Update search suggestions
+    try {
+      await deleteSuggestionsByPublicId(updated.publicId)
+      const suggestions = await populateSuggestionsFromInstitute(updated.toObject())
+      await upsertSuggestions(suggestions)
+    } catch (suggestionError: any) {
+      console.error('Failed to update suggestions:', suggestionError)
+    }
+    
     return NextResponse.json(updated)
   } catch (err: any) {
     if (err?.code === 11000) {
@@ -84,6 +95,14 @@ export async function DELETE(
     await connectToDatabase()
     const res = await AdminInstitute.findOneAndDelete({ slug: slug.toLowerCase() })
     if (!res) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    
+    // Delete search suggestions
+    try {
+      await deleteSuggestionsByPublicId(res.publicId)
+    } catch (suggestionError: any) {
+      console.error('Failed to delete suggestions:', suggestionError)
+    }
+    
     return NextResponse.json({ ok: true })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Failed to delete' }, { status: 500 })

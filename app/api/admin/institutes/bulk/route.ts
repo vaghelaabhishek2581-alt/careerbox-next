@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import AdminInstitute from '@/src/models/AdminInstitute'
+import { populateSuggestionsFromInstitute, upsertSuggestions } from '@/lib/utils/populate-suggestions'
 
 // POST /api/admin/institutes/bulk - bulk create/update via JSON array
 export async function POST(req: NextRequest) {
@@ -97,7 +98,23 @@ export async function POST(req: NextRequest) {
 
     const result = await AdminInstitute.bulkWrite(ops, { ordered: false })
 
-    return NextResponse.json({ result })
+    // Populate search suggestions for all institutes
+    try {
+      const institutes = await AdminInstitute.find({}).select('publicId name slug logo location programmes courses')
+      const allSuggestions = []
+      
+      for (const institute of institutes) {
+        const suggestions = await populateSuggestionsFromInstitute(institute.toObject())
+        allSuggestions.push(...suggestions)
+      }
+      
+      await upsertSuggestions(allSuggestions)
+    } catch (suggestionError: any) {
+      console.error('Failed to populate suggestions:', suggestionError)
+      // Don't fail the request, just log the error
+    }
+
+    return NextResponse.json({ result, suggestionsPopulated: true })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Bulk upload failed' }, { status: 500 })
   }

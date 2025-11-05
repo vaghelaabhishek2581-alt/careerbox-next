@@ -28,11 +28,39 @@ const normalizeUrl = (u?: string): string | undefined => {
   return `${ASSET_BASE}/${u.replace(/^\//, '')}`;
 };
 
+// Helper: extract value from overview array
+const getOverviewValue = (overview: any, key: string): string => {
+  if (!overview) return "";
+  if (Array.isArray(overview)) {
+    const item = overview.find((o: any) => o.key?.toLowerCase() === key.toLowerCase());
+    return item?.value || "";
+  }
+  return overview[key] || "";
+};
+
+// Helper: get rich description from faculty_student_ratio or overview
+const getInstituteDescription = (admin: any): string => {
+  // First try to get from faculty_student_ratio.students array
+  if (admin.faculty_student_ratio?.students && Array.isArray(admin.faculty_student_ratio.students)) {
+    const studentData = admin.faculty_student_ratio.students[0];
+    if (studentData?.description) return studentData.description;
+  }
+  
+  // Fallback to overview
+  if (admin.overview) {
+    if (Array.isArray(admin.overview)) {
+      const desc = admin.overview.find((o: any) => o.key?.toLowerCase() === 'description');
+      if (desc?.value) return desc.value;
+    } else if (admin.overview.description) {
+      return admin.overview.description;
+    }
+  }
+  
+  return "";
+};
+
 // Map AdminInstitute (DB) -> UI Institute type
 function mapAdminToUiInstitute(admin: IAdminInstitute): UiInstitute {
-  console.log("admin", admin);
-  console.log("courses", admin.courses);
-
   // Merge legacy courses[] and new programmes[].course[]
   const mergedAdminCourses: any[] = [
     ...(Array.isArray((admin as any).courses) ? (admin as any).courses : []),
@@ -40,7 +68,6 @@ function mapAdminToUiInstitute(admin: IAdminInstitute): UiInstitute {
       ? (admin as any).programmes.flatMap((p: any) => Array.isArray(p?.course) ? p.course : [])
       : []) as any[]),
   ]
-console.log("adminadmin", admin);
   return {
     id: admin._id?.toString?.() || admin.id,
     name: admin.name,
@@ -94,18 +121,18 @@ console.log("adminadmin", admin);
       website: admin.contact?.website ? (admin.contact.website.startsWith('http') ? admin.contact.website : `https://${admin.contact.website}`) : "",
     },
     overview: {
-      description: admin.overview?.description || "",
-      vision: admin.overview?.vision || "",
-      mission: admin.overview?.mission || "",
-      motto: admin.overview?.motto || "",
-      founder: admin.overview?.founder || "",
-      chancellor: admin.overview?.chancellor || "",
-      viceChancellor: admin.overview?.viceChancellor || "",
-      stats: (admin.overview as any)?.stats || [],
+      description: getInstituteDescription(admin),
+      vision: getOverviewValue(admin.overview, "vision"),
+      mission: getOverviewValue(admin.overview, "mission"),
+      motto: getOverviewValue(admin.overview, "motto"),
+      founder: getOverviewValue(admin.overview, "founder"),
+      chancellor: getOverviewValue(admin.overview, "chancellor"),
+      viceChancellor: getOverviewValue(admin.overview, "viceChancellor"),
+      stats: Array.isArray(admin.overview) ? admin.overview : ((admin.overview as any)?.stats || []),
     },
     campusDetails: {
-      totalArea: "",
-      builtUpArea: "",
+      totalArea: admin.campusDetails?.totalArea || "",
+      builtUpArea: admin.campusDetails?.builtUpArea || "",
       campusType: admin.campusDetails?.campusType || "",
       environment: admin.campusDetails?.environment || "",
       facilities: {
@@ -114,6 +141,8 @@ console.log("adminadmin", admin);
         recreational: admin.campusDetails?.facilities?.recreational || [],
         support: admin.campusDetails?.facilities?.support || [],
       },
+      // Add raw facilities data for InstituteDetailPage
+      ...(admin.campusDetails || {}),
     },
     academics: {
       totalStudents: admin.academics?.totalStudents || 0,
@@ -330,8 +359,12 @@ console.log("adminadmin", admin);
         recognition: c.recognition?.map((r: string) => ({ name: r })) || [],
         reviewCount: c.reviewCount,
         questionsCount: c.questionsCount,
+        facultyStudentRatio: c.facultyStudentRatio || "",
       } as UiCourse)),
     })) : undefined,
+    // Preserve raw data fields for InstituteDetailPage (ensure serializable)
+    rawOverview: (admin as any).overview || [],
+    faculty_student_ratio: (admin as any).faculty_student_ratio || {},
   };
 }
 
