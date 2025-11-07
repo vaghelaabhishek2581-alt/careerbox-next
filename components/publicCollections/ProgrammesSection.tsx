@@ -137,7 +137,7 @@ export function ProgrammesSection({ programmes, onApplyClick, onCourseClick, aut
                           {programme.course.length} Courses
                         </Badge>
                       )}
-                      {programme.placementRating && (
+                      {programme.placementRating && programme.placementRating > 0 && (
                         <Badge className="bg-green-100 text-green-700 px-2 py-0.5 text-xs">
                           {programme.placementRating}★ Placement
                         </Badge>
@@ -291,26 +291,26 @@ export function ProgrammesSection({ programmes, onApplyClick, onCourseClick, aut
                           )}
 
                           {/* Placement Information */}
-                          {course.placements && (course.placements.averagePackage || course.placements.highestPackage || course.placements.placementRate) && (
+                          {course.placements && ((course.placements.averagePackage && course.placements.averagePackage > 0) || (course.placements.highestPackage && course.placements.highestPackage > 0) || (course.placements.placementRate && course.placements.placementRate > 0)) && (
                             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
                               <h5 className="text-xs font-semibold text-blue-800 mb-2 flex items-center gap-2">
                                 <TrendingUp className="h-3 w-3" />
                                 Placements
                               </h5>
                               <div className="space-y-1">
-                                {course.placements.averagePackage && (
+                                {course.placements.averagePackage && course.placements.averagePackage > 0 && (
                                   <div className="flex justify-between items-center">
                                     <span className="text-xs text-gray-600">Average</span>
                                     <span className="font-bold text-green-600 text-sm">₹{course.placements.averagePackage.toLocaleString()}</span>
                                   </div>
                                 )}
-                                {course.placements.highestPackage && (
+                                {course.placements.highestPackage && course.placements.highestPackage > 0 && (
                                   <div className="flex justify-between items-center">
                                     <span className="text-xs text-gray-600">Highest</span>
                                     <span className="font-bold text-purple-600 text-sm">₹{course.placements.highestPackage.toLocaleString()}</span>
                                   </div>
                                 )}
-                                {course.placements.placementRate && (
+                                {course.placements.placementRate && course.placements.placementRate > 0 && (
                                   <div className="flex justify-between items-center">
                                     <span className="text-xs text-gray-600">Rate</span>
                                     <span className="font-bold text-orange-600 text-sm">{course.placements.placementRate}%</span>

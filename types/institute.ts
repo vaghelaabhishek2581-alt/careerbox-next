@@ -386,6 +386,9 @@ export interface Institute {
   courses: Course[];
   programmes?: Programme[];
   mediaGallery?: MediaGallery;
+  // Raw data fields for InstituteDetailPage
+  rawOverview?: Array<{ key: string; value: string }>;
+  faculty_student_ratio?: any;
 }
 
 // Search and Filter Types

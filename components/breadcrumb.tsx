@@ -27,18 +27,18 @@ export default function Breadcrumb({ className }: BreadcrumbProps) {
     href: string;
     icon?: React.ComponentType<any>;
   }> = [
-    { name: 'Home', href: '/recommendation-collections', icon: Home }
-  ];
+      { name: 'Home', href: '/recommendation-collections', icon: Home }
+    ];
 
   let currentPath = '';
   segments.forEach((segment, index) => {
     currentPath += `/${segment}`;
-    
+
     // Skip "recommendation-collections" from breadcrumbs
     if (segment === 'recommendation-collections') {
       return;
     }
-    
+
     // Format segment name (replace hyphens with spaces and capitalize)
     const name = segment
       .split('-')
@@ -52,7 +52,7 @@ export default function Breadcrumb({ className }: BreadcrumbProps) {
   });
 
   return (
-    <nav className={cn("fixed top-[104px] lg:top-[100px] left-0 right-0 bg-white border-b border-gray-200 z-50", className)} aria-label="Breadcrumb">
+    <nav className={cn("fixed top-[104px] lg:top-[100px] left-0 right-0 bg-white border-b border-gray-200 z-[1000]", className)} aria-label="Breadcrumb">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <ol className="flex items-center space-x-2 py-2 text-sm">
           {breadcrumbItems.map((item, index) => {

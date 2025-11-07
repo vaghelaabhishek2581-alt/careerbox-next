@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import AdminInstitute from '@/src/models/AdminInstitute'
+import { populateSuggestionsFromInstitute, upsertSuggestions } from '@/lib/utils/populate-suggestions'
 
 // GET /api/admin/institutes - list with pagination and search
 export async function GET(req: NextRequest) {
@@ -62,28 +63,36 @@ export async function POST(req: NextRequest) {
     }
     if (Array.isArray(body?.programmes)) {
       body.programmes = body.programmes.map((p: any) => {
+        // Normalize programme _id
+        const pId = p?._id || p?.id
+        const programmeId = normalizeId(pId)
+        
         // Handle both old 'course' and new 'courses' structure
-        if (Array.isArray(p?.course)) {
-          p.course = p.course.map((c: any) => {
+        let normalizedCourses = p?.course || p?.courses || []
+        if (Array.isArray(normalizedCourses)) {
+          normalizedCourses = normalizedCourses.map((c: any) => {
             const explicitId = c?._id || c?.id
             const _id = normalizeId(explicitId)
             const { id, ...rest } = c || {}
             return { _id, ...rest }
           })
         }
-        if (Array.isArray(p?.courses)) {
-          p.courses = p.courses.map((c: any) => {
-            const explicitId = c?._id || c?.id
-            const _id = normalizeId(explicitId)
-            const { id, ...rest } = c || {}
-            return { _id, ...rest }
-          })
-        }
-        return p
+        
+        const { id, _id: oldId, course, courses, ...restP } = p || {}
+        return { _id: programmeId, ...restP, course: normalizedCourses }
       })
     }
 
     const created = await AdminInstitute.create(body)
+    
+    // Create search suggestions
+    try {
+      const suggestions = await populateSuggestionsFromInstitute(created.toObject())
+      await upsertSuggestions(suggestions)
+    } catch (suggestionError: any) {
+      console.error('Failed to create suggestions:', suggestionError)
+    }
+    
     return NextResponse.json(created, { status: 201 })
   } catch (err: any) {
     if (err?.code === 11000) {

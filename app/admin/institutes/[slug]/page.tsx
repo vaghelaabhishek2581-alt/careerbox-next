@@ -163,17 +163,37 @@ export default function AdminInstituteDetailPage() {
       {/* Accreditation */}
       <Card>
         <CardHeader><CardTitle>Accreditation</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div><Label>NAAC Grade</Label><Input value={getPath(['accreditation','naac','grade'],'')} onChange={(e)=> setPath(['accreditation','naac','grade'], e.target.value)} /></div>
-          <div><Label>NAAC Category</Label><Input value={getPath(['accreditation','naac','category'],'')} onChange={(e)=> setPath(['accreditation','naac','category'], e.target.value)} /></div>
-          <div><Label>NAAC CGPA</Label><Input value={getPath(['accreditation','naac','cgpa'],'')} onChange={(e)=> setPath(['accreditation','naac','cgpa'], e.target.value ? Number(e.target.value) : undefined)} /></div>
-          <div><Label>NAAC Cycle</Label><Input value={getPath(['accreditation','naac','cycleNumber'],'')} onChange={(e)=> setPath(['accreditation','naac','cycleNumber'], e.target.value ? Number(e.target.value) : undefined)} /></div>
-          <div className="md:col-span-2"><Label>NAAC Valid Until</Label><Input value={getPath(['accreditation','naac','validUntil'],'')} onChange={(e)=> setPath(['accreditation','naac','validUntil'], e.target.value)} /></div>
-          <div><Label>NIRF Overall Rank</Label><Input value={getPath(['accreditation','nirf','overallRank'],'')} onChange={(e)=> setPath(['accreditation','nirf','overallRank'], e.target.value)} /></div>
-          <div><Label>NIRF University Rank</Label><Input value={getPath(['accreditation','nirf','universityRank'],'')} onChange={(e)=> setPath(['accreditation','nirf','universityRank'], e.target.value)} /></div>
-          <div><Label>NIRF Management Rank</Label><Input value={getPath(['accreditation','nirf','managementRank'],'')} onChange={(e)=> setPath(['accreditation','nirf','managementRank'], e.target.value)} /></div>
-          <div><Label>NIRF Year</Label><Input value={getPath(['accreditation','nirf','year'],'')} onChange={(e)=> setPath(['accreditation','nirf','year'], e.target.value ? Number(e.target.value) : undefined)} /></div>
-          <div className="md:col-span-4"><Label>UGC Recognition</Label><Input value={getPath(['accreditation','ugc','recognition'],'')} onChange={(e)=> setPath(['accreditation','ugc','recognition'], e.target.value)} /></div>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div><Label>NAAC Grade</Label><Input value={getPath(['accreditation','naac','grade'],'')} onChange={(e)=> setPath(['accreditation','naac','grade'], e.target.value)} /></div>
+            <div><Label>NAAC Category</Label><Input value={getPath(['accreditation','naac','category'],'')} onChange={(e)=> setPath(['accreditation','naac','category'], e.target.value)} /></div>
+            <div><Label>NAAC CGPA</Label><Input value={getPath(['accreditation','naac','cgpa'],'')} onChange={(e)=> setPath(['accreditation','naac','cgpa'], e.target.value ? Number(e.target.value) : undefined)} /></div>
+            <div><Label>NAAC Cycle</Label><Input value={getPath(['accreditation','naac','cycleNumber'],'')} onChange={(e)=> setPath(['accreditation','naac','cycleNumber'], e.target.value ? Number(e.target.value) : undefined)} /></div>
+            <div className="md:col-span-2"><Label>NAAC Valid Until</Label><Input value={getPath(['accreditation','naac','validUntil'],'')} onChange={(e)=> setPath(['accreditation','naac','validUntil'], e.target.value)} /></div>
+            <div className="md:col-span-4"><Label>UGC Recognition</Label><Input value={getPath(['accreditation','ugc','recognition'],'')} onChange={(e)=> setPath(['accreditation','ugc','recognition'], e.target.value)} /></div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>NIRF Rankings (key-value pairs)</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={()=> setPath(['accreditation','nirf'], { ...(getPath(['accreditation','nirf'], {}) as any), '': '' })}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(getPath(['accreditation','nirf'], {} as Record<string,string>)).map(([k, v]: any, idx: number) => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2" key={`${k}-${idx}`}>
+                  <div><Label>Category</Label><Input value={k} onChange={(e)=> {
+                    const obj: any = { ...(getPath(['accreditation','nirf'], {}) as any) }; const val = obj[k]; delete obj[k]; obj[e.target.value] = val; setPath(['accreditation','nirf'], obj)
+                  }} placeholder="Pharmacy, Innovation, University..."/></div>
+                  <div><Label>Rank/Value</Label><Input value={v} onChange={(e)=> {
+                    const obj: any = { ...(getPath(['accreditation','nirf'], {}) as any) }; obj[k] = e.target.value; setPath(['accreditation','nirf'], obj)
+                  }} placeholder="41, 11-50..."/></div>
+                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
+                    const obj: any = { ...(getPath(['accreditation','nirf'], {}) as any) }; delete obj[k]; setPath(['accreditation','nirf'], obj)
+                  }}><Trash2 className="w-4 h-4"/></Button></div>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -198,36 +218,26 @@ export default function AdminInstituteDetailPage() {
 
       {/* Overview */}
       <Card>
-        <CardHeader><CardTitle>Overview</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-3"><Label>Description</Label><Input value={getPath(['overview','description'],'')} onChange={(e)=> setPath(['overview','description'], e.target.value)} /></div>
-          <div><Label>Vision</Label><Input value={getPath(['overview','vision'],'')} onChange={(e)=> setPath(['overview','vision'], e.target.value)} /></div>
-          <div><Label>Mission</Label><Input value={getPath(['overview','mission'],'')} onChange={(e)=> setPath(['overview','mission'], e.target.value)} /></div>
-          <div><Label>Motto</Label><Input value={getPath(['overview','motto'],'')} onChange={(e)=> setPath(['overview','motto'], e.target.value)} /></div>
-          <div><Label>Founder</Label><Input value={getPath(['overview','founder'],'')} onChange={(e)=> setPath(['overview','founder'], e.target.value)} /></div>
-          <div><Label>Chancellor</Label><Input value={getPath(['overview','chancellor'],'')} onChange={(e)=> setPath(['overview','chancellor'], e.target.value)} /></div>
-          <div><Label>Vice Chancellor</Label><Input value={getPath(['overview','viceChancellor'],'')} onChange={(e)=> setPath(['overview','viceChancellor'], e.target.value)} /></div>
-          
-          <div className="md:col-span-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Stats</Label>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setPath(['overview','stats'], [...(getPath(['overview','stats'], []) as any[]), { title: '', description: '' }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
-            </div>
-            <div className="space-y-3">
-              {(getPath(['overview','stats'], []) as any[]).map((stat: any, idx: number) => (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-2" key={idx}>
-                  <div><Label>Title</Label><Input value={stat.title||''} onChange={(e)=> {
-                    const arr = [...(getPath(['overview','stats'], []) as any[])]; arr[idx] = { ...arr[idx], title: e.target.value }; setPath(['overview','stats'], arr)
-                  }} /></div>
-                  <div className="md:col-span-2"><Label>Description</Label><Input value={stat.description||''} onChange={(e)=> {
-                    const arr = [...(getPath(['overview','stats'], []) as any[])]; arr[idx] = { ...arr[idx], description: e.target.value }; setPath(['overview','stats'], arr)
-                  }} /></div>
-                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
-                    const arr = [...(getPath(['overview','stats'], []) as any[])]; arr.splice(idx,1); setPath(['overview','stats'], arr)
-                  }}><Trash2 className="w-4 h-4"/></Button></div>
-                </div>
-              ))}
-            </div>
+        <CardHeader><CardTitle>Overview (Key-Value Pairs)</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>Overview Items</Label>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setPath(['overview'], [...(getPath(['overview'], []) as any[]), { key: '', value: '' }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+          </div>
+          <div className="space-y-3">
+            {(getPath(['overview'], []) as any[]).map((item: any, idx: number) => (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-2" key={idx}>
+                <div className="md:col-span-2"><Label>Key</Label><Input value={item.key||''} onChange={(e)=> {
+                  const arr = [...(getPath(['overview'], []) as any[])]; arr[idx] = { ...arr[idx], key: e.target.value }; setPath(['overview'], arr)
+                }} placeholder="Establishment year, Campus size..."/></div>
+                <div className="md:col-span-2"><Label>Value</Label><Input value={item.value||''} onChange={(e)=> {
+                  const arr = [...(getPath(['overview'], []) as any[])]; arr[idx] = { ...arr[idx], value: e.target.value }; setPath(['overview'], arr)
+                }} /></div>
+                <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
+                  const arr = [...(getPath(['overview'], []) as any[])]; arr.splice(idx,1); setPath(['overview'], arr)
+                }}><Trash2 className="w-4 h-4"/></Button></div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -235,13 +245,37 @@ export default function AdminInstituteDetailPage() {
       {/* Campus Details */}
       <Card>
         <CardHeader><CardTitle>Campus Details</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><Label>Campus Type</Label><Input value={getPath(['campusDetails','campusType'],'')} onChange={(e)=> setPath(['campusDetails','campusType'], e.target.value)} /></div>
-          <div><Label>Environment</Label><Input value={getPath(['campusDetails','environment'],'')} onChange={(e)=> setPath(['campusDetails','environment'], e.target.value)} /></div>
-          <div className="md:col-span-3"><StringList label="Academic Facilities" values={getPath(['campusDetails','facilities','academic'], [])} onChange={(v)=> setPath(['campusDetails','facilities','academic'], v)} placeholder="Library, Labs, ..."/></div>
-          <div className="md:col-span-3"><StringList label="Residential Facilities" values={getPath(['campusDetails','facilities','residential'], [])} onChange={(v)=> setPath(['campusDetails','facilities','residential'], v)} placeholder="Hostel, Mess, ..."/></div>
-          <div className="md:col-span-3"><StringList label="Recreational Facilities" values={getPath(['campusDetails','facilities','recreational'], [])} onChange={(v)=> setPath(['campusDetails','facilities','recreational'], v)} placeholder="Sports, Gym, ..."/></div>
-          <div className="md:col-span-3"><StringList label="Support Facilities" values={getPath(['campusDetails','facilities','support'], [])} onChange={(v)=> setPath(['campusDetails','facilities','support'], v)} placeholder="Wi-Fi, Bank, ..."/></div>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><Label>Campus Type</Label><Input value={getPath(['campusDetails','campusType'],'')} onChange={(e)=> setPath(['campusDetails','campusType'], e.target.value)} /></div>
+            <div><Label>Environment</Label><Input value={getPath(['campusDetails','environment'],'')} onChange={(e)=> setPath(['campusDetails','environment'], e.target.value)} /></div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Facilities (key-value pairs)</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setPath(['campusDetails','facilities'], [...(getPath(['campusDetails','facilities'], []) as any[]), { key: '', value: '' }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+            </div>
+            <div className="space-y-3">
+              {(getPath(['campusDetails','facilities'], []) as any[]).map((facility: any, idx: number) => (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-2" key={idx}>
+                  <div className="md:col-span-2"><Label>Facility Name</Label><Input value={facility.key||''} onChange={(e)=> {
+                    const arr = [...(getPath(['campusDetails','facilities'], []) as any[])]; arr[idx] = { ...arr[idx], key: e.target.value }; setPath(['campusDetails','facilities'], arr)
+                  }} placeholder="Library, Gym, Hostel..."/></div>
+                  <div className="md:col-span-2"><Label>Description</Label><Input value={facility.value||''} onChange={(e)=> {
+                    const arr = [...(getPath(['campusDetails','facilities'], []) as any[])]; arr[idx] = { ...arr[idx], value: e.target.value }; setPath(['campusDetails','facilities'], arr)
+                  }} placeholder="Optional description"/></div>
+                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
+                    const arr = [...(getPath(['campusDetails','facilities'], []) as any[])]; arr.splice(idx,1); setPath(['campusDetails','facilities'], arr)
+                  }}><Trash2 className="w-4 h-4"/></Button></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <StringList label="Facilities Array (Simple List)" values={getPath(['campusDetails','facilities_arr'], [])} onChange={(v)=> setPath(['campusDetails','facilities_arr'], v)} placeholder="Library, Gym, Hostel..."/>
+          </div>
         </CardContent>
       </Card>
 
@@ -281,6 +315,98 @@ export default function AdminInstituteDetailPage() {
               ))}
             </div>
           </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Program Overviews (key-value pairs)</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setPath(['academics','programOverviews'], [...(getPath(['academics','programOverviews'], []) as any[]), { key: '', value: '' }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+            </div>
+            <div className="space-y-3">
+              {(getPath(['academics','programOverviews'], []) as any[]).map((item: any, idx: number) => (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-2" key={idx}>
+                  <div className="md:col-span-2"><Label>Key</Label><Input value={item.key||''} onChange={(e)=> {
+                    const arr = [...(getPath(['academics','programOverviews'], []) as any[])]; arr[idx] = { ...arr[idx], key: e.target.value }; setPath(['academics','programOverviews'], arr)
+                  }} placeholder="UG Programs, PG Programs..."/></div>
+                  <div className="md:col-span-2"><Label>Value</Label><Input value={item.value||''} onChange={(e)=> {
+                    const arr = [...(getPath(['academics','programOverviews'], []) as any[])]; arr[idx] = { ...arr[idx], value: e.target.value }; setPath(['academics','programOverviews'], arr)
+                  }} /></div>
+                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
+                    const arr = [...(getPath(['academics','programOverviews'], []) as any[])]; arr.splice(idx,1); setPath(['academics','programOverviews'], arr)
+                  }}><Trash2 className="w-4 h-4"/></Button></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Faculty/Student Ratio */}
+      <Card>
+        <CardHeader><CardTitle>Faculty & Student Data</CardTitle></CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Faculty Details (key-value pairs)</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setPath(['faculty_student_ratio','faculties'], [...(getPath(['faculty_student_ratio','faculties'], []) as any[]), { key: '', value: '' }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+            </div>
+            <div className="space-y-3">
+              {(getPath(['faculty_student_ratio','faculties'], []) as any[]).map((item: any, idx: number) => (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-2" key={idx}>
+                  <div className="md:col-span-2"><Label>Key</Label><Input value={item.key||''} onChange={(e)=> {
+                    const arr = [...(getPath(['faculty_student_ratio','faculties'], []) as any[])]; arr[idx] = { ...arr[idx], key: e.target.value }; setPath(['faculty_student_ratio','faculties'], arr)
+                  }} placeholder="Total Faculties, PhD holders..."/></div>
+                  <div className="md:col-span-2"><Label>Value</Label><Input value={item.value||''} onChange={(e)=> {
+                    const arr = [...(getPath(['faculty_student_ratio','faculties'], []) as any[])]; arr[idx] = { ...arr[idx], value: e.target.value }; setPath(['faculty_student_ratio','faculties'], arr)
+                  }} /></div>
+                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
+                    const arr = [...(getPath(['faculty_student_ratio','faculties'], []) as any[])]; arr.splice(idx,1); setPath(['faculty_student_ratio','faculties'], arr)
+                  }}><Trash2 className="w-4 h-4"/></Button></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Student Admission Reports</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setPath(['faculty_student_ratio','students'], [...(getPath(['faculty_student_ratio','students'], []) as any[]), { title: '', data: [] }])}><Plus className="w-4 h-4 mr-1"/>Add Section</Button>
+            </div>
+            <div className="space-y-4">
+              {(getPath(['faculty_student_ratio','students'], []) as any[]).map((section: any, sectionIdx: number) => (
+                <div className="border rounded p-4 space-y-3" key={sectionIdx}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div><Label>Section Title</Label><Input value={section.title||''} onChange={(e)=> {
+                      const arr = [...(getPath(['faculty_student_ratio','students'], []) as any[])]; arr[sectionIdx] = { ...arr[sectionIdx], title: e.target.value }; setPath(['faculty_student_ratio','students'], arr)
+                    }} placeholder="UG - 4 years student admission"/></div>
+                    <div className="flex items-end"><Button type="button" variant="destructive" size="sm" onClick={()=> {
+                      const arr = [...(getPath(['faculty_student_ratio','students'], []) as any[])]; arr.splice(sectionIdx,1); setPath(['faculty_student_ratio','students'], arr)
+                    }}><Trash2 className="w-4 h-4 mr-1"/>Remove Section</Button></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Data Items</Label>
+                      <Button type="button" variant="outline" size="sm" onClick={() => {
+                        const arr = [...(getPath(['faculty_student_ratio','students'], []) as any[])]; const data = [...(arr[sectionIdx].data||[])]; data.push({ key: '', value: '' }); arr[sectionIdx] = { ...arr[sectionIdx], data }; setPath(['faculty_student_ratio','students'], arr)
+                      }}><Plus className="w-3 h-3 mr-1"/>Add Item</Button>
+                    </div>
+                    {(section.data||[]).map((item: any, itemIdx: number) => (
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-2" key={itemIdx}>
+                        <div className="md:col-span-2"><Label>Key</Label><Input value={item.key||''} onChange={(e)=> {
+                          const arr = [...(getPath(['faculty_student_ratio','students'], []) as any[])]; const data = [...arr[sectionIdx].data]; data[itemIdx] = { ...data[itemIdx], key: e.target.value }; arr[sectionIdx] = { ...arr[sectionIdx], data }; setPath(['faculty_student_ratio','students'], arr)
+                        }} placeholder="Total students"/></div>
+                        <div className="md:col-span-2"><Label>Value</Label><Input value={item.value||''} onChange={(e)=> {
+                          const arr = [...(getPath(['faculty_student_ratio','students'], []) as any[])]; const data = [...arr[sectionIdx].data]; data[itemIdx] = { ...data[itemIdx], value: e.target.value }; arr[sectionIdx] = { ...arr[sectionIdx], data }; setPath(['faculty_student_ratio','students'], arr)
+                        }} /></div>
+                        <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
+                          const arr = [...(getPath(['faculty_student_ratio','students'], []) as any[])]; const data = [...arr[sectionIdx].data]; data.splice(itemIdx,1); arr[sectionIdx] = { ...arr[sectionIdx], data }; setPath(['faculty_student_ratio','students'], arr)
+                        }}><Trash2 className="w-4 h-4"/></Button></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -288,6 +414,7 @@ export default function AdminInstituteDetailPage() {
       <Card>
         <CardHeader><CardTitle>Admissions & Placements</CardTitle></CardHeader>
         <CardContent className="space-y-6">
+          <div><Label>Application Fee</Label><Input value={getPath(['admissions','applicationFee'],'')} onChange={(e)=> setPath(['admissions','applicationFee'], e.target.value)} placeholder="1000 INR or any format"/></div>
           <StringList label="Admission Process Steps" values={getPath(['admissions','admissionProcess'], [])} onChange={(v)=> setPath(['admissions','admissionProcess'], v)} placeholder="Step"/>
 
           <div className="space-y-2">
@@ -320,25 +447,75 @@ export default function AdminInstituteDetailPage() {
       {/* Rankings */}
       <Card>
         <CardHeader><CardTitle>Rankings</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>National Rankings</Label>
-            <Button type="button" variant="secondary" size="sm" onClick={()=> setPath(['rankings','national'], [...(getPath(['rankings','national'], []) as any[]), { agency: '', category: '', rank: '', year: new Date().getFullYear() }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+        <CardContent className="space-y-6">
+          <div><Label>Rankings Title</Label><Input value={getPath(['rankings','title'],'')} onChange={(e)=> setPath(['rankings','title'], e.target.value)} /></div>
+          <div><Label>Rankings Description</Label><Input value={getPath(['rankings','description'],'')} onChange={(e)=> setPath(['rankings','description'], e.target.value)} /></div>
+          <div><Label>Rankings Detail Description</Label><Input value={getPath(['rankings','rankingsDescription'],'')} onChange={(e)=> setPath(['rankings','rankingsDescription'], e.target.value)} /></div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>National Rankings</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={()=> setPath(['rankings','national','national'], [...(getPath(['rankings','national','national'], []) as any[]), { agency: '', category: '', rank: '', year: new Date().getFullYear() }])}><Plus className="w-4 h-4 mr-1"/>Add</Button>
+            </div>
+            <div className="space-y-3">
+              {(getPath(['rankings','national','national'], []) as any[]).filter(r => r !== null && r !== undefined).map((r: any, idx: number) => (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-2" key={idx}>
+                  <div><Label>Agency</Label><Input value={r?.agency||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national','national'], []) as any[])]; arr[idx] = { ...arr[idx], agency: e.target.value }; setPath(['rankings','national','national'], arr) }} /></div>
+                  <div><Label>Category</Label><Input value={r?.category||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national','national'], []) as any[])]; arr[idx] = { ...arr[idx], category: e.target.value }; setPath(['rankings','national','national'], arr) }} /></div>
+                  <div><Label>Rank</Label><Input value={r?.rank||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national','national'], []) as any[])]; arr[idx] = { ...arr[idx], rank: e.target.value }; setPath(['rankings','national','national'], arr) }} /></div>
+                  <div><Label>Year</Label><Input value={r?.year||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national','national'], []) as any[])]; arr[idx] = { ...arr[idx], year: e.target.value }; setPath(['rankings','national','national'], arr) }} /></div>
+                  <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> { const arr=[...(getPath(['rankings','national','national'], []) as any[])]; arr.splice(idx,1); setPath(['rankings','national','national'], arr) }}><Trash2 className="w-4 h-4"/></Button></div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="space-y-3">
-            {(getPath(['rankings','national'], []) as any[]).filter(r => r !== null && r !== undefined).map((r: any, idx: number) => (
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-2" key={idx}>
-                <div><Label>Agency</Label><Input value={r?.agency||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], agency: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
-                <div><Label>Category</Label><Input value={r?.category||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], category: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
-                <div><Label>Rank</Label><Input value={r?.rank||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], rank: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
-                <div><Label>Year</Label><Input value={r?.year||''} onChange={(e)=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr[idx] = { ...arr[idx], year: e.target.value }; setPath(['rankings','national'], arr) }} /></div>
-                <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> { const arr=[...(getPath(['rankings','national'], []) as any[])]; arr.splice(idx,1); setPath(['rankings','national'], arr) }}><Trash2 className="w-4 h-4"/></Button></div>
-              </div>
-            ))}
-          </div>
-          <div>
-            <Label>Rankings Description</Label>
-            <Input value={getPath(['rankings','rankingsDescription'],'')} onChange={(e)=> setPath(['rankings','rankingsDescription'], e.target.value)} />
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Publisher Rankings</Label>
+              <Button type="button" variant="secondary" size="sm" onClick={()=> setPath(['rankings','data'], [...(getPath(['rankings','data'], []) as any[]), { publisherName: '', publisherLogo: '', entityName: '', rankData: [] }])}><Plus className="w-4 h-4 mr-1"/>Add Publisher</Button>
+            </div>
+            <div className="space-y-4">
+              {(getPath(['rankings','data'], []) as any[]).map((publisher: any, pubIdx: number) => (
+                <div className="border rounded p-4 space-y-3" key={pubIdx}>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <div><Label>Publisher Name</Label><Input value={publisher.publisherName||''} onChange={(e)=> {
+                      const arr = [...(getPath(['rankings','data'], []) as any[])]; arr[pubIdx] = { ...arr[pubIdx], publisherName: e.target.value }; setPath(['rankings','data'], arr)
+                    }} placeholder="NIRF, Outlook..."/></div>
+                    <div><Label>Publisher Logo URL</Label><Input value={publisher.publisherLogo||''} onChange={(e)=> {
+                      const arr = [...(getPath(['rankings','data'], []) as any[])]; arr[pubIdx] = { ...arr[pubIdx], publisherLogo: e.target.value }; setPath(['rankings','data'], arr)
+                    }} /></div>
+                    <div><Label>Entity Name</Label><Input value={publisher.entityName||''} onChange={(e)=> {
+                      const arr = [...(getPath(['rankings','data'], []) as any[])]; arr[pubIdx] = { ...arr[pubIdx], entityName: e.target.value }; setPath(['rankings','data'], arr)
+                    }} placeholder="Pharmacy, BCA..."/></div>
+                    <div className="flex items-end"><Button type="button" variant="destructive" size="sm" onClick={()=> {
+                      const arr = [...(getPath(['rankings','data'], []) as any[])]; arr.splice(pubIdx,1); setPath(['rankings','data'], arr)
+                    }}><Trash2 className="w-4 h-4 mr-1"/>Remove</Button></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Year-wise Ranks</Label>
+                      <Button type="button" variant="outline" size="sm" onClick={() => {
+                        const arr = [...(getPath(['rankings','data'], []) as any[])]; const rankData = [...(arr[pubIdx].rankData||[])]; rankData.push({ year: new Date().getFullYear(), rank: '' }); arr[pubIdx] = { ...arr[pubIdx], rankData }; setPath(['rankings','data'], arr)
+                      }}><Plus className="w-3 h-3 mr-1"/>Add Year</Button>
+                    </div>
+                    {(publisher.rankData||[]).map((rd: any, rdIdx: number) => (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2" key={rdIdx}>
+                        <div><Label>Year</Label><Input value={rd.year||''} onChange={(e)=> {
+                          const arr = [...(getPath(['rankings','data'], []) as any[])]; const rankData = [...arr[pubIdx].rankData]; rankData[rdIdx] = { ...rankData[rdIdx], year: e.target.value ? Number(e.target.value) : new Date().getFullYear() }; arr[pubIdx] = { ...arr[pubIdx], rankData }; setPath(['rankings','data'], arr)
+                        }} /></div>
+                        <div><Label>Rank</Label><Input value={rd.rank||''} onChange={(e)=> {
+                          const arr = [...(getPath(['rankings','data'], []) as any[])]; const rankData = [...arr[pubIdx].rankData]; rankData[rdIdx] = { ...rankData[rdIdx], rank: e.target.value }; arr[pubIdx] = { ...arr[pubIdx], rankData }; setPath(['rankings','data'], arr)
+                        }} /></div>
+                        <div className="flex items-end"><Button type="button" variant="destructive" size="icon" onClick={()=> {
+                          const arr = [...(getPath(['rankings','data'], []) as any[])]; const rankData = [...arr[pubIdx].rankData]; rankData.splice(rdIdx,1); arr[pubIdx] = { ...arr[pubIdx], rankData }; setPath(['rankings','data'], arr)
+                        }}><Trash2 className="w-4 h-4"/></Button></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
