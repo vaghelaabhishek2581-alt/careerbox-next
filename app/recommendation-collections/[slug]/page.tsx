@@ -7,14 +7,20 @@ interface PageProps {
   params: Promise<{
     slug: string;
   }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({
   params,
+  searchParams,
 }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const institute = await getInstituteDetails(resolvedParams.slug);
+  
+  const programmeSlug = resolvedSearchParams.programme as string | undefined;
+  const courseSlug = resolvedSearchParams.course as string | undefined;
 
   if (!institute) {
     return {
@@ -23,14 +29,50 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${institute.name} - Fees, Placements, Reviews & Rankings | CareerBox`;
-  const description = `Get complete information about ${institute.name} in ${institute.location.city}, ${institute.location.state}. Check courses, placements, reviews, rankings, and admission details.`;
+  // Find selected programme and course for dynamic SEO
+  let programmeName = '';
+  let courseName = '';
+  
+  if (programmeSlug && institute.programmes) {
+    const programme = institute.programmes.find((p: any) => 
+      p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === programmeSlug
+    );
+    if (programme) {
+      programmeName = programme.name;
+      
+      if (courseSlug) {
+        const course = programme.course?.find((c: any) => {
+          const fullCourseName = `${c.degree}${c.name ? `-${c.name}` : ''}`;
+          return fullCourseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') === courseSlug;
+        });
+        if (course) {
+          courseName = `${course.degree}${course.name ? ` in ${course.name}` : ''}`;
+        }
+      }
+    }
+  }
+  
+  let title: string;
+  let description: string;
+  
+  if (courseName) {
+    title = `${courseName} at ${institute.name} - Fees, Duration, Admission | CareerBox`;
+    description = `Complete details about ${courseName} program at ${institute.name}, ${institute.location.city}. Check course fees, duration, eligibility, admission process, and placement statistics.`;
+  } else if (programmeName) {
+    title = `${programmeName} at ${institute.name} - Courses, Fees & Placements | CareerBox`;
+    description = `Explore ${programmeName} courses at ${institute.name}, ${institute.location.city}. View course list, fees structure, admission requirements, and placement records.`;
+  } else {
+    title = `${institute.name} - Fees, Placements, Reviews & Rankings | CareerBox`;
+    description = `Get complete information about ${institute.name} in ${institute.location.city}, ${institute.location.state}. Check courses, placements, reviews, rankings, and admission details.`;
+  }
 
   return {
     title,
     description,
     keywords: [
       institute.name,
+      ...(programmeName ? [programmeName, `${programmeName} at ${institute.name}`, `${programmeName} fees`, `${programmeName} admission`] : []),
+      ...(courseName ? [courseName, `${courseName} fees`, `${courseName} duration`, `${courseName} eligibility`] : []),
       `${institute.name} fees`,
       `${institute.name} placements`,
       `${institute.name} admission`,
@@ -45,7 +87,7 @@ export async function generateMetadata({
       "engineering admission",
       "college admission",
       institute.type,
-    ],
+    ].filter(Boolean),
     authors: [{ name: "CareerBox" }],
     creator: "CareerBox",
     publisher: "CareerBox",

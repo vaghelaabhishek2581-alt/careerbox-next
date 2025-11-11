@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import { ChromeDevToolsHandler } from "./chrome-devtools-handler";
 import { SocketProvider } from "@/lib/socket/SocketProvider";
+import { Toaster } from "@/components/ui/toaster";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <SocketProvider>
         <ChromeDevToolsHandler />
         {children}
+        <Toaster />
       </SocketProvider>
     </SessionProvider>
   );

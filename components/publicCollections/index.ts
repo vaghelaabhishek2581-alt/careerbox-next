@@ -1,12 +1,9 @@
-// Export all public collection components
-export { LoadingSkeleton } from "./LoadingSkeleton";
-
 // Export institute components
 export { InstituteCard } from "./InstituteCard";
 export { InstituteDetailPage } from "./InstituteDetailPage";
-export { InstituteFilters } from "./InstituteFilters";
-export { InstituteGrid } from "./InstituteGrid";
-export { InstituteSearchHeader } from "./InstituteSearchHeader";
+export { ProgramCard } from "./ProgramCard";
+export { CourseCard } from "./CourseCard";
+export { UnifiedFilters } from "./UnifiedFilters";
 
 // Re-export types and functions from institute recommendations
 export type {

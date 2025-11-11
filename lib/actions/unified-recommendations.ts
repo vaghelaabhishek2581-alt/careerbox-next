@@ -16,6 +16,37 @@ const normalizeUrl = (u?: string): string | undefined => {
   return `${ASSET_BASE}/${u.replace(/^\//, '')}`;
 };
 
+// Serialize MongoDB ObjectIds to strings for Client Components
+const serializeForClient = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => serializeForClient(item));
+  }
+  
+  if (typeof obj === 'object') {
+    // Handle MongoDB ObjectId
+    if (obj._id && typeof obj._id === 'object' && obj._id.toString) {
+      obj._id = obj._id.toString();
+    }
+    
+    // Recursively serialize nested objects
+    const serialized: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        if (key === '_id' && typeof obj[key] === 'object' && obj[key].toString) {
+          serialized[key] = obj[key].toString();
+        } else {
+          serialized[key] = serializeForClient(obj[key]);
+        }
+      }
+    }
+    return serialized;
+  }
+  
+  return obj;
+};
+
 export interface UnifiedSearchParams {
   type?: 'institutes' | 'programs' | 'courses';
   location?: string;
@@ -178,6 +209,7 @@ export const getUnifiedRecommendations = cache(
         'contact.website': 1,
         // Include full objects needed by InstituteCard
         overview: 1,
+        rawOverview: 1,
         campusDetails: 1,
         placements: 1,
         faculty_student_ratio: 1,
@@ -259,6 +291,7 @@ export const getUnifiedRecommendations = cache(
           location: inst.location || {},
           contact: inst.contact || {},
           overview: inst.overview || {},
+          rawOverview: inst.rawOverview || inst.overview || [],
           campusDetails: inst.campusDetails || {},
           academics: inst.academics || {},
           admissions: inst.admissions || {},
@@ -269,6 +302,8 @@ export const getUnifiedRecommendations = cache(
           awards: inst.awards || [],
           courses: [],
           mediaGallery: inst.mediaGallery,
+          faculty_student_ratio: serializeForClient(inst.faculty_student_ratio || {}),
+          programmes: serializeForClient(inst.programmes || []),
         })),
         total,
         totalPages: Math.ceil(total / pageSize),

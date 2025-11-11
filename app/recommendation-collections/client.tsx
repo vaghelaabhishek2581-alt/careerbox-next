@@ -43,10 +43,10 @@ interface RecommendationCollectionsClientProps {
   };
 }
 
-export default function RecommendationCollectionsClient({ 
-  initialData, 
+export default function RecommendationCollectionsClient({
+  initialData,
   initialType,
-  initialParams 
+  initialParams
 }: RecommendationCollectionsClientProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -56,7 +56,7 @@ export default function RecommendationCollectionsClient({
   const [showFilters, setShowFilters] = useState(false);
   const [locationQuery, setLocationQuery] = useState(initialParams.location || '');
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  
+
   // Get the correct data array based on type
   const getDataArray = (data: any, type: string) => {
     if (type === 'institutes') return data.institutes || [];
@@ -64,7 +64,7 @@ export default function RecommendationCollectionsClient({
     if (type === 'courses') return data.courses || [];
     return [];
   };
-  
+
   const [allData, setAllData] = useState<any[]>(() => getDataArray(initialData, initialType));
   const [data, setData] = useState<any>(initialData);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -136,10 +136,10 @@ export default function RecommendationCollectionsClient({
 
   const handleLoadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
-    
+
     setIsLoadingMore(true);
     const nextPage = currentPage + 1;
-    
+
     try {
       const result = await getUnifiedRecommendations({
         type,
@@ -152,7 +152,6 @@ export default function RecommendationCollectionsClient({
         sortBy,
         accreditation,
       });
-      
       setData(result);
       const newData = getDataArray(result, type);
       setAllData(prev => [...prev, ...newData]);
@@ -451,8 +450,8 @@ export default function RecommendationCollectionsClient({
                       <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr' : 'space-y-4'}>
                         {allData.map((institute: any) => (
                           <div key={institute.id} className="h-full">
-                            <InstituteCard 
-                              institute={institute} 
+                            <InstituteCard
+                              institute={institute}
                               variant={viewMode === 'list' ? 'detailed' : 'default'}
                               showCourses={true}
                             />
@@ -465,8 +464,8 @@ export default function RecommendationCollectionsClient({
                       <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr' : 'space-y-4'}>
                         {allData.map((program: any) => (
                           <div key={program.id} className="h-full">
-                            <ProgramCard 
-                              program={program} 
+                            <ProgramCard
+                              program={program}
                               variant={viewMode === 'list' ? 'compact' : 'default'}
                             />
                           </div>
@@ -478,8 +477,8 @@ export default function RecommendationCollectionsClient({
                       <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr' : 'space-y-4'}>
                         {allData.map((course: any) => (
                           <div key={course.id} className="h-full">
-                            <CourseCard 
-                              course={course} 
+                            <CourseCard
+                              course={course}
                               variant={viewMode === 'list' ? 'compact' : 'default'}
                             />
                           </div>
@@ -521,7 +520,7 @@ export default function RecommendationCollectionsClient({
                       <p className="text-gray-600 mb-6">
                         Try adjusting your filters or search criteria to find what you're looking for.
                       </p>
-                      <Button 
+                      <Button
                         onClick={() => router.push(`/recommendation-collections?type=${type}`)}
                         variant="outline"
                       >
