@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select'
 import { ProgrammesSection } from '@/components/publicCollections/ProgrammesSection'
 import { saveUserDetails, loadUserDetails } from '@/lib/utils/localStorage'
+import { saveAppliedCourse, hasAppliedToCourse, saveEligibilityExams, loadEligibilityExams } from '@/lib/utils/applicationStorage'
 import { useToast } from '@/components/ui/use-toast'
 import {
   MapPin,
@@ -31,7 +32,9 @@ import {
   Plus,
   ChevronRight,
   ArrowLeft,
-  Info
+  Info,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react'
 import { KeyValueTable } from '@/components/publicCollections/KeyValueTable'
 import { FacilityList } from '@/components/publicCollections/FacilityList'
@@ -206,11 +209,13 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
   const searchParams = useSearchParams()
 
   const [showApplicationModal, setShowApplicationModal] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string>('')
   const [selectedProgrammeId, setSelectedProgrammeId] = useState<string | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [formData, setFormData] = useState<ApplicationFormData>(() => {
     const savedDetails = loadUserDetails()
+    const savedExams = loadEligibilityExams()
     if (savedDetails) {
       return {
         name: savedDetails.name,
@@ -218,7 +223,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
         phone: savedDetails.phone,
         city: savedDetails.city,
         course: '',
-        eligibilityExams: [],
+        eligibilityExams: savedExams,
       }
     }
     return {
@@ -227,7 +232,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
       phone: '',
       city: '',
       course: '',
-      eligibilityExams: [],
+      eligibilityExams: savedExams,
     }
   })
   const [currentExam, setCurrentExam] = useState('')
@@ -461,6 +466,16 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
   const handleApplyClick = async (courseName: string) => {
     const selectedCourseObj = allCourses.find(c => `${c.degree}${c.name ? ` in ${c.name}` : ''}` === courseName)
 
+    // Check if already applied
+    if (hasAppliedToCourse(institute.id, courseName)) {
+      toast({
+        title: "Already Applied",
+        description: "You have already applied to this course. We will contact you soon.",
+        variant: "default",
+      })
+      return
+    }
+
     if (session?.user) {
       try {
         const courseId = selectedCourseObj?.id
@@ -484,6 +499,15 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
           throw new Error(data?.error || 'Failed to submit application')
         }
 
+        // Save to localStorage
+        saveAppliedCourse({
+          instituteId: institute.id,
+          instituteName: institute.name,
+          courseId,
+          courseName,
+          appliedAt: new Date().toISOString(),
+        })
+
         toast({
           title: "Application Submitted!",
           description: "Your application has been submitted successfully. We will contact you soon.",
@@ -500,6 +524,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
       }
     } else {
       const savedDetails = loadUserDetails()
+      const savedExams = loadEligibilityExams()
       if (savedDetails) {
         setFormData(prev => ({
           name: savedDetails.name,
@@ -507,10 +532,10 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
           phone: savedDetails.phone,
           city: savedDetails.city,
           course: courseName,
-          eligibilityExams: prev.eligibilityExams,
+          eligibilityExams: savedExams,
         }))
       } else {
-        setFormData(prev => ({ ...prev, course: courseName }))
+        setFormData(prev => ({ ...prev, course: courseName, eligibilityExams: savedExams }))
       }
       setSelectedCourse(courseName)
       setShowApplicationModal(true)
@@ -519,6 +544,8 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
+    
     try {
       const selectedCourseObj = allCourses.find(c => `${c.degree}${c.name ? ` in ${c.name}` : ''}` === formData.course)
       const courseId = selectedCourseObj?.id
@@ -548,36 +575,62 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
 
       console.log('Lead created with id:', data.id)
 
+      // Save user details and eligibility exams to localStorage
       saveUserDetails({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         city: formData.city,
       })
+      saveEligibilityExams(formData.eligibilityExams)
 
+      // Save applied course to localStorage
+      saveAppliedCourse({
+        instituteId: institute.id,
+        instituteName: institute.name,
+        courseId,
+        courseName: formData.course,
+        appliedAt: new Date().toISOString(),
+      })
+
+      // Close modal first
       setShowApplicationModal(false)
+      setIsSubmitting(false)
+
+      // Show success toast after modal closes
+      setTimeout(() => {
+        toast({
+          title: "Application Submitted!",
+          description: "Your application has been submitted successfully. We will contact you soon.",
+        })
+      }, 300)
 
       setFormData(prev => ({
         ...prev,
         course: '',
-        eligibilityExams: []
       }))
       setCurrentExam('')
       setCurrentScore('')
     } catch (error: any) {
       console.error('Failed to create lead:', error?.message || error)
-      if (typeof window !== 'undefined') {
-        alert(error?.message || 'Failed to submit')
-      }
+      setIsSubmitting(false)
+      toast({
+        title: "Application Failed",
+        description: error?.message || 'Failed to submit application. Please try again.',
+        variant: "destructive",
+      })
     }
   }
 
   const addEligibilityExam = () => {
     if (currentExam.trim() && currentScore.trim()) {
+      const updatedExams = [...formData.eligibilityExams, { exam: currentExam.trim(), score: currentScore.trim() }]
       setFormData(prev => ({
         ...prev,
-        eligibilityExams: [...prev.eligibilityExams, { exam: currentExam.trim(), score: currentScore.trim() }]
+        eligibilityExams: updatedExams
       }))
+      // Save to localStorage immediately
+      saveEligibilityExams(updatedExams)
       setCurrentExam('')
       setCurrentScore('')
     }
@@ -897,12 +950,12 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Button
-                              variant="outline"
-                              size="sm"
+                              variant="default"
+                              size="default"
                               onClick={handleBackToProgrammes}
-                              className="flex items-center gap-2"
+                              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all font-semibold"
                             >
-                              <ArrowLeft className="h-4 w-4" />
+                              <ArrowLeft className="h-5 w-5" />
                               Back to Programs
                             </Button>
                             <div>
@@ -1199,12 +1252,22 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                                     )}
 
                                     <div className="flex flex-col gap-2">
-                                      <Button
-                                        onClick={() => handleApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
-                                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                                      >
-                                        Apply Now
-                                      </Button>
+                                      {hasAppliedToCourse(institute.id, `${course.degree}${course.name ? ` in ${course.name}` : ''}`) ? (
+                                        <Button
+                                          className="w-full bg-green-100 text-green-700 hover:bg-green-200 border-2 border-green-300 cursor-default"
+                                          disabled
+                                        >
+                                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                                          Applied
+                                        </Button>
+                                      ) : (
+                                        <Button
+                                          onClick={() => handleApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
+                                          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                        >
+                                          Apply Now
+                                        </Button>
+                                      )}
                                       {course.brochure?.url && (
                                         <Button
                                           asChild
@@ -1650,10 +1713,10 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
 
           {/* Application Modal */}
           {showApplicationModal && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl mx-auto max-h-[90vh] overflow-hidden">
-                <div className="block md:hidden">
-                  <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-8 text-white">
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm overflow-y-auto">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl mx-auto my-8 max-h-[95vh] overflow-hidden flex flex-col">
+                <div className="block md:hidden flex-shrink-0">
+                  <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-6 text-white">
                     <button
                       onClick={() => setShowApplicationModal(false)}
                       className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
@@ -1670,14 +1733,14 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                     </div>
                   </div>
 
-                  <div className="p-6 max-h-[60vh] overflow-y-auto">
+                  <div className="p-4 flex-1 overflow-y-auto">
                     <form onSubmit={handleFormSubmit} className="space-y-6">
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900 pb-2 border-b border-gray-200">
+                      <div className="space-y-3">
+                        <h3 className="text-base font-semibold text-gray-900 pb-1 border-b border-gray-200">
                           Personal Details
                         </h3>
 
-                        <div className="grid grid-cols-1 gap-4">
+                        <div className="grid grid-cols-1 gap-3">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
                             <input
@@ -1751,14 +1814,23 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                           variant="outline"
                           onClick={() => setShowApplicationModal(false)}
                           className="flex-1"
+                          disabled={isSubmitting}
                         >
                           Cancel
                         </Button>
                         <Button
                           type="submit"
                           className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                          disabled={isSubmitting}
                         >
-                          Submit Application
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            'Submit Application'
+                          )}
                         </Button>
                       </div>
 
@@ -1995,14 +2067,23 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                               variant="outline"
                               onClick={() => setShowApplicationModal(false)}
                               className="flex-1 py-2 rounded-lg border-2 hover:bg-gray-50 text-sm"
+                              disabled={isSubmitting}
                             >
                               Cancel
                             </Button>
                             <Button
                               type="submit"
                               className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-sm"
+                              disabled={isSubmitting}
                             >
-                              Submit Application
+                              {isSubmitting ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Submitting...
+                                </>
+                              ) : (
+                                'Submit Application'
+                              )}
                             </Button>
                           </div>
 

@@ -45,19 +45,38 @@ export default function SearchSuggestions({
     const fetchSuggestions = async () => {
       setIsSearching(true);
       try {
-        // Both variants: Search all types (parallel approach with limits)
-        const [instituteResult, programResult, courseResult] = await Promise.all([
-          getUnifiedRecommendations({ type: 'institutes', query: searchQuery, page: 1 }),
-          getUnifiedRecommendations({ type: 'programs', query: searchQuery, page: 1 }),
-          getUnifiedRecommendations({ type: 'courses', query: searchQuery, page: 1 }),
-        ]);
+        let suggestions: any[] = [];
 
-        // Combine and limit results (3 institutes, 2 programs, 2 courses)
-        const suggestions = [
-          ...(instituteResult.institutes || []).slice(0, 3).map((item: any) => ({ ...item, resultType: 'institute' })),
-          ...(programResult.programs || []).slice(0, 2).map((item: any) => ({ ...item, resultType: 'program' })),
-          ...(courseResult.courses || []).slice(0, 2).map((item: any) => ({ ...item, resultType: 'course' })),
-        ];
+        if (variant === 'page') {
+          // Page variant: Only search current type for better performance
+          const result = await getUnifiedRecommendations({ 
+            type: currentType, 
+            query: searchQuery, 
+            page: 1 
+          });
+          
+          if (currentType === 'institutes') {
+            suggestions = (result.institutes || []).slice(0, 5).map((item: any) => ({ ...item, resultType: 'institute' }));
+          } else if (currentType === 'programs') {
+            suggestions = (result.programs || []).slice(0, 5).map((item: any) => ({ ...item, resultType: 'program' }));
+          } else {
+            suggestions = (result.courses || []).slice(0, 5).map((item: any) => ({ ...item, resultType: 'course' }));
+          }
+        } else {
+          // Header variant: Search all types (multi-type search)
+          const [instituteResult, programResult, courseResult] = await Promise.all([
+            getUnifiedRecommendations({ type: 'institutes', query: searchQuery, page: 1 }),
+            getUnifiedRecommendations({ type: 'programs', query: searchQuery, page: 1 }),
+            getUnifiedRecommendations({ type: 'courses', query: searchQuery, page: 1 }),
+          ]);
+
+          // Combine and limit results (3 institutes, 2 programs, 2 courses)
+          suggestions = [
+            ...(instituteResult.institutes || []).slice(0, 3).map((item: any) => ({ ...item, resultType: 'institute' })),
+            ...(programResult.programs || []).slice(0, 2).map((item: any) => ({ ...item, resultType: 'program' })),
+            ...(courseResult.courses || []).slice(0, 2).map((item: any) => ({ ...item, resultType: 'course' })),
+          ];
+        }
 
         setSearchSuggestions(suggestions);
         if (suggestions.length > 0) {
@@ -75,7 +94,7 @@ export default function SearchSuggestions({
     // Debounce 500ms for better performance
     const timer = setTimeout(fetchSuggestions, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, variant, currentType]);
 
   // Click outside handler to close suggestions
   useEffect(() => {
@@ -118,18 +137,10 @@ export default function SearchSuggestions({
       url += '&type=institutes';
     }
 
-    if (onSearch) {
-      // For page variant, use custom handler
-      setSearchQuery(query);
-      setShowSuggestions(false);
-      setSearchSuggestions([]);
-      setTimeout(() => onSearch(query), 50);
-    } else {
-      // For header variant, navigate
-      router.push(url);
-      setShowSuggestions(false);
-      setSearchQuery("");
-    }
+    // Always navigate to switch tabs properly (both header and page variants)
+    router.push(url);
+    setShowSuggestions(false);
+    setSearchQuery("");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

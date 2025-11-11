@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { hasAppliedToCourse } from '@/lib/utils/applicationStorage'
 import {
   BookOpen,
   Clock,
@@ -19,7 +20,8 @@ import {
   X,
   Plus,
   Search,
-  Filter
+  Filter,
+  CheckCircle2
 } from 'lucide-react'
 
 interface ProgrammesSectionProps {
@@ -27,9 +29,10 @@ interface ProgrammesSectionProps {
   onApplyClick: (courseName: string) => void
   onCourseClick?: (courseName: string) => void
   autoExpand?: boolean
+  instituteId: string
 }
 
-export function ProgrammesSection({ programmes, onApplyClick, onCourseClick, autoExpand = false }: ProgrammesSectionProps) {
+export function ProgrammesSection({ programmes, onApplyClick, onCourseClick, autoExpand = false, instituteId }: ProgrammesSectionProps) {
   const [expandedProgramme, setExpandedProgramme] = useState<string | null>(
     autoExpand && programmes.length > 0 ? programmes[0].name : null
   )
@@ -202,13 +205,24 @@ export function ProgrammesSection({ programmes, onApplyClick, onCourseClick, aut
                                 View Details
                               </Button>
                             )}
-                            <Button
-                              size="sm"
-                              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs"
-                              onClick={() => onApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
-                            >
-                              Apply Now
-                            </Button>
+                            {hasAppliedToCourse(instituteId, `${course.degree}${course.name ? ` in ${course.name}` : ''}`) ? (
+                              <Button
+                                size="sm"
+                                className="bg-green-100 text-green-700 hover:bg-green-200 border border-green-300 text-xs cursor-default"
+                                disabled
+                              >
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Applied
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs"
+                                onClick={() => onApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
+                              >
+                                Apply Now
+                              </Button>
+                            )}
                             {course.brochure && (
                               <Button
                                 variant="outline"
