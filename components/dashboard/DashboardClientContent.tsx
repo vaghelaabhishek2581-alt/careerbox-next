@@ -18,7 +18,6 @@ import { UnifiedFilters } from "@/components/publicCollections/UnifiedFilters";
 import { InstituteCard } from "@/components/publicCollections/InstituteCard";
 import { ProgramCard } from "@/components/publicCollections/ProgramCard";
 import { CourseCard } from "@/components/publicCollections/CourseCard";
-import { LoadingSkeleton } from "@/components/publicCollections/LoadingSkeleton";
 import { getUnifiedRecommendations } from "@/lib/actions/unified-recommendations";
 
 interface DashboardClientContentProps {
