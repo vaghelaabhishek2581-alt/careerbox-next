@@ -70,10 +70,10 @@ export function FacultyStudentSection({ faculties, students }: FacultyStudentSec
         )}
 
         {/* Student Description */}
-        {studentDescription && studentDescription?.value(
+        {studentDescription && studentDescription?.value && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <p className="text-sm text-gray-700 leading-relaxed">
-              {studentDescription?.value}
+              {studentDescription.value}
             </p>
           </div>
         )}
