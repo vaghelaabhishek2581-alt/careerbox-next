@@ -211,6 +211,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
   const [showApplicationModal, setShowApplicationModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string>('')
+  const [applyingCourse, setApplyingCourse] = useState<string | null>(null)
   const [selectedProgrammeId, setSelectedProgrammeId] = useState<string | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [formData, setFormData] = useState<ApplicationFormData>(() => {
@@ -478,6 +479,9 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
 
     if (session?.user) {
       try {
+        // Set loading state for this specific course
+        setApplyingCourse(courseName)
+        
         const courseId = selectedCourseObj?.id
 
         const res = await fetch('/api/student-leads', {
@@ -521,6 +525,9 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
           description: error?.message || 'Failed to submit application. Please try again.',
           variant: "destructive",
         })
+      } finally {
+        // Clear loading state
+        setApplyingCourse(null)
       }
     } else {
       const savedDetails = loadUserDetails()
@@ -1264,8 +1271,16 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                                         <Button
                                           onClick={() => handleApplyClick(`${course.degree}${course.name ? ` in ${course.name}` : ''}`)}
                                           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                          disabled={applyingCourse === `${course.degree}${course.name ? ` in ${course.name}` : ''}`}
                                         >
-                                          Apply Now
+                                          {applyingCourse === `${course.degree}${course.name ? ` in ${course.name}` : ''}` ? (
+                                            <>
+                                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                              Applying...
+                                            </>
+                                          ) : (
+                                            'Apply Now'
+                                          )}
                                         </Button>
                                       )}
                                       {course.brochure?.url && (
@@ -1974,7 +1989,7 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                                 <SelectTrigger className="w-full h-9 text-sm">
                                   <SelectValue placeholder="Choose an exam" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="z-[99999]">
                                   <SelectGroup>
                                     <SelectLabel>Engineering (PCM)</SelectLabel>
                                     <SelectItem value="JEE Main">JEE Main</SelectItem>

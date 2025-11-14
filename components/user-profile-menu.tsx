@@ -73,6 +73,7 @@ export default function UserProfileMenu() {
   const userNavigation = [
     { name: "Overview", href: "/dashboard", icon: Home },
     { name: "Profile", href: "/dashboard/user", icon: Users },
+    { name: "Applied Courses", href: "/user/applied-courses", icon: GraduationCap },
     { name: "Skills", href: "/dashboard/user/skills", icon: BookOpen },
     { name: "Goals", href: "/dashboard/user/goals", icon: Target },
     { name: "Network", href: "/dashboard/user/network", icon: Users },

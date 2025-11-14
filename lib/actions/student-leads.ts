@@ -4,7 +4,9 @@ import { connectToDatabase } from '@/lib/db/mongoose'
 import StudentLead, { IStudentLead } from '@/src/models/StudentLead'
 import Profile from '@/src/models/Profile'
 import User from '@/src/models/User'
+import AdminInstitute from '@/src/models/AdminInstitute'
 import { Types } from 'mongoose'
+import { sendCourseApplicationConfirmation, sendCourseApplicationAdminNotification } from '@/lib/services/email-service'
 
 export type CreateStudentLeadInput = {
   // Authenticated user id if available
@@ -146,7 +148,63 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
 
     // Persist
     const created = await StudentLead.create(doc)
-    return { ok: true, id: created._id.toString() }
+    
+    // Send email notifications asynchronously
+    const applicationId = created._id.toString()
+    
+    // Fetch institute name for better email content
+    let instituteName = input.instituteSlug || 'Institute'
+    if (input.instituteId) {
+      try {
+        const institute = await AdminInstitute.findById(input.instituteId)
+        if (institute) {
+          instituteName = institute.name
+        }
+      } catch (err) {
+        console.error('Failed to fetch institute name:', err)
+      }
+    }
+    
+    // Send confirmation email to user
+    if (email && fullName) {
+      try {
+        await sendCourseApplicationConfirmation(
+          email,
+          fullName,
+          instituteName,
+          input.courseName || 'Course',
+          applicationId
+        )
+        console.log('Confirmation email sent to user:', email)
+      } catch (emailError) {
+        console.error('Failed to send confirmation email to user:', emailError)
+        // Don't fail the entire operation if email fails
+      }
+    }
+    
+    // Send notification email to admin
+    const adminEmail = process.env.ADMIN_EMAIL
+    if (adminEmail && email && fullName) {
+      try {
+        await sendCourseApplicationAdminNotification(
+          adminEmail,
+          fullName,
+          email,
+          phone || '',
+          city || '',
+          instituteName,
+          input.courseName || 'Course',
+          applicationId,
+          eligibilityExams
+        )
+        console.log('Admin notification email sent to:', adminEmail)
+      } catch (emailError) {
+        console.error('Failed to send admin notification email:', emailError)
+        // Don't fail the entire operation if email fails
+      }
+    }
+    
+    return { ok: true, id: applicationId }
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Failed to create lead' }
   }

@@ -42,7 +42,8 @@ export default function Header() {
 
   const shouldHideHeader =
     pathname?.startsWith("/auth/") ||
-    pathname?.startsWith("/dashboard/");
+    pathname?.startsWith("/dashboard/") ||
+    pathname?.startsWith("/admin/");
 
   if (shouldHideHeader) {
     return null; // Don't show header on auth and dashboard pages
