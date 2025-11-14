@@ -8,7 +8,6 @@ export const config = {
     // Protected dashboard sub-routes that need authentication
     '/dashboard/:path+',
     '/onboarding/:path*',
-    '/profile/:path*',
     // Protected routes without /dashboard prefix
     '/admin/:path*',
     '/business/:path*',
@@ -183,10 +182,6 @@ export default withAuth(
           return true
         }
 
-        // Allow public access to main dashboard page (unified explore page)
-        if (pathname === '/dashboard') {
-          return true
-        }
 
         // Protected routes that require authentication
         const protectedRoutes = [

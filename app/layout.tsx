@@ -57,10 +57,18 @@ export const metadata: Metadata = {
     description: 'Empowering Careers, Transforming Lives. Find best colleges, courses, and career guidance in India.',
     images: [
       {
-        url: '/cboxLogo.png',
+        url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cboxLogo.png`,
         width: 1200,
         height: 630,
         alt: 'CareerBox - Your Career Partner',
+        type: 'image/png',
+      },
+      {
+        url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/web/icon-512.png`,
+        width: 512,
+        height: 512,
+        alt: 'CareerBox Logo',
+        type: 'image/png',
       },
     ],
   },
@@ -70,7 +78,7 @@ export const metadata: Metadata = {
     creator: '@careerbox',
     title: 'CareerBox | Your Pathway to Professional Excellence',
     description: 'Empowering Careers, Transforming Lives. Find best colleges, courses, and career guidance in India.',
-    images: ['/cboxLogo.png'],
+    images: [`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cboxLogo.png`],
   },
   robots: {
     index: true,
@@ -96,6 +104,30 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Additional Open Graph tags for better social media support */}
+        <meta property="og:image:secure_url" content={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cboxLogo.png`} />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="CareerBox - Your Career Partner" />
+
+        {/* WhatsApp specific - uses Open Graph tags above */}
+        <meta property="og:site_name" content="CareerBox" />
+        <meta property="og:locale" content="en_IN" />
+
+        {/* Twitter Card tags */}
+        <meta name="twitter:image" content={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cboxLogo.png`} />
+        <meta name="twitter:image:alt" content="CareerBox - Your Career Partner" />
+
+        {/* Theme color */}
+        <meta name="theme-color" content="#3b82f6" />
+        <meta name="msapplication-TileColor" content="#3b82f6" />
+
+        {/* Additional meta for better mobile experience */}
+        <meta name="format-detection" content="telephone=no" />
+        <link rel="canonical" href={process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'} />
+      </head>
       <body className={inter.className} suppressHydrationWarning>
         <Providers>
           <ReduxProvider>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 
 interface StudentProfile {
   name: string
@@ -13,7 +12,6 @@ interface StudentProfile {
 
 export function useProfileCompletion() {
   const { data: session, status } = useSession()
-  const router = useRouter()
   const [profile, setProfile] = useState<StudentProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -43,18 +41,7 @@ export function useProfileCompletion() {
         const data = await response.json()
         setProfile(data.data)
 
-        // If profile is incomplete, redirect to onboarding
-        if (!data.data.profileComplete) {
-          const isRequiredFieldsMissing = !data.data.name || !data.data.email || !data.data.phone || !data.data.city
-          
-          if (isRequiredFieldsMissing) {
-            // Only redirect if not already on onboarding page
-            if (window.location.pathname !== '/onboarding') {
-              router.push('/onboarding')
-              return
-            }
-          }
-        }
+        // Do not auto-redirect; surface completion status only
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error')
@@ -64,7 +51,7 @@ export function useProfileCompletion() {
     }
 
     checkProfileCompletion()
-  }, [session, status, router])
+  }, [session, status])
 
   const isProfileComplete = () => {
     if (!profile) return false

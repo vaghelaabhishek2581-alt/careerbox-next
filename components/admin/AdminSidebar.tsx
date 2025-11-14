@@ -1,46 +1,23 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import UserProfileMenu from "@/components/user-profile-menu";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Home,
-  Users,
   FileText,
-  CreditCard,
-  BarChart3,
-  Settings,
   Shield,
-  ChevronDown,
-  ChevronRight,
   Menu,
   X,
   UserCheck,
   Building2,
   Briefcase,
-  AlertTriangle,
-  TrendingUp,
-  Database,
   Mail,
   Bell,
   Activity,
-  Globe,
-  UserPlus
+  Compass,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -49,181 +26,87 @@ interface SidebarProps {
   onToggle?: () => void;
 }
 
-const navigationItems = [
+const navigationSections = [
   {
-    title: "Overview",
-    href: "/admin",
-    icon: Home,
-    badge: null,
-  },
-  {
-    title: "User Management",
-    icon: Users,
+    title: "Dashboard",
     items: [
       {
-        title: "All Users",
-        href: "/admin/users",
-        icon: Users,
-        badge: "2,456",
+        title: "Overview",
+        href: "/admin",
+        icon: Home,
       },
       {
-        title: "Role Management",
-        href: "/admin/users/roles",
-        icon: UserCheck,
-        badge: null,
-      },
-      {
-        title: "Suspended Users",
-        href: "/admin/users/suspended",
-        icon: AlertTriangle,
-        badge: "12",
+        title: "Explore Programs",
+        href: "/recommendation-collections",
+        icon: Compass,
       },
     ],
   },
   {
     title: "Registration Management",
-    icon: FileText,
     items: [
       {
-        title: "Pending Reviews",
-        href: "/admin/registrations/pending",
-        icon: FileText,
-        badge: "23",
-      },
-      {
-        title: "Institute Applications",
-        href: "/admin/registrations/institutes",
-        icon: Building2,
-        badge: "156",
-      },
-      {
-        title: "Business Applications",
-        href: "/admin/registrations/businesses",
-        icon: Briefcase,
-        badge: "89",
-      },
-      {
-        title: "All Applications",
+        title: "All Registrations",
         href: "/admin/registrations",
-        icon: Database,
-        badge: null,
+        icon: FileText,
+      },
+      {
+        title: "Counseling Inquiries",
+        href: "/admin/counseling",
+        icon: UserCheck,
+      },
+      {
+        title: "Business Inquiries",
+        href: "/admin/inquiries",
+        icon: Briefcase,
       },
     ],
   },
   {
-    title: "Subscription Management",
-    icon: CreditCard,
+    title: "Institute Management",
     items: [
       {
-        title: "Active Subscriptions",
-        href: "/admin/subscriptions/active",
-        icon: CreditCard,
-        badge: "1,234",
+        title: "All Institutes",
+        href: "/admin/institutes",
+        icon: Building2,
       },
       {
-        title: "Expired Subscriptions",
-        href: "/admin/subscriptions/expired",
-        icon: AlertTriangle,
-        badge: "45",
-      },
-      {
-        title: "Grant Free Access",
-        href: "/admin/subscriptions/grant",
-        icon: Shield,
-        badge: null,
-      },
-      {
-        title: "Billing Reports",
-        href: "/admin/subscriptions/reports",
-        icon: BarChart3,
-        badge: null,
+        title: "Add Institute",
+        href: "/admin/institutes/new",
+        icon: Building2,
       },
     ],
   },
   {
     title: "Student Leads",
-    href: "/admin/student-leads",
-    icon: UserPlus,
-    badge: null,
-  },
-  {
-    title: "Analytics & Reports",
-    href: "/admin/analytics",
-    icon: BarChart3,
-    badge: null,
-  },
-  {
-    title: "Admin Institutes",
-    icon: CreditCard,
     items: [
       {
-        title: "Add Institute",
-        href: "/admin/institutes/new",
-        icon: CreditCard,
-        badge: "1,234",
-      },
-      {
-        title: "Get Institutes",
-        href: "/admin/institutes",
-        icon: CreditCard,
-        badge: "1,234",
+        title: "All Student Leads",
+        href: "/admin/student-leads",
+        icon: UserCheck,
       },
     ],
   },
   {
-    title: "System Health",
-    href: "/admin/health",
-    icon: Activity,
-    badge: null,
-  },
-  {
     title: "Communication",
-    icon: Mail,
     items: [
       {
         title: "Email Templates",
         href: "/admin/email-templates",
         icon: Mail,
-        badge: null,
       },
       {
         title: "Notifications",
         href: "/admin/notifications",
         icon: Bell,
-        badge: "5",
-      },
-      {
-        title: "Announcements",
-        href: "/admin/announcements",
-        icon: Globe,
-        badge: null,
       },
     ],
-  },
-  {
-    title: "Platform Settings",
-    href: "/admin/settings",
-    icon: Settings,
-    badge: null,
   },
 ];
 
 export default function AdminSidebar({ className, isCollapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [expandedItems, setExpandedItems] = useState<string[]>([
-    "User Management",
-    "Registration Management",
-    "Subscription Management"
-  ]);
-
-  const toggleExpanded = (title: string) => {
-    setExpandedItems(prev =>
-      prev.includes(title)
-        ? prev.filter(item => item !== title)
-        : [...prev, title]
-    );
-  };
 
   const isActive = (href: string) => {
     if (!pathname) return false;
@@ -233,106 +116,40 @@ export default function AdminSidebar({ className, isCollapsed = false, onToggle 
     return pathname.startsWith(href);
   };
 
-  const hasActiveChild = (items: any[]) => {
-    return items?.some(item => isActive(item.href));
-  };
+  const renderSection = (section: any) => {
+    if (isCollapsed) return null;
 
-  const renderNavItem = (item: any, isChild = false) => {
-    const Icon = item.icon;
-    const active = isActive(item.href);
-    
-    if (item.items) {
-      const isExpanded = expandedItems.includes(item.title);
-      const hasActive = hasActiveChild(item.items);
-      
-      return (
-        <Collapsible
-          key={item.title}
-          open={isExpanded}
-          onOpenChange={() => toggleExpanded(item.title)}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start gap-3 h-10 px-3",
-                hasActive && "bg-red-50 text-red-700 border-r-2 border-red-600",
-                isCollapsed && "justify-center px-2"
-              )}
-            >
-              <Icon className={cn("h-4 w-4 flex-shrink-0", hasActive && "text-red-600")} />
-              {!isCollapsed && (
-                <>
-                  <span className="flex-1 text-left">{item.title}</span>
-                  {isExpanded ? (
-                    <ChevronDown className="h-3 w-3" />
-                  ) : (
-                    <ChevronRight className="h-3 w-3" />
-                  )}
-                </>
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          {!isCollapsed && (
-            <CollapsibleContent className="space-y-1">
-              <div className="ml-4 border-l border-gray-200 pl-4 space-y-1">
-                {item.items.map((subItem: any) => renderNavItem(subItem, true))}
-              </div>
-            </CollapsibleContent>
-          )}
-        </Collapsible>
-      );
-    }
+    return (
+      <div key={section.title} className="mb-6">
+        {/* Section Title */}
+        <h3 className="px-3 mb-2 text-xs font-bold text-gray-900 uppercase tracking-wider">
+          {section.title}
+        </h3>
 
-    const content = (
-      <Button
-        key={item.href}
-        variant="ghost"
-        onClick={() => router.push(item.href)}
-        className={cn(
-          "w-full justify-start gap-3 h-10 px-3",
-          active && "bg-red-50 text-red-700 border-r-2 border-red-600",
-          isChild && "h-9 text-sm",
-          isCollapsed && "justify-center px-2"
-        )}
-      >
-        <Icon className={cn("h-4 w-4 flex-shrink-0", active && "text-red-600")} />
-        {!isCollapsed && (
-          <>
-            <span className="flex-1 text-left">{item.title}</span>
-            {item.badge && (
-              <Badge 
-                variant="secondary" 
+        {/* Section Links */}
+        <div className="space-y-1">
+          {section.items.map((item: any) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+
+            return (
+              <Button
+                key={item.href}
+                variant="ghost"
+                onClick={() => router.push(item.href)}
                 className={cn(
-                  "text-xs h-5 px-1.5",
-                  active ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
+                  "w-full justify-start gap-3 h-9 px-3 text-sm",
+                  active && "bg-red-50 text-red-700 font-medium border-r-2 border-red-600"
                 )}
               >
-                {item.badge}
-              </Badge>
-            )}
-          </>
-        )}
-      </Button>
+                <Icon className={cn("h-4 w-4 flex-shrink-0", active && "text-red-600")} />
+                <span className="flex-1 text-left">{item.title}</span>
+              </Button>
+            );
+          })}
+        </div>
+      </div>
     );
-
-    if (isCollapsed && item.badge) {
-      return (
-        <TooltipProvider key={item.href}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {content}
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>{item.title}</p>
-              {item.badge && <p className="text-xs opacity-75">{item.badge}</p>}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-
-    return content;
   };
 
   return (
@@ -371,8 +188,8 @@ export default function AdminSidebar({ className, isCollapsed = false, onToggle 
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-2">
-          {navigationItems.map((item) => renderNavItem(item))}
+        <nav>
+          {navigationSections.map((section) => renderSection(section))}
         </nav>
       </ScrollArea>
 

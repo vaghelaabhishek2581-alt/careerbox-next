@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { ObjectId } from 'mongodb'
 import { z } from 'zod'
-import clientPromise from '../../../db'
+import { connectToDatabase } from '@/lib/db/mongodb'
 
 const validateSchema = z.object({
   publicId: z
@@ -44,19 +44,20 @@ const validateSchema = z.object({
  */
 export async function POST (request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser(request)
+    if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { userId } = authResult
 
     const data = await request.json()
     const { publicId } = validateSchema.parse(data)
 
-    const client = await clientPromise
-    const db = client.db()
+    const { db } = await connectToDatabase()
 
     // Validate ObjectId format
-    if (!ObjectId.isValid(session.user.id)) {
+    if (!ObjectId.isValid(userId)) {
       return NextResponse.json(
         { error: 'Invalid user ID format' },
         { status: 400 }
@@ -65,7 +66,7 @@ export async function POST (request: NextRequest) {
 
     // Check if publicId exists for any other user
     const existingUser = await db.collection('users').findOne({
-      _id: { $ne: new ObjectId(session.user.id) },
+      _id: { $ne: new ObjectId(userId) },
       'personalDetails.publicProfileId': publicId
     })
 
