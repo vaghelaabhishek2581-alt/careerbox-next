@@ -91,28 +91,39 @@ export function useProfileIdSocketValidation() {
   // API fallback validation
   const validateViaAPI = useCallback(async (profileId: string): Promise<ValidationResult> => {
     try {
-      const response = await fetch('/api/profile/validate-id', {
+      const response = await fetch('/api/user/profile/validate-id', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ profileId })
+        body: JSON.stringify({ publicId: profileId })
       })
 
-      const data = await response.json()
+      // Check if response has content before parsing JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format - expected JSON')
+      }
+
+      const text = await response.text()
+      if (!text.trim()) {
+        throw new Error('Empty response from server')
+      }
+
+      const data = JSON.parse(text)
       console.log('🔍 API validation response:', data)
 
       if (!response.ok) {
-        throw new Error(data.message || 'Validation failed')
+        throw new Error(data.error || 'Validation failed')
       }
 
-      // The API returns success: true/false, but we need to handle both cases
+      // The API returns { available: boolean, suggestions: string[] }
       return {
         profileId,
-        isValid: data.isValid,
-        message: data.message,
+        isValid: data.available,
+        message: data.available ? 'Profile ID is available' : 'Profile ID is already taken',
         suggestions: data.suggestions || [],
-        isOwnProfile: data.isOwnProfile || false
+        isOwnProfile: false
       }
     } catch (error) {
       console.error('API validation error:', error)

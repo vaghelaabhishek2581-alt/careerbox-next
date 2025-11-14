@@ -501,7 +501,7 @@ export const CourseForm: React.FC<CourseFormProps> = ({
                         {/* Course Dates */}
                         <div className="space-y-4">
                             <h3 className="text-lg font-medium">Course Schedule</h3>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {/* Course Start Date */}
                                 <FormField
@@ -607,7 +607,7 @@ export const CourseForm: React.FC<CourseFormProps> = ({
                     role="dialog"
                     aria-modal="true"
                     aria-label={isEditing ? 'Edit Course' : 'Create New Course'}
-                    className="fixed inset-0 z-50 mt-[10vh] rounded-t-2xl bg-background overflow-hidden"
+                    className="fixed inset-0 z-50 mt-[18vh] rounded-t-2xl bg-background overflow-hidden"
                 >
                     <header className="flex items-center justify-between px-6 py-4 border-b bg-orange-50">
                         <h1 className="text-lg font-semibold">

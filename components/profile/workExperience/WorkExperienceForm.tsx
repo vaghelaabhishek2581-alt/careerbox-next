@@ -748,14 +748,14 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
   );
 
   if (variant === 'full-screen') {
-    console.log('🔍 Modal render check:', { 
-      open, 
-      variant, 
-      isEditing, 
-      isEditingSpecificPosition, 
+    console.log('🔍 Modal render check:', {
+      open,
+      variant,
+      isEditing,
+      isEditingSpecificPosition,
       editingPositionId,
       experienceId: experience?.id,
-      positionsCount: experience?.positions?.length 
+      positionsCount: experience?.positions?.length
     });
     if (!open) return null;
     return (
@@ -765,7 +765,7 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
           role="dialog"
           aria-modal="true"
           aria-label={isEditing ? 'Edit Work Experience' : 'Add Work Experience'}
-          className="fixed inset-0 z-50 mt-[10vh] rounded-t-2xl bg-background overflow-hidden"
+          className="fixed inset-0 z-50 mt-[18vh] rounded-t-2xl bg-background overflow-hidden"
         >
           <header className="flex items-center justify-between px-6 py-4 border-b bg-blue-100">
             <h1 className="text-lg font-semibold">

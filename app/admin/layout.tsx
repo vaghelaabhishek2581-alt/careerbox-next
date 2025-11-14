@@ -14,7 +14,6 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { data: session, status } = useSession();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Check authentication and admin access
@@ -40,20 +39,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <div className="flex h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Desktop Sidebar */}
-      <div className={cn(
-        "hidden lg:flex flex-col transition-all duration-300 ease-in-out",
-        sidebarCollapsed ? "w-16" : "w-64"
-      )}>
+      <div className="hidden lg:flex flex-col w-64">
         <AdminSidebar
-          isCollapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="h-full"
         />
       </div>

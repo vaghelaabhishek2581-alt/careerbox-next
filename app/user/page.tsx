@@ -83,7 +83,7 @@ export default function ModernProfileDashboard() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Profile</h3>
             <p className="text-red-600 mb-6 text-sm">{error}</p>
-            <Button 
+            <Button
               onClick={() => dispatch(fetchProfile())}
               className="w-full"
             >

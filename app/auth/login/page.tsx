@@ -53,16 +53,10 @@ export default function LoginPage() {
           // Handle NextAuth error
           console.error("NextAuth sign in failed:", nextAuthResult.error);
         }
-
-        // Check if user needs onboarding
-        const sessionResponse = await apiClient.get("/api/auth/session");
-        const sessionData = sessionResponse.data as any;
-
-        if (sessionData?.user?.needsOnboarding) {
-          router.push("/onboarding");
-        } else {
-          router.push("/dashboard");
-        }
+        // Navigate to intended destination; middleware will handle onboarding if required
+        const params = new URLSearchParams(window.location.search);
+        const callbackUrl = params.get('callbackUrl');
+        router.push(callbackUrl || "/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -71,7 +65,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn("google", { callbackUrl: "/onboarding" });
+      await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
       console.error("Google sign-in failed:", error);
     }

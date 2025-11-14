@@ -7,12 +7,15 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SheetTitle } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Menu,
   Phone,
   Mail,
   Home,
   MessageCircle,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "./logo";
@@ -134,8 +137,41 @@ export default function Header() {
 
             {/* Desktop CTA Buttons or User Profile */}
             <div className="hidden lg:flex items-center space-x-4">
-              {status === "authenticated" ? (
-                <UserProfileMenu />
+              {status === "loading" ? (
+                <div className="flex items-center gap-3">
+                  <div className="text-right space-y-1.5">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-40" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
+              ) : status === "authenticated" && session?.user ? (
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className={cn(
+                      "text-sm font-medium",
+                      isScrolled ? "text-gray-900" : "text-gray-800"
+                    )}>
+                      {session.user.name || session.user.email?.split('@')[0] || 'User'}
+                    </p>
+                    <p className={cn(
+                      "text-xs",
+                      isScrolled ? "text-gray-500" : "text-gray-600"
+                    )}>
+                      {session.user.email}
+                    </p>
+                    {session.user.activeRole && (
+                      <p className={cn(
+                        "text-xs font-medium capitalize",
+                        isScrolled ? "text-blue-600" : "text-blue-700"
+                      )}>
+                        {session.user.activeRole}
+                      </p>
+                    )}
+                  </div>
+                  <UserProfileMenu />
+                </div>
               ) : (
                 <>
                   <Link href="/auth/signup?mode=signin">
@@ -203,8 +239,39 @@ export default function Header() {
                   </nav>
 
                   <div className="pt-4 border-t border-gray-200 space-y-3">
-                    {status === "authenticated" ? (
-                      <div className="px-4">
+                    {status === "loading" ? (
+                      <div className="px-4 space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Skeleton className="h-12 w-12 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-40" />
+                            <Skeleton className="h-3 w-20" />
+                          </div>
+                        </div>
+                      </div>
+                    ) : status === "authenticated" && session?.user ? (
+                      <div className="px-4 space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Avatar className="h-12 w-12">
+                            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
+                              {session.user.name?.charAt(0) || session.user.email?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {session.user.name || session.user.email?.split('@')[0] || 'User'}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {session.user.email}
+                            </p>
+                            {session.user.activeRole && (
+                              <p className="text-xs font-medium text-blue-600 capitalize mt-1">
+                                {session.user.activeRole}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                         <UserProfileMenu />
                       </div>
                     ) : (
@@ -235,8 +302,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Breadcrumb */}
-      <Breadcrumb />
+
     </>
   );
 }

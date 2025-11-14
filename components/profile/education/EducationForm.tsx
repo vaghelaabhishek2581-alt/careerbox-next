@@ -339,7 +339,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({
           role="dialog"
           aria-modal="true"
           aria-label={isEditing ? 'Edit Education' : 'Add Education'}
-          className="fixed inset-0 z-50 mt-[10vh] rounded-t-2xl bg-background overflow-hidden"
+          className="fixed inset-0 z-50 mt-[18vh] rounded-t-2xl bg-background overflow-hidden"
         >
           <header className="flex items-center justify-between px-6 py-4 border-b">
             <h1 className="text-lg font-semibold">

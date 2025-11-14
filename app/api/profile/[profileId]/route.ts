@@ -1,44 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth/unified-auth'
-import { connectToDatabase } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import Profile from '@/src/models/Profile'
+import { Business, Institute } from '@/src/models'
 import { UserProfile, BusinessProfile, InstituteProfile } from '@/lib/types/unified.types'
 
-// GET /api/profile/[profileId] - Fetch profile by public profile ID
+// GET /api/profile/[profileId] - Fetch public profile by publicProfileId
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ profileId: string }> }
 ) {
   try {
-    const authCheck = await requireAuth(req)
-    if (authCheck.error) return authCheck.response
-
     const { profileId } = await params
-    const { db } = await connectToDatabase()
+    await connectToDatabase()
 
-    // Try to find user profile first
-    let profile = await db.collection('users').findOne({
+    // Try to find user profile first (only public profiles)
+    let profile: any = await Profile.findOne({
       'personalDetails.publicProfileId': profileId,
-      status: 'active'
-    })
+      isPublic: true // isPublic is at root level, not in personalDetails
+    }).lean().exec()
 
     if (profile) {
       // Increment profile view count
-      await db.collection('users').updateOne(
-        { _id: profile._id },
+      await Profile.findByIdAndUpdate(
+        profile._id,
         { $inc: { 'stats.profileViews': 1 } }
       )
 
+      // Convert MongoDB document to plain object and sanitize for public access
       const userProfile: UserProfile = {
         id: profile._id.toString(),
-        name: profile.name,
-        email: profile.email,
+        name: profile.personalDetails?.firstName && profile.personalDetails?.lastName 
+          ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
+          : profile.name || 'User',
+        email: profile.personalDetails?.email || profile.email, // Only show if public
         role: profile.role,
         userType: profile.userType,
         profileImage: profile.profileImage,
         coverImage: profile.coverImage,
-        bio: profile.bio,
-        location: profile.location,
-        website: profile.website,
+        bio: profile.personalDetails?.bio || profile.bio,
+        location: profile.personalDetails?.city && profile.personalDetails?.state
+          ? `${profile.personalDetails.city}, ${profile.personalDetails.state}`
+          : profile.location,
+        website: profile.personalDetails?.website || profile.website,
         verified: profile.verified || false,
         emailVerified: profile.emailVerified || false,
         status: profile.status || 'active',
@@ -46,23 +49,23 @@ export async function GET(
         personalDetails: profile.personalDetails,
         skills: profile.skills || [],
         languages: profile.languages || [],
-        workExperiences: profile.workExperiences || [],
+        workExperiences: profile.workExperience || [],
         education: profile.education || [],
         certifications: profile.certifications || [],
         achievements: profile.achievements || [],
         contacts: profile.contacts || [],
         socialLinks: profile.socialLinks,
         address: profile.address,
-        stats: profile.stats,
+        stats: profile.stats || { profileViews: 0, connections: 0 },
         progress: profile.progress,
         roles: profile.roles || [],
         activeRole: profile.activeRole,
-        permissions: profile.permissions || [],
-        needsOnboarding: profile.needsOnboarding || false,
-        needsRoleSelection: profile.needsRoleSelection || false,
+        permissions: [], // Don't expose permissions for public profiles
+        needsOnboarding: false, // Don't expose onboarding status
+        needsRoleSelection: false, // Don't expose role selection status
         provider: profile.provider || 'credentials',
-        privacySettings: profile.privacySettings,
-        notificationPreferences: profile.notificationPreferences,
+        privacySettings: undefined, // Don't expose privacy settings
+        notificationPreferences: undefined, // Don't expose notification preferences
         followers: profile.followers || [],
         following: profile.following || [],
         createdAt: profile.createdAt,
@@ -78,15 +81,15 @@ export async function GET(
     }
 
     // Try to find business profile
-    profile = await db.collection('businesses').findOne({
+    profile = await Business.findOne({
       publicProfileId: profileId,
       status: 'active'
-    })
+    }).lean().exec()
 
     if (profile) {
       // Increment profile view count
-      await db.collection('businesses').updateOne(
-        { _id: profile._id },
+      await Business.findByIdAndUpdate(
+        profile._id,
         { $inc: { 'stats.profileViews': 1 } }
       )
 
@@ -122,15 +125,15 @@ export async function GET(
     }
 
     // Try to find institute profile
-    profile = await db.collection('institutes').findOne({
+    profile = await Institute.findOne({
       publicProfileId: profileId,
       status: 'active'
-    })
+    }).lean().exec()
 
     if (profile) {
       // Increment profile view count
-      await db.collection('institutes').updateOne(
-        { _id: profile._id },
+      await Institute.findByIdAndUpdate(
+        profile._id,
         { $inc: { 'stats.profileViews': 1 } }
       )
 

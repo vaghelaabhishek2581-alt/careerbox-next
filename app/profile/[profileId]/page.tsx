@@ -1,9 +1,10 @@
-import { Suspense } from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import ProfileView from '@/components/profile/ProfileView'
-import { connectToDatabase } from '@/lib/db/mongodb'
-import { Profile, Institute, Business } from '@/src/models'
+import { connectToDatabase } from '@/lib/db/mongoose'
+import Profile from '@/src/models/Profile'
+import { Institute, Business } from '@/src/models'
+import Header from '@/components/header'
+import PublicProfileClient from './PublicProfileClient.tsx'
 
 interface ProfilePageProps {
   params: Promise<{
@@ -13,14 +14,14 @@ interface ProfilePageProps {
 
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
   const { profileId } = await params
-  
+
   try {
     await connectToDatabase()
-    
-    // Try to find user profile
+
+    // Try to find user profile by publicProfileId
     let profile: any = await Profile.findOne({
       'personalDetails.publicProfileId': profileId,
-      status: 'active'
+      isPublic: true // Only show public profiles (isPublic is at root level)
     }).lean().exec()
 
     if (!profile) {
@@ -46,23 +47,66 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       }
     }
 
-    const name = profile?.name || profile?.companyName || profile?.instituteName || 'Unknown'
-    const description = profile?.bio || profile?.description || `View ${name}'s profile on CareerBox`
+    // Extract name based on profile type
+    const name = profile?.personalDetails?.firstName && profile?.personalDetails?.lastName
+      ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
+      : profile?.companyName || profile?.instituteName || 'Unknown'
+
+    const bio = profile?.personalDetails?.bio || profile?.bio || profile?.description || `View ${name}'s profile on CareerBox`
+    const profession = profile?.personalDetails?.profession || profile?.personalDetails?.professionalHeadline || ''
 
     return {
-      title: `${name} | CareerBox`,
-      description,
+      title: `${name} (@${profileId}) | CareerBox`,
+      description: bio.length > 160 ? `${bio.substring(0, 157)}...` : bio,
+      keywords: [
+        name,
+        profileId,
+        'CareerBox',
+        'professional profile',
+        profession,
+        'career',
+        'portfolio'
+      ].filter(Boolean).join(', '),
+      authors: [{ name }],
       openGraph: {
-        title: `${name} | CareerBox`,
-        description,
-        images: profile?.profileImage || profile?.logo ? [profile.profileImage || profile.logo] : undefined,
+        title: `${name} (@${profileId})`,
+        description: `${profession ? profession + ' - ' : ''}${bio}`,
+        type: 'profile',
+        url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${profileId}`,
+        images: profile?.profileImage || profile?.logo ? [
+          {
+            url: profile.profileImage || profile.logo,
+            width: 400,
+            height: 400,
+            alt: `${name}'s profile picture`,
+          }
+        ] : [
+          {
+            url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/og-default.png`,
+            width: 1200,
+            height: 630,
+            alt: 'CareerBox Profile',
+          }
+        ],
+        siteName: 'CareerBox',
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${name} | CareerBox`,
-        description,
-        images: profile?.profileImage || profile?.logo ? [profile.profileImage || profile.logo] : undefined,
-      }
+        title: `${name} (@${profileId})`,
+        description: `${profession ? profession + ' - ' : ''}${bio}`,
+        images: profile?.profileImage || profile?.logo ? [profile.profileImage || profile.logo] : [],
+      },
+      alternates: {
+        canonical: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${profileId}`,
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+        },
+      },
     }
   } catch (error) {
     console.error('Error generating metadata:', error)
@@ -76,35 +120,53 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { profileId } = await params
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <Suspense fallback={<ProfileSkeleton />}>
-          <ProfileView profileId={profileId} />
-        </Suspense>
-      </div>
-    </div>
-  )
-}
+  try {
+    await connectToDatabase()
 
-function ProfileSkeleton() {
-  return (
-    <div className="space-y-6">
-      {/* Header Skeleton */}
-      <div className="h-64 bg-muted animate-pulse rounded-lg" />
-      
-      {/* Content Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="h-32 bg-muted animate-pulse rounded-lg" />
-          <div className="h-48 bg-muted animate-pulse rounded-lg" />
-          <div className="h-32 bg-muted animate-pulse rounded-lg" />
-        </div>
-        <div className="space-y-4">
-          <div className="h-48 bg-muted animate-pulse rounded-lg" />
-          <div className="h-32 bg-muted animate-pulse rounded-lg" />
+    console.log('🔍 Searching for profile with publicProfileId:', profileId)
+
+    // First, let's try to find any profile with this publicProfileId (for debugging)
+    const anyProfile = await Profile.findOne({
+      'personalDetails.publicProfileId': profileId
+    }).lean().exec()
+
+    console.log('🔍 Found any profile:', !!anyProfile)
+    if (anyProfile) {
+      console.log('🔍 Profile isPublic status:', (anyProfile as any).isPublic)
+    }
+
+    // Find user profile by publicProfileId
+    const profile: any = await Profile.findOne({
+      'personalDetails.publicProfileId': profileId,
+      isPublic: true // Only show public profiles (isPublic is at root level)
+    }).lean().exec()
+
+    console.log('🔍 Found public profile:', !!profile)
+
+    if (!profile) {
+      console.log('❌ No public profile found for:', profileId)
+      notFound()
+    }
+
+    // Convert MongoDB document to plain object for client component
+    const profileData = {
+      ...profile,
+      _id: profile._id.toString(),
+      userId: profile.userId?.toString(),
+      createdAt: profile.createdAt?.toISOString(),
+      updatedAt: profile.updatedAt?.toISOString(),
+    }
+
+    return (
+      <div className="bg-gray-50">
+        <Header />
+        <div className="min-h-screen mt-28">
+          <PublicProfileClient profile={profileData} />
         </div>
       </div>
-    </div>
-  )
+    )
+  } catch (error) {
+    console.error('Error loading profile:', error)
+    notFound()
+  }
 }

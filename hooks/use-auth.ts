@@ -12,7 +12,7 @@ interface UseAuthOptions {
   skipOnboarding?: boolean
 }
 
-export function useAuth (options: UseAuthOptions = {}) {
+export function useAuth (options: UseAuthOptions = { skipOnboarding: true }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const pathname = usePathname()

@@ -53,7 +53,7 @@ export default function Header() {
   // Fetch notifications and request notification permission
   useEffect(() => {
     fetchNotifications();
-    
+
     // Request browser notification permission
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().then(permission => {
@@ -68,13 +68,13 @@ export default function Header() {
 
     const handleNewNotification = (notification: any) => {
       console.log('🔔 New notification received via socket:', notification);
-      
+
       // Add to notifications list
       setNotifications(prev => [notification, ...(prev || []).slice(0, 9)]); // Keep only 10 most recent
-      
+
       // Increment unread count
       setUnreadCount(prev => prev + 1);
-      
+
       // Show browser notification if permission granted
       if (Notification.permission === 'granted') {
         new Notification(notification.title, {
@@ -98,7 +98,7 @@ export default function Header() {
     try {
       const response = await fetch('/api/notifications?limit=10&status=unread');
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setNotifications(data.data);
         setUnreadCount(data.unreadCount || 0);
@@ -127,9 +127,9 @@ export default function Header() {
 
       if (response.ok) {
         // Update local state
-        setNotifications(prev => 
-          (prev || []).map(notif => 
-            notificationIds.includes(notif.id) 
+        setNotifications(prev =>
+          (prev || []).map(notif =>
+            notificationIds.includes(notif.id)
               ? { ...notif, status: 'read' as const }
               : notif
           )
@@ -152,7 +152,7 @@ export default function Header() {
       });
 
       if (response.ok) {
-        setNotifications(prev => 
+        setNotifications(prev =>
           (prev || []).map(notif => ({ ...notif, status: 'read' as const }))
         );
         setUnreadCount(0);
@@ -247,7 +247,7 @@ export default function Header() {
                 </Button>
               )}
             </div>
-            
+
             <ScrollArea className="h-96">
               {!notifications || notifications.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
@@ -259,9 +259,8 @@ export default function Header() {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                        notification.status === 'unread' ? 'bg-blue-50' : ''
-                      }`}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${notification.status === 'unread' ? 'bg-blue-50' : ''
+                        }`}
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -292,7 +291,7 @@ export default function Header() {
                 </div>
               )}
             </ScrollArea>
-            
+
             {notifications.length > 0 && (
               <>
                 <DropdownMenuSeparator />

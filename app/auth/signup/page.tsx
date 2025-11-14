@@ -51,11 +51,7 @@ function AuthPageContent() {
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
-      if (session.user.needsOnboarding) {
-        router.push("/onboarding");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
     }
   }, [session, status, router]);
 
@@ -151,7 +147,7 @@ function AuthPageContent() {
             password,
             redirect: false,
           });
-          
+
           if (result?.error) {
             setError("Session creation failed. Please try again.");
           } else if (result?.ok) {
@@ -207,8 +203,7 @@ function AuthPageContent() {
 
     try {
       const result = await signIn("google", {
-        redirect: true,
-        callbackUrl: "/onboarding",
+        redirect: false,
       });
 
       if ((result as any)?.error) {
@@ -380,12 +375,12 @@ function AuthPageContent() {
                       📧 Verification Email Sent
                     </div>
                     <p className="text-sm text-blue-700 mb-3">
-                      We've sent a verification link to <strong>{email}</strong>. 
+                      We've sent a verification link to <strong>{email}</strong>.
                       Please check your email and click the link to verify your account.
                     </p>
                     <p className="text-xs text-blue-600">
                       Didn't receive the email? Check your spam folder or{" "}
-                      <button 
+                      <button
                         className="underline hover:no-underline font-medium"
                         onClick={handleResendVerification}
                         disabled={isLoading}
@@ -592,11 +587,10 @@ function AuthPageContent() {
 
                   <Button
                     type="submit"
-                    className={`w-full h-12 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 ${
-                      mode === "signup"
-                        ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                        : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    }`}
+                    className={`w-full h-12 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 ${mode === "signup"
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      }`}
                     disabled={isLoading}
                   >
                     {isLoading
@@ -604,8 +598,8 @@ function AuthPageContent() {
                         ? "Creating Account..."
                         : "Signing In..."
                       : mode === "signup"
-                      ? "Create Account"
-                      : "Sign In"}
+                        ? "Create Account"
+                        : "Sign In"}
                   </Button>
                 </form>
 
@@ -616,17 +610,16 @@ function AuthPageContent() {
                       : "Don't have an account?"}{" "}
                     <button
                       onClick={toggleMode}
-                      className={`font-semibold hover:underline transition-colors ${
-                        mode === "signup"
-                          ? "text-purple-600 hover:text-purple-700"
-                          : "text-blue-600 hover:text-blue-700"
-                      }`}
+                      className={`font-semibold hover:underline transition-colors ${mode === "signup"
+                        ? "text-purple-600 hover:text-purple-700"
+                        : "text-blue-600 hover:text-blue-700"
+                        }`}
                       disabled={isLoading}
                     >
                       {mode === "signup" ? "Sign in here" : "Sign up here"}
                     </button>
                   </p>
-                  
+
                   {mode === "signin" && (
                     <p className="text-gray-600">
                       <Link
