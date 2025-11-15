@@ -72,7 +72,7 @@ export default function UserProfileMenu() {
   const userNavigation = [
     { name: "Explore", href: "/recommendation-collections", icon: Home },
     { name: "Profile", href: "/user", icon: Users },
-    { name: "Applied Courses", href: "/applied-courses", icon: GraduationCap },
+    { name: "Applied Courses", href: "/user/applied-courses", icon: GraduationCap },
   ];
 
   const registrationNavigation = [
@@ -236,8 +236,8 @@ export default function UserProfileMenu() {
                           }
                         }}
                         className={`cursor-pointer ${isCurrentRole
-                            ? 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
-                            : 'hover:bg-gray-50'
+                          ? 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
+                          : 'hover:bg-gray-50'
                           }`}
                       >
                         <div className="flex items-center gap-3 w-full">
