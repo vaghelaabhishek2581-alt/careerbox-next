@@ -88,14 +88,14 @@ export default function ContactPage() {
     message: '',
     type: 'general'
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -146,7 +146,7 @@ export default function ContactPage() {
               Choose the contact method that works best for you
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {contactMethods.map((method, index) => {
               const IconComponent = method.icon;
@@ -178,7 +178,7 @@ export default function ContactPage() {
                 Fill out the form below and we'll get back to you within 24 hours
               </p>
             </div>
-            
+
             <Card className="shadow-2xl border-0">
               <CardContent className="p-8">
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -189,7 +189,7 @@ export default function ContactPage() {
                       </AlertDescription>
                     </Alert>
                   )}
-                  
+
                   {submitStatus === 'error' && (
                     <Alert variant="destructive">
                       <AlertDescription>
@@ -197,7 +197,7 @@ export default function ContactPage() {
                       </AlertDescription>
                     </Alert>
                   )}
-                  
+
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <Label htmlFor="name">Full Name *</Label>
@@ -211,7 +211,7 @@ export default function ContactPage() {
                         className="mt-2"
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="email">Email Address *</Label>
                       <Input
@@ -225,7 +225,7 @@ export default function ContactPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <Label htmlFor="company">Company/Organization</Label>
@@ -238,7 +238,7 @@ export default function ContactPage() {
                         className="mt-2"
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="type">Inquiry Type *</Label>
                       <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value as ContactFormData['type'])}>
@@ -255,7 +255,7 @@ export default function ContactPage() {
                       </Select>
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="subject">Subject *</Label>
                     <Input
@@ -268,7 +268,7 @@ export default function ContactPage() {
                       className="mt-2"
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="message">Message *</Label>
                     <Textarea
@@ -281,7 +281,7 @@ export default function ContactPage() {
                       className="mt-2"
                     />
                   </div>
-                  
+
                   <Button
                     type="submit"
                     className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
@@ -311,7 +311,7 @@ export default function ContactPage() {
               Quick answers to common questions
             </p>
           </div>
-          
+
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-8">
               {faqs.map((faq, index) => (
@@ -348,7 +348,7 @@ export default function ContactPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-4">
                     <Clock className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
                     <div>
@@ -360,7 +360,7 @@ export default function ContactPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h4 className="font-semibold text-blue-800 mb-2">Schedule a Visit</h4>
                     <p className="text-sm text-blue-700">
@@ -369,11 +369,11 @@ export default function ContactPage() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="relative">
                 <div className="aspect-square rounded-2xl overflow-hidden shadow-lg">
                   <iframe
-  src="https://www.google.com/maps?q=23.0195344,72.558727&z=15&output=embed"
+                    src="https://www.google.com/maps?q=23.0195344,72.558727&z=15&output=embed"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -392,7 +392,7 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-      
+
       {/* Map Section */}
       <section className="py-20">
         <div className="container mx-auto px-6">
@@ -402,11 +402,11 @@ export default function ContactPage() {
               Located in the heart of Ahmedabad's business district
             </p>
           </div>
-          
+
           <div className="max-w-6xl mx-auto">
             <div className="rounded-2xl overflow-hidden shadow-2xl">
               <iframe
-  src="https://www.google.com/maps?q=23.0195344,72.558727&z=15&output=embed"
+                src="https://www.google.com/maps?q=23.0195344,72.558727&z=15&output=embed"
                 width="100%"
                 height="400"
                 style={{ border: 0 }}
@@ -415,7 +415,7 @@ export default function ContactPage() {
                 referrerPolicy="no-referrer-when-downgrade"
               ></iframe>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-8 mt-12">
               <div className="text-center p-6 bg-blue-50 rounded-lg">
                 <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -424,21 +424,21 @@ export default function ContactPage() {
                 <h4 className="font-bold text-gray-900 mb-2">Address</h4>
                 <p className="text-gray-600 text-sm">53, World Business House, Nr. Parimal Garden, Ahmedabad Gujarat India</p>
               </div>
-              
+
               <div className="text-center p-6 bg-green-50 rounded-lg">
                 <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Phone className="h-6 w-6 text-white" />
                 </div>
                 <h4 className="font-bold text-gray-900 mb-2">Phone</h4>
-                <p className="text-gray-600 text-sm">+91 79 1234 5678</p>
+                <p className="text-gray-600 text-sm">+91 99 0967 5185</p>
               </div>
-              
+
               <div className="text-center p-6 bg-purple-50 rounded-lg">
                 <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Mail className="h-6 w-6 text-white" />
                 </div>
                 <h4 className="font-bold text-gray-900 mb-2">Email</h4>
-                <p className="text-gray-600 text-sm">info@careerbox.com</p>
+                <p className="text-gray-600 text-sm">info@careerbox.in</p>
               </div>
             </div>
           </div>

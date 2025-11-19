@@ -199,8 +199,8 @@ export default function TermsPage() {
                 If you have any questions about these Terms of Service, please contact us at:
               </p>
               <div className="bg-gray-50 p-6 rounded-lg mt-4">
-                <p><strong>Email:</strong> info@careerbox.com</p>
-                <p><strong>Phone:</strong> +91 9909675185</p>
+                <p><strong>Email:</strong> info@careerbox.in</p>
+                <p><strong>Phone:</strong> +91 99 0967 5185</p>
                 <p><strong>Address:</strong> 53, World Business House, Nr. Parimal Garden, Ahmedabad Gujarat India</p>
               </div>
             </section>
