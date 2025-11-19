@@ -27,14 +27,14 @@ const contactMethods = [
     icon: Mail,
     title: 'Email Support',
     description: 'Get help via email',
-    contact: 'info@careerbox.com',
+    contact: 'info@careerbox.in',
     availability: '24/7'
   },
   {
     icon: Phone,
     title: 'Phone Support',
     description: 'Talk to our team',
-    contact: '+91 79 1234 5678',
+    contact: '+91 99 0967 5185',
     availability: 'Mon-Fri, 9am-6pm IST'
   },
   {
@@ -342,9 +342,9 @@ export default function ContactPage() {
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Headquarters</h3>
                       <p className="text-gray-600">
-                        Corporate House, Off SG Road<br />
-                        Ahmedabad, Gujarat 380015<br />
-                        India
+                        53, World Business House,<br />
+                        Nr. Parimal Garden, EllisBridge,<br />
+                        Ahmedabad - 380006 (Gujarat) India
                       </p>
                     </div>
                   </div>
@@ -373,7 +373,7 @@ export default function ContactPage() {
               <div className="relative">
                 <div className="aspect-square rounded-2xl overflow-hidden shadow-lg">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d467692.0518120344!2d72.41493271540286!3d23.020474374321485!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x395e848aba5bd449%3A0x4fcedd11614f6516!2sAhmedabad%2C%20Gujarat!5e0!3m2!1sen!2sin!4v1708456789123!5m2!1sen!2sin"
+  src="https://www.google.com/maps?q=23.0195344,72.558727&z=15&output=embed"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -406,7 +406,7 @@ export default function ContactPage() {
           <div className="max-w-6xl mx-auto">
             <div className="rounded-2xl overflow-hidden shadow-2xl">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14688.518147896214!2d72.52049997771043!3d23.02594462319617!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x395e84faa5a36071%3A0x8ead7b72c0e09a1e!2sSG%20Rd%2C%20Ahmedabad%2C%20Gujarat!5e0!3m2!1sen!2sin!4v1708456923456!5m2!1sen!2sin"
+  src="https://www.google.com/maps?q=23.0195344,72.558727&z=15&output=embed"
                 width="100%"
                 height="400"
                 style={{ border: 0 }}
@@ -422,7 +422,7 @@ export default function ContactPage() {
                   <MapPin className="h-6 w-6 text-white" />
                 </div>
                 <h4 className="font-bold text-gray-900 mb-2">Address</h4>
-                <p className="text-gray-600 text-sm">Corporate House, Off SG Road, Ahmedabad, Gujarat 380015</p>
+                <p className="text-gray-600 text-sm">53, World Business House, Nr. Parimal Garden, Ahmedabad Gujarat India</p>
               </div>
               
               <div className="text-center p-6 bg-green-50 rounded-lg">
