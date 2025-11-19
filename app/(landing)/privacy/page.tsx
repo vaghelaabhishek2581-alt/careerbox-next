@@ -312,7 +312,7 @@ export default function PrivacyPage() {
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Privacy Officer</h3>
                 <p><strong>Email:</strong> contact@careerbox.in</p>
                 <p><strong>General Contact:</strong> info@careerbox.in</p>
-                <p><strong>Phone:</strong> +91 9909675185</p>
+                <p><strong>Phone:</strong> +91 99 0967 5185</p>
                 <p><strong>Address:</strong> 53, World Business House, Nr. Parimal Garden, Ahmedabad Gujarat India</p>
               </div>
 

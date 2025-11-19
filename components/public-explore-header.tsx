@@ -90,7 +90,7 @@ export default function PublicExploreHeader() {
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
                 <Phone className="h-3 w-3" />
-                <span>+91 9909675185</span>
+                <span>+91 99 0967 5185</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-3 w-3" />
