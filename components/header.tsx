@@ -70,11 +70,11 @@ export default function Header() {
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-2">
                   <Phone className="h-3 w-3" />
-                  <span>+91 79 1234 5678</span>
+                  <span>+91 99 0967 5185</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Mail className="h-3 w-3" />
-                  <span>info@careerbox.com</span>
+                  <span>info@careerbox.in</span>
                 </div>
               </div>
               <div className="hidden md:block text-xs">

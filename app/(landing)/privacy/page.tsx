@@ -310,10 +310,10 @@ export default function PrivacyPage() {
               
               <div className="bg-gray-50 p-6 rounded-lg mt-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Privacy Officer</h3>
-                <p><strong>Email:</strong> privacy@careerbox.com</p>
-                <p><strong>General Contact:</strong> info@careerbox.com</p>
-                <p><strong>Phone:</strong> +91 79 1234 5678</p>
-                <p><strong>Address:</strong> Corporate House, Off SG Road, Ahmedabad, Gujarat 380015, India</p>
+                <p><strong>Email:</strong> contact@careerbox.in</p>
+                <p><strong>General Contact:</strong> info@careerbox.in</p>
+                <p><strong>Phone:</strong> +91 99 0967 5185</p>
+                <p><strong>Address:</strong> 53, World Business House, Nr. Parimal Garden, Ahmedabad Gujarat India</p>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg mt-6">
