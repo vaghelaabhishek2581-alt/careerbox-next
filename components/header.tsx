@@ -24,8 +24,8 @@ import Breadcrumb from "./breadcrumb";
 import SearchSuggestions from "./SearchSuggestions";
 
 const navigation = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Contact", href: "/contact", icon: MessageCircle },
+  // { name: "Home", href: "/", icon: Home },
+  // { name: "Contact", href: "/contact", icon: MessageCircle },
 ];
 
 export default function Header() {
@@ -111,7 +111,7 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
+            {/* <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
               {navigation.map((item) => {
                 const IconComponent = item.icon;
                 const isActive = pathname === item.href;
@@ -133,7 +133,7 @@ export default function Header() {
                   </Link>
                 );
               })}
-            </nav>
+            </nav> */}
 
             {/* Desktop CTA Buttons or User Profile */}
             <div className="hidden lg:flex items-center space-x-4">
@@ -217,7 +217,7 @@ export default function Header() {
                   </div>
 
                   {/* Mobile Navigation */}
-                  <nav className="flex flex-col space-y-2">
+                  {/* <nav className="flex flex-col space-y-2">
                     {navigation.map((item) => {
                       const IconComponent = item.icon;
                       const isActive = pathname === item.href;
@@ -236,7 +236,7 @@ export default function Header() {
                         </Link>
                       );
                     })}
-                  </nav>
+                  </nav> */}
 
                   <div className="pt-4 border-t border-gray-200 space-y-3">
                     {status === "loading" ? (

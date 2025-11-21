@@ -257,7 +257,7 @@ export default function RegistrationPaymentPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
         <Button 
-          onClick={() => router.push('/dashboard')} 
+          onClick={() => router.push('/recommendation-collections')} 
           className="mt-4"
           variant="outline"
         >

@@ -20,11 +20,11 @@ function RegistrationSuccessContent() {
   }, [searchParams]);
 
   const handleGoToDashboard = () => {
-    router.push('/dashboard/user/registration-status');
+    router.push('/user/registration-status');
   };
 
   const handleGoToHome = () => {
-    router.push('/dashboard');
+    router.push('/recommendation-collections');
   };
 
   if (!registrationType) {
@@ -40,8 +40,8 @@ function RegistrationSuccessContent() {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${registrationType === 'institute'
-        ? 'from-blue-50 to-indigo-100'
-        : 'from-purple-50 to-pink-100'
+      ? 'from-blue-50 to-indigo-100'
+      : 'from-purple-50 to-pink-100'
       } py-12`}>
       <div className="max-w-2xl mx-auto px-4">
         <Card className="text-center">
@@ -130,8 +130,8 @@ function RegistrationSuccessContent() {
               <Button
                 onClick={handleGoToDashboard}
                 className={`${registrationType === 'institute'
-                    ? 'bg-blue-600 hover:bg-blue-700'
-                    : 'bg-purple-600 hover:bg-purple-700'
+                  ? 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-purple-600 hover:bg-purple-700'
                   } text-white`}
               >
                 <ArrowRight className="w-4 h-4 mr-2" />

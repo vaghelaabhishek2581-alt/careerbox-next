@@ -172,7 +172,7 @@ export default function PublicExploreHeader() {
                   </Link>
                 </>
               ) : (
-                <Link href="/dashboard">
+                <Link href="/recommendation-collections">
                   <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                     Go to Dashboard
                   </Button>

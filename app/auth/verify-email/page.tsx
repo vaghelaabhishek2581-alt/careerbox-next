@@ -33,10 +33,10 @@ function VerifyEmailContent() {
       if (response.success) {
         setStatus('success')
         setMessage('Your email has been verified successfully!')
-        
+
         // Redirect to dashboard after 3 seconds
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push('/recommendation-collections')
         }, 3000)
       } else {
         setStatus('error')
@@ -113,7 +113,7 @@ function VerifyEmailContent() {
             {status === 'expired' && 'This verification link has expired'}
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           {message && (
             <Alert>
@@ -126,7 +126,7 @@ function VerifyEmailContent() {
               <p className="text-sm text-gray-600">
                 You will be redirected to your dashboard shortly...
               </p>
-              <Button 
+              <Button
                 onClick={() => router.push('/dashboard')}
                 className="w-full"
               >
@@ -141,7 +141,7 @@ function VerifyEmailContent() {
                 The verification link may be invalid or expired.
               </p>
               <div className="space-y-2">
-                <Button 
+                <Button
                   onClick={resendVerification}
                   disabled={isResending}
                   className="w-full"
@@ -155,7 +155,7 @@ function VerifyEmailContent() {
                     'Resend Verification Email'
                   )}
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => router.push('/auth/signup')}
                   className="w-full"
@@ -172,7 +172,7 @@ function VerifyEmailContent() {
                 Verification links expire after 24 hours for security reasons.
               </p>
               <div className="space-y-2">
-                <Button 
+                <Button
                   onClick={resendVerification}
                   disabled={isResending}
                   className="w-full"
@@ -186,7 +186,7 @@ function VerifyEmailContent() {
                     'Request New Verification Email'
                   )}
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => router.push('/auth/signup')}
                   className="w-full"

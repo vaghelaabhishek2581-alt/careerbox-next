@@ -82,7 +82,7 @@ export default function UserProfileMenu() {
   ];
 
   const roleBasedNavigation = {
-    student: [{ name: "My Applications", href: "/dashboard/user/applications", icon: Briefcase }],
+    student: [{ name: "My Applications", href: "/user/applications", icon: Briefcase }],
     institute: [{ name: "My Institute", href: "/institute", icon: Building2 }],
     admin: [{ name: "Admin Panel", href: "/admin", icon: Activity }],
   };
@@ -221,8 +221,8 @@ export default function UserProfileMenu() {
                               // Navigate to appropriate dashboard
                               const dashboardRoutes: Record<string, string> = {
                                 admin: '/admin',
-                                institute: '/dashboard/institute',
-                                business: '/dashboard/business',
+                                institute: '/institute',
+                                business: '/business',
                                 user: '/user',
                                 student: '/user',
                                 professional: '/user',

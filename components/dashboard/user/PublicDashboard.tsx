@@ -25,7 +25,7 @@ export default function PublicDashboard() {
   const { exams, loading: examsLoading } = useSelector((state: RootState) => state.exams)
   const { institutes, loading: institutesLoading } = useSelector((state: RootState) => state.institute)
   const { applications } = useSelector((state: RootState) => state.applications)
-  
+
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
@@ -36,19 +36,19 @@ export default function PublicDashboard() {
     dispatch(fetchApplications({}))
   }, [dispatch])
 
-  const filteredJobs = jobs.filter(job => 
+  const filteredJobs = jobs.filter(job =>
     job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     job.location.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const filteredCourses = courses.filter(course => 
+  const filteredCourses = courses.filter(course =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     course.category?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const filteredExams = exams.filter(exam => 
+  const filteredExams = exams.filter(exam =>
     exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     exam.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -469,8 +469,8 @@ export default function PublicDashboard() {
                     </div>
                     <Badge variant={
                       application.status === 'accepted' ? 'default' :
-                      application.status === 'rejected' ? 'destructive' :
-                      application.status === 'pending' ? 'secondary' : 'outline'
+                        application.status === 'rejected' ? 'destructive' :
+                          application.status === 'pending' ? 'secondary' : 'outline'
                     }>
                       {application.status}
                     </Badge>
