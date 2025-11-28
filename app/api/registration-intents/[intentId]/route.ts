@@ -1,32 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth/unified-auth';
 import { connectToDatabase } from '@/lib/db/mongodb';
-import RegistrationIntent, { IRegistrationIntent } from '@/src/models/RegistrationIntent';
-
-// Type for lean document to fix Mongoose typing issues
-type LeanRegistrationIntent = {
-  _id: any;
-  userId: any;
-  type: string;
-  status: string;
-  organizationName: string;
-  contactName: string;
-  email: string;
-  contactPhone: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  zipCode?: string;
-  description?: string;
-  website?: string;
-  establishmentYear?: number;
-  adminNotes?: string;
-  subscriptionPlan?: string;
-  reviewedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import RegistrationIntent, { IRegistrationIntent, LeanRegistrationIntent } from '@/src/models/RegistrationIntent';
 
 export async function GET(
   request: NextRequest,

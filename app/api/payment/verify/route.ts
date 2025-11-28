@@ -716,10 +716,10 @@ import { verifyPaymentSignature, getPaymentDetails } from '@/lib/payment/razorpa
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { getAuthenticatedUser } from '@/lib/auth/unified-auth';
 import { z } from 'zod';
-import RegistrationIntent from '@/src/models/RegistrationIntent';
+import RegistrationIntent, { LeanRegistrationIntent } from '@/src/models/RegistrationIntent';
 import User from '@/src/models/User';
 import Subscription from '@/src/models/Subscription';
-import Institute from '@/src/models/Institute';
+import AdminInstitute from '@/src/models/AdminInstitute';
 import Business from '@/src/models/Business';
 import NotificationService from '@/lib/services/notificationService';
 import { ObjectId } from 'mongodb';
@@ -778,7 +778,7 @@ async function generateUniquePublicProfileId(baseName: string, type: Organizatio
     // Check all collections in parallel
     const [profileExists, instituteExists, businessExists] = await Promise.all([
       Profile.exists({ 'personalDetails.publicProfileId': profileId }),
-      Institute.exists({ publicProfileId: profileId }),
+      AdminInstitute.exists({ id: profileId }),
       Business.exists({ publicProfileId: profileId })
     ]);
 
@@ -795,7 +795,7 @@ async function generateUniquePublicProfileId(baseName: string, type: Organizatio
 }
 
 /**
- * Create organization entity (Institute or Business)
+ * Create organization entity (AdminInstitute or Business)
  */
 async function createOrganization(
   intent: any,
@@ -807,7 +807,7 @@ async function createOrganization(
     userId: new ObjectId(userId),
     registrationIntentId: new ObjectId(intent._id),
     name: intent.organizationName,
-    publicProfileId,
+    // publicProfileId - handled specifically per type
     email: intent.email,
     contactPerson: intent.contactName,
     phone: intent.contactPhone,
@@ -828,22 +828,51 @@ async function createOrganization(
   };
 
   if (intent.type === 'institute') {
-    // Check for existing institute (one per user limit)
-    const existingInstitute = await Institute.exists({ userId: new ObjectId(userId) });
-    if (existingInstitute) {
-      throw new Error('User already has an institute registered');
+    // Check if intent links to existing AdminInstitute
+    if (intent.instituteId) {
+      const existingInstitute = await AdminInstitute.findById(intent.instituteId);
+      if (existingInstitute) {
+        // Initialize userIds if it doesn't exist (for old documents)
+        if (!existingInstitute.userIds) {
+          existingInstitute.userIds = [];
+        }
+        if (!existingInstitute.userIds.some((id: any) => id.toString() === userId)) {
+          existingInstitute.userIds.push(new ObjectId(userId));
+          await existingInstitute.save();
+        }
+        return existingInstitute;
+      }
     }
 
-    return new Institute({
-      ...baseData,
-      accreditation: [],
-      studentCount: 0,
-      facultyCount: 0,
-      courseCount: 0
+    // Create new AdminInstitute
+    return new AdminInstitute({
+      id: publicProfileId,
+      slug: publicProfileId,
+      name: intent.organizationName,
+      type: intent.instituteType || 'University',
+      status: 'active',
+      userIds: [new ObjectId(userId)],
+      contact: {
+        email: intent.email,
+        phone: [intent.contactPhone],
+        website: intent.website
+      },
+      location: {
+        address: intent.address,
+        city: intent.city,
+        state: intent.state,
+        pincode: intent.zipCode,
+        country: intent.country
+      },
+      overview: [{ key: 'Description', value: intent.description || 'No description provided' }],
+      establishedYear: intent.establishmentYear,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
   } else {
     return new Business({
       ...baseData,
+      publicProfileId,
       industry: intent.businessCategory || 'General',
       size: intent.organizationSize || 'Small',
       employeeCount: 0,
@@ -993,42 +1022,6 @@ export async function POST(request: NextRequest) {
         });
       })()
     ]);
-
-    // Type assertion for lean document to fix TypeScript error
-    type LeanRegistrationIntent = {
-      _id: any;
-      userId: any;
-      type: string;
-      status: string;
-      organizationName: string;
-      email: string;
-      contactName: string;
-      contactPhone: string;
-      instituteType?: string;
-      instituteCategory?: string;
-      establishmentYear?: number;
-      businessCategory?: string;
-      organizationSize?: string;
-      address: string;
-      city: string;
-      state: string;
-      country: string;
-      zipCode: string;
-      description: string;
-      website?: string;
-      adminNotes?: string;
-      reviewedBy?: any;
-      reviewedAt?: Date;
-      subscriptionPlan?: string;
-      subscriptionAmount?: number;
-      subscriptionGrantedBy?: any;
-      subscriptionGrantedAt?: Date;
-      paymentIntentId?: string;
-      paymentStatus?: string;
-      paidAt?: Date;
-      createdAt: Date;
-      updatedAt: Date;
-    };
 
     const registrationIntentTyped = registrationIntent as unknown as LeanRegistrationIntent;
     if (!registrationIntentTyped || registrationIntentTyped.userId.toString() !== userId) {

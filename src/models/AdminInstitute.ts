@@ -30,7 +30,7 @@ export interface IAdminInstitute extends Document {
   alumniNetwork?: any
   awards?: string[]
   mediaGallery?: any
-  
+
   // User management
   userIds: mongoose.Types.ObjectId[]
 
@@ -412,6 +412,14 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
         ),
       ],
     },
+
+    userIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: [],
+      },
+    ],
 
     programmes: [ProgrammeSchema],
   },
