@@ -10,14 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Building2, Mail, Phone, MapPin, Globe, FileText, CheckCircle, Calendar } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building2, Mail, Phone, MapPin, Globe, FileText, CheckCircle, Calendar, Search, Check, ChevronsUpDown } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { getStateNames, getCityNames } from "@/lib/utils/indian-locations";
 
@@ -53,6 +49,24 @@ export default function InstituteRegistrationForm() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState(false);
+  const [institutes, setInstitutes] = useState<Array<{
+    _id: string;
+    name: string;
+    type?: string;
+    website?: string;
+    establishedYear?: number;
+    location?: {
+      address?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+    };
+    contact?: {
+      phone?: string[];
+      email?: string;
+    };
+  }>>([]);
+  const [loadingInstitutes, setLoadingInstitutes] = useState(false);
 
   // State and city data
   const [states, setStates] = useState<string[]>([]);
@@ -64,6 +78,7 @@ export default function InstituteRegistrationForm() {
   const [formData, setFormData] = useState({
     // Institute Information
     organizationName: "",
+    instituteId: "", // Will store the selected institute ID
     instituteType: "",
     instituteCategory: "",
     establishmentYear: "",
@@ -86,8 +101,93 @@ export default function InstituteRegistrationForm() {
     contactViaEmail: false,
     contactViaPhone: false
   });
+  
+  // State for handling 'Other' institute name input
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherInstituteName, setOtherInstituteName] = useState("");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Load institutes on component mount
+  useEffect(() => {
+    const fetchInstitutes = async () => {
+      try {
+        setLoadingInstitutes(true);
+        const response = await fetch('/api/admin-institutes');
+        if (response.ok) {
+          const data = await response.json();
+          setInstitutes(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching institutes:', error);
+      } finally {
+        setLoadingInstitutes(false);
+      }
+    };
+
+    fetchInstitutes();
+  }, []);
+
+  // Handle institute selection
+  const [selectedInstituteId, setSelectedInstituteId] = useState<string>('none');
+  
+  const handleInstituteSelect = (value: string) => {
+    setSelectedInstituteId(value);
+    
+    if (value === 'none') {
+      // Reset form when 'Select an institute' is chosen
+      setFormData(prev => ({
+        ...prev,
+        organizationName: '',
+        instituteId: '',
+        instituteType: '',
+        website: '',
+        establishmentYear: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        contactPhone: ''
+      }));
+      setShowOtherInput(false);
+    } else if (value === 'other') {
+      // For 'Other' option, show input field
+      setFormData(prev => ({
+        ...prev,
+        organizationName: otherInstituteName || '',
+        instituteId: 'other',
+        // Clear other fields
+        instituteType: '',
+        website: '',
+        establishmentYear: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        contactPhone: ''
+      }));
+      setShowOtherInput(true);
+    } else {
+      // For regular institute selection
+      const selectedInstitute = institutes.find(inst => inst._id === value);
+      if (selectedInstitute) {
+        setFormData(prev => ({
+          ...prev,
+          organizationName: selectedInstitute.name || '',
+          instituteId: selectedInstitute._id || '',
+          instituteType: selectedInstitute.type || '',
+          website: selectedInstitute.website || '',
+          establishmentYear: selectedInstitute.establishedYear?.toString() || '',
+          address: selectedInstitute.location?.address || '',
+          city: selectedInstitute.location?.city || '',
+          state: selectedInstitute.location?.state || '',
+          zipCode: selectedInstitute.location?.pincode || '',
+          contactPhone: selectedInstitute.contact?.phone?.[0] || '',
+        }));
+        setShowOtherInput(false);
+      }
+    }
+  };
 
   // Load states on component mount
   useEffect(() => {
@@ -224,15 +324,25 @@ export default function InstituteRegistrationForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // If 'Other' is selected, ensure a name is provided
+    if (selectedInstituteId === 'other' && !otherInstituteName.trim()) {
+      setErrors(prev => ({ ...prev, organizationName: 'Please enter institute name' }));
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
 
     setLoading(true);
     try {
-      // Prepare data for submission (add country as India)
+      // Prepare data for submission
       const submissionData = {
         ...formData,
+        // Use the entered name if 'Other' is selected
+        organizationName: selectedInstituteId === 'other' ? otherInstituteName : formData.organizationName,
+        // Only include instituteId if an actual institute is selected (not 'Other' or 'none')
+        instituteId: selectedInstituteId !== 'other' && selectedInstituteId !== 'none' ? selectedInstituteId : undefined,
         country: "India", // Hardcoded to India
         establishmentYear: parseInt(formData.establishmentYear)
       };
@@ -284,22 +394,119 @@ export default function InstituteRegistrationForm() {
                       <div className="p-2 bg-blue-100 rounded-lg">
                         <Building2 className="h-5 w-5 text-blue-600" />
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-900">Institute Information</h3>
                     </div>
+                    <h3 className="text-xl font-semibold text-gray-900">Institute Information</h3>
+                  </div>
 
-                    <div>
-                      <Label htmlFor="organizationName" className="text-sm font-medium text-gray-700">
-                        Institute/College/University Name *
-                      </Label>
-                      <Input
-                        id="organizationName"
-                        placeholder="Enter your institute name"
-                        value={formData.organizationName}
-                        onChange={(e) => handleInputChange('organizationName', e.target.value)}
-                        className={cn("mt-2 h-12", errors.organizationName && 'border-red-500')}
-                      />
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="instituteSelect">Institute/College/University Name *</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between h-12 text-left font-normal",
+                              !selectedInstituteId && "text-muted-foreground",
+                              errors.organizationName && "border-red-500"
+                            )}
+                          >
+                            {selectedInstituteId === 'other' 
+                              ? 'Other (Not Listed)'
+                              : selectedInstituteId && selectedInstituteId !== 'none'
+                                ? institutes.find((institute) => institute._id === selectedInstituteId)?.name
+                                : 'Select an institute'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="start">
+                          <Command>
+                            <div className="flex items-center border-b px-3">
+                              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                              <CommandInput 
+                                placeholder="Search institutes..." 
+                                className="h-11 border-0 focus:ring-0"
+                              />
+                            </div>
+                            <CommandEmpty>No institute found.</CommandEmpty>
+                            <CommandGroup className="max-h-[300px] overflow-y-auto">
+                              <CommandItem 
+                                value="none"
+                                onSelect={() => handleInstituteSelect('none')}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedInstituteId === 'none' ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                -- Select an institute --
+                              </CommandItem>
+                              {institutes.map((institute) => (
+                                <CommandItem
+                                  key={institute._id}
+                                  value={institute.name}
+                                  onSelect={() => handleInstituteSelect(institute._id)}
+                                  className="cursor-pointer"
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedInstituteId === institute._id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {institute.name} {institute.location?.city ? `(${institute.location.city})` : ''}
+                                </CommandItem>
+                              ))}
+                              <CommandItem 
+                                value="other"
+                                onSelect={() => handleInstituteSelect('other')}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedInstituteId === 'other' ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                Other (Not Listed)
+                              </CommandItem>
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {/* Input field for 'Other' institute name */}
+                      {selectedInstituteId === 'other' && (
+                        <div className="mt-4">
+                          <Label htmlFor="otherInstituteName">Enter Institute Name *</Label>
+                          <Input
+                            id="otherInstituteName"
+                            type="text"
+                            placeholder="Enter institute name"
+                            value={otherInstituteName}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setOtherInstituteName(value);
+                              setFormData(prev => ({
+                                ...prev,
+                                organizationName: value
+                              }));
+                              // Clear error when user starts typing
+                              if (errors.organizationName) {
+                                setErrors(prev => ({
+                                  ...prev,
+                                  organizationName: ''
+                                }));
+                              }
+                            }}
+                            className={errors.organizationName ? "border-red-500 mt-2" : "mt-2"}
+                          />
+                        </div>
+                      )}
                       {errors.organizationName && (
-                        <p className="text-sm text-red-600 mt-1">{errors.organizationName}</p>
+                        <p className="text-sm text-red-500 mt-1">{errors.organizationName}</p>
                       )}
                     </div>
 

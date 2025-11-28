@@ -325,6 +325,7 @@ export default function AdminRegistrationsPage() {
                   <TableHead>Contact</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Admin Institute</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Applied</TableHead>
                   <TableHead>Actions</TableHead>
@@ -362,9 +363,20 @@ export default function AdminRegistrationsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="capitalize">
+                        <Badge variant={intent.type === 'institute' ? 'outline' : 'secondary'} className="capitalize">
                           {intent.type}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {intent.type === 'institute' ? (
+                          intent.isAdminInstitute ? (
+                            <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                          ) : (
+                            <XCircle className="h-5 w-5 text-red-500 mx-auto" />
+                          )
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(intent.status)}
@@ -615,9 +627,7 @@ export default function AdminRegistrationsPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                           <SelectItem value="free">Free</SelectItem>
-                                          <SelectItem value="basic">Basic</SelectItem>
-                                          <SelectItem value="premium">Premium</SelectItem>
-                                          <SelectItem value="enterprise">Enterprise</SelectItem>
+                                          <SelectItem value="paid">paid</SelectItem>
                                         </SelectContent>
                                       </Select>
                                     </div>
@@ -669,9 +679,7 @@ export default function AdminRegistrationsPage() {
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="free">Free</SelectItem>
-                                        <SelectItem value="basic">Basic</SelectItem>
-                                        <SelectItem value="premium">Premium</SelectItem>
-                                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                                        <SelectItem value="paid">Paid</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>

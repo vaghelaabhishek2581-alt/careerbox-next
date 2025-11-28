@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import RegistrationIntent from '@/src/models/RegistrationIntent'
+import AdminInstitute from '@/src/models/AdminInstitute'
 
 // Validation schemas
 const registrationIntentsQuerySchema = z.object({
@@ -94,32 +95,53 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Sort stage
+    // Create sort stage (will be added after the $project stage)
     const sortStage: any = {}
     sortStage[sortBy] = sortOrder === 'asc' ? 1 : -1
-    pipeline.push({ $sort: sortStage })
 
-    // Get total count
+    // Get total count for pagination
     let totalItems = 0
-    try {
-      if (Object.keys(filter).length === 0 && !search) {
-        // No filters, get total count directly
-        totalItems = await RegistrationIntent.countDocuments({})
-      } else {
-        // Use aggregation for filtered count
-        const countPipeline = [...pipeline, { $count: 'total' }]
-        const countResult = await RegistrationIntent.aggregate(countPipeline)
-        totalItems = countResult[0]?.total || 0
-      }
-    } catch (countError) {
-      console.error('Error getting count:', countError)
-      totalItems = 0
+    if (Object.keys(filter).length === 0 && !search) {
+      // No filters, get total count directly
+      totalItems = await RegistrationIntent.countDocuments({})
+    } else {
+      // With filters, get count with the same filter
+      totalItems = await RegistrationIntent.countDocuments(filter)
     }
 
-    // Add pagination
+    // Lookup to check if institute exists in AdminInstitute
+    pipeline.push({
+      $lookup: {
+        from: 'admininstitutes',
+        localField: 'instituteId',
+        foreignField: '_id',
+        as: 'adminInstitute'
+      }
+    })
+
+    // Add a field to indicate if it's an admin institute
+    pipeline.push({
+      $addFields: {
+        isAdminInstitute: { $gt: [{ $size: '$adminInstitute' }, 0] }
+      }
+    })
+
+    // Project only the fields we need
+    pipeline.push({
+      $project: {
+        adminInstitute: 0 // Exclude the adminInstitute array from results
+      }
+    })
+
+    // Sort stage (moved after the $project stage)
+    pipeline.push({ $sort: sortStage })
+
+    // Pagination
     const skip = (page - 1) * limit
-    pipeline.push({ $skip: skip })
-    pipeline.push({ $limit: limit })
+    pipeline.push(
+      { $skip: skip },
+      { $limit: limit }
+    )
 
     // Project final fields
     pipeline.push({
@@ -143,6 +165,8 @@ export async function GET(request: NextRequest) {
         adminNotes: 1,
         reviewedBy: 1,
         reviewedAt: 1,
+        isAdminInstitute: 1,
+        instituteId: 1,
         createdAt: 1,
         updatedAt: 1,
         _id: 0
@@ -182,6 +206,7 @@ export async function GET(request: NextRequest) {
         description: intent.description,
         website: intent.website,
         establishmentYear: intent.establishmentYear,
+        instituteId: intent.instituteId,
         adminNotes: intent.adminNotes,
         reviewedBy: intent.reviewedBy,
         reviewedAt: intent.reviewedAt,

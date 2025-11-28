@@ -17,6 +17,7 @@ export interface IRegistrationIntent extends Document {
   contactPhone: string
   
   // Institute specific fields
+  instituteId: mongoose.Types.ObjectId
   instituteType?: string
   instituteCategory?: string
   establishmentYear?: number
@@ -102,6 +103,11 @@ const RegistrationIntentSchema = new Schema<IRegistrationIntent>({
   },
   
   // Institute specific fields
+  instituteId: {
+    type: Schema.Types.ObjectId,
+    ref: 'AdminInstitute',
+    index: true
+  },
   instituteType: { 
     type: String, 
     trim: true 

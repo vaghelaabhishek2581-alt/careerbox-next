@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import RegistrationIntent from '@/src/models/RegistrationIntent'
 import User from '@/src/models/User'
 import { connectToDatabase } from '@/lib/db/mongoose'
+import mongoose from 'mongoose'
 import { sendInstituteRegistrationConfirmation } from '@/lib/services/email-service'
 import NotificationService from '@/lib/services/notificationService'
 import { z } from 'zod'
@@ -12,6 +13,7 @@ const instituteRegistrationSchema = z.object({
   // Basic Information
   email: z.string().email('Invalid email address').optional(),
   organizationName: z.string().min(1, 'Organization name is required'),
+  instituteId: z.string().optional(),
   instituteType: z.string().min(1, 'Institute type is required'),
   instituteCategory: z.string().min(1, 'Institute category is required'),
   contactName: z.string().min(1, 'Contact name is required'),
@@ -59,9 +61,22 @@ export async function POST(request: NextRequest) {
 
     const { userId, user } = authResult
 
-    // Parse and validate request body
-    const body = await request.json()
-    const validatedData = instituteRegistrationSchema.parse(body)
+    // Validate request body
+    const requestData = await request.json()
+    console.log('Received request data:', JSON.stringify(requestData, null, 2))
+    
+    const validationResult = instituteRegistrationSchema.safeParse(requestData)
+
+    if (!validationResult.success) {
+      console.error('Validation failed:', validationResult.error.format())
+      return NextResponse.json(
+        { success: false, message: 'Validation failed', errors: validationResult.error.format() },
+        { status: 400 }
+      )
+    }
+    
+    const validatedData = validationResult.data
+    console.log('Validated data:', JSON.stringify(validatedData, null, 2))
 
     // Check if user already has a pending or approved institute registration
     const existingIntent = await RegistrationIntent.findOne({
@@ -81,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new registration intent
-    const registrationIntent = new RegistrationIntent({
+    const registrationData = {
       userId,
       type: 'institute',
       status: 'pending',
@@ -93,6 +108,7 @@ export async function POST(request: NextRequest) {
       contactPhone: validatedData.contactPhone,
 
       // Institute specific fields
+      instituteId: validatedData.instituteId ? new mongoose.Types.ObjectId(validatedData.instituteId) : undefined, 
       instituteType: validatedData.instituteType,
       instituteCategory: validatedData.instituteCategory,
       establishmentYear: validatedData.establishmentYear,
@@ -107,9 +123,22 @@ export async function POST(request: NextRequest) {
       // Additional Information
       description: validatedData.description,
       website: validatedData.website || undefined,
-    })
+      subscribeNewsletter: validatedData.subscribeNewsletter,
+      contactViaEmail: validatedData.contactViaEmail,
+      contactViaPhone: validatedData.contactViaPhone,
+    }
+    
+    console.log('Creating registration with data:', JSON.stringify(registrationData, null, 2))
+    
+    const registrationIntent = new RegistrationIntent(registrationData)
 
-    await registrationIntent.save()
+    try {
+      await registrationIntent.save()
+      console.log('Registration saved successfully:', registrationIntent)
+    } catch (error) {
+      console.error('Error saving registration:', error)
+      throw error
+    }
 
     // Send confirmation email to user
     try {

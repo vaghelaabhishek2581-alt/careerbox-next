@@ -30,6 +30,9 @@ export interface IAdminInstitute extends Document {
   alumniNetwork?: any
   awards?: string[]
   mediaGallery?: any
+  
+  // User management
+  userIds: mongoose.Types.ObjectId[]
 
   courses?: Array<{
     _id?: mongoose.Types.ObjectId
@@ -265,7 +268,15 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
             totalSeats: Number,
             courseCount: Number,
             fees: { type: Schema.Types.Mixed },
-            medianSalary: { type: Schema.Types.Mixed },
+            mediaGallery: {
+              type: Schema.Types.Mixed,
+              default: {}
+            },
+            userIds: [{
+              type: Schema.Types.ObjectId,
+              ref: 'User',
+              default: []
+            }],
             eligibility: { type: Schema.Types.Mixed },
             courseLevel: String,
             url: String,
