@@ -104,6 +104,7 @@ declare module 'next-auth' {
       needsOnboarding: boolean
       needsRoleSelection: boolean
       provider: string
+      ownedOrganizations?: string[]
     }
   }
 
@@ -115,6 +116,7 @@ declare module 'next-auth' {
     activeRole?: string | null
     needsOnboarding?: boolean
     needsRoleSelection?: boolean
+    ownedOrganizations?: string[]
   }
 }
 
@@ -125,5 +127,6 @@ declare module 'next-auth/jwt' {
     needsOnboarding?: boolean
     needsRoleSelection?: boolean
     provider?: string
+    ownedOrganizations?: string[]
   }
 }
