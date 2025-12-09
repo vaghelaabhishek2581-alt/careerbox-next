@@ -156,30 +156,29 @@ export default function UserProfileMenu() {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-80 max-h-[80vh]" align="end" forceMount>
-        <ScrollArea className="max-h-[calc(80vh-2rem)]">
-          {/* User Profile Header */}
-          <div className="p-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={undefined} alt={session.user?.name || "User"} />
-                <AvatarFallback className="bg-purple-600 text-white font-semibold text-lg">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col flex-1">
-                <p className="text-base font-semibold leading-none">{session.user?.name || "User"}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-xs text-muted-foreground capitalize">
-                    {userRole}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">{session.user?.email}</p>
+      <DropdownMenuContent className="p-0 w-[90vw] max-w-sm sm:w-80 max-h-[80vh]" align="end" forceMount>
+        {/* User Profile Header (non-scrolling) */}
+        <div className="p-4 border-b bg-white">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={undefined} alt={session.user?.name || "User"} />
+              <AvatarFallback className="bg-purple-600 text-white font-semibold text-lg">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col flex-1">
+              <p className="text-base font-semibold leading-none">{session.user?.name || "User"}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-xs text-muted-foreground capitalize">
+                  {userRole}
+                </span>
               </div>
+              <p className="text-sm text-muted-foreground mt-1">{session.user?.email}</p>
             </div>
           </div>
-
-          <DropdownMenuSeparator />
+        </div>
+        <ScrollArea type="always" className="max-h-[calc(80vh-88px)]">
+          {/* <DropdownMenuSeparator /> */}
 
           {/* Role Switcher - Show when user has multiple roles */}
           {session.user?.roles && session.user.roles.length > 1 && (
@@ -260,16 +259,16 @@ export default function UserProfileMenu() {
                   })}
                 </div>
               </div>
-              <DropdownMenuSeparator />
+              {/* <DropdownMenuSeparator /> */}
             </>
           )}
 
           {/* User Name Link */}
-          <DropdownMenuItem onClick={() => handleNavigation("/user", "user")} className="cursor-pointer">
+          {/* <DropdownMenuItem onClick={() => handleNavigation("/user", "user")} className="cursor-pointer">
             <span className="text-blue-600 font-medium">{session.user?.name}</span>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
 
-          <DropdownMenuSeparator />
+          {/* <DropdownMenuSeparator /> */}
 
           {/* Sign Out Button */}
           <DropdownMenuItem onClick={() => handleUserSignOut()} className="cursor-pointer text-red-600">
