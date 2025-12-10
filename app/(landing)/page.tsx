@@ -85,7 +85,7 @@ export default function LandingPage() {
       primaryCta: { href: '/courses', label: 'Explore Courses' },
       secondaryCta: { href: '/auth/signup', label: 'Get Started Free' },
       tags: ['Diploma', 'Degree', 'Masters', 'M.phil', 'Ph.D', 'Certificate Courses', 'Study Abroad', 'Skill Programs', 'Top Institutes'],
-      image: '/hero1.png',
+      image: '/hero1.jpg',
     },
     { 
       title: 'Upgrade skills. Unlock opportunities.',
@@ -95,7 +95,7 @@ export default function LandingPage() {
       primaryCta: { href: '/recommendation-collections', label: 'Explore Courses' },
       secondaryCta: { href: '/career-counselling', label: 'Connect Live' },
       tags: ['Data Science', 'AI/ML', 'Design', 'Marketing', 'Cloud', 'Cybersecurity'],
-      image: '/hero2.png',
+      image: '/hero2.jpg',
     },
     {
       title: 'Connect with Student Admission Inquiries',
@@ -105,7 +105,7 @@ export default function LandingPage() {
       primaryCta: { href: '/institutes-service', label: 'Partner with CareerBox' },
       secondaryCta: { href: '/business', label: 'Learn More' },
       tags: ['Verified Applications', 'High-Intent Leads', 'Placement & Outreach'],
-      image: '/hero3.png',
+      image: '/hero3.jpg',
     },
   ];
 
@@ -227,88 +227,87 @@ export default function LandingPage() {
       {/* Add top padding to account for fixed header */}
       <div>
         {/* Hero Section (Slider) */}
-        <section className="container mx-auto px-6 pt-10 pb-12">
-          <Carousel
-            opts={{ align: 'start', loop: true }}
+        <section className="container mx-auto px-4 sm:px-6 lg:px-8 pt-12 min-h-[calc(100vh-110px)] relative">
+           <Carousel
+             opts={{ align: 'start', loop: true }}
             setApi={setCarouselApi}
-            className=""
-          >
-            <CarouselContent>
-              {slides.map((slide, idx) => (
-                <CarouselItem key={idx}>
-                  <div className="lg:mx-[70px] my-9">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
-                      <div className="space-y-4 sm:space-y-5 md:space-y-6 pt-6 md:pt-12 lg:pt-16 pb-8 md:pb-12">
-                        <h1 className="hero-content text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
-                          {slide.title}
-                        </h1>
-                        <h2 className="hero-content text-xl sm:text-2xl md:text-3xl text-gray-800 font-semibold leading-snug">
-                          {slide.subtitle}
-                        </h2>
-                        <p className="hero-content text-gray-600 text-base sm:text-lg md:text-xl max-w-prose md:max-w-xl">
-                          {slide.description}
-                        </p>
-                        <div className="hero-content flex flex-wrap gap-3">
-                          <Link href={slide.primaryCta.href}>
-                            <Button size="lg" variant="outline" className="px-6 w-full sm:w-auto">
-                              {slide.primaryCta.label}
-                            </Button>
-                          </Link>
-                          <Link href={slide.secondaryCta.href}>
-                            <Button size="lg" className="px-6 w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                              {slide.secondaryCta.label}
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
+           >
+             <CarouselContent>
+               {slides.map((slide, idx) => (
+                 <CarouselItem key={idx}>
+                   <div className="mx-[20px] sm:mx-[70px] mt-8 sm:mt-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-stretch">
+                       {/* Left side content */}
+                       <div className="space-y-4 sm:space-y-5 md:space-y-6 pt-6 sm:pt-8 md:pt-12 lg:pt-16 pb-8 sm:pb-12 md:pb-16">
+                         <h1 className="hero-content text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
+                           {slide.title}
+                         </h1>
+                         <h2 className="hero-content text-xl sm:text-2xl md:text-3xl text-gray-800 font-semibold leading-snug">
+                           {slide.subtitle}
+                         </h2>
+                         <p className="hero-content text-gray-600 text-base sm:text-lg md:text-xl max-w-prose md:max-w-xl">
+                           {slide.description}
+                         </p>
+                         <div className="hero-content flex flex-wrap gap-3">
+                           <Link href={slide.primaryCta.href}>
+                             <Button size="lg" variant="outline" className="px-6 w-full sm:w-auto">
+                               {slide.primaryCta.label}
+                             </Button>
+                           </Link>
+                           <Link href={slide.secondaryCta.href}>
+                             <Button size="lg" className="px-6 w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                               {slide.secondaryCta.label}
+                             </Button>
+                           </Link>
+                         </div>
+                       </div>
 
-                      {/* Right visual with overlay badges */}
-                      <div className="relative flex justify-center">
-                        <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg aspect-[3/2]" />
-                        <img
-                          src={slide.image}
-                          alt={slide.title}
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full object-cover"
-                        />
-                        {/* floating tags per mock */}
-                        {/* top-right program */}
-                        <Badge className="absolute -top-4 sm:-top-6 right-2 sm:right-6 rounded-lg bg-pink-100 text-gray-800 text-xs sm:text-sm">JOIN YOUR PROGRAM</Badge>
-                        {/* category chips */}
-                        <Badge variant="outline" className="absolute top-3 sm:top-6 left-1/2 -translate-x-1/2 bg-white text-xs sm:text-sm">{slide.tags[0]}</Badge>
-                        <Badge variant="outline" className="absolute top-8 sm:top-14 right-2 sm:right-10 bg-white text-xs sm:text-sm">{slide.tags[1]}</Badge>
-                        <Badge variant="outline" className="absolute top-8 sm:top-14 left-2 sm:left-10 bg-white text-xs sm:text-sm">{slide.tags[2]}</Badge>
-                        <Badge variant="outline" className="absolute top-12 sm:top-24 left-4 sm:left-20 bg-white text-xs sm:text-sm">{slide.tags[3] ?? ''}</Badge>
-                        {/* explore label */}
-                        <Badge className="absolute -right-2 sm:-right-6 top-12 sm:top-24 bg-white text-gray-900 border text-xs sm:text-sm">Explore TOP</Badge>
-                        {/* create profile */}
-                        <Badge className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs sm:text-sm">+ Create profile</Badge>
-                      </div>
-                    </div>
-                 </div>
-                  </CarouselItem>
-              ))}
-            </CarouselContent>
+                       {/* Right visual with overlay badges */} 
+                      <div className="relative flex justify-center md:justify-end h-full">
+                        <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg h-[240px] sm:h-[380px] md:h-[520px] lg:h-[620px] xl:h-[720px] md:-my-16 lg:-my-20 xl:-my-24" />
+                         <img
+                           src={slide.image}
+                           alt={slide.title}
+                          className="absolute left-1/2 -translate-x-1/2 inset-y-0 w-auto max-h-full"
+                         />
+                         {/* floating tags per mock */}
+                         {/* top-right program */}
+                         {/* <Badge className="absolute -top-4 sm:-top-6 right-2 sm:right-6 rounded-lg bg-pink-100 text-gray-800 text-xs sm:text-sm">JOIN YOUR PROGRAM</Badge> */}
+                         {/* category chips */}
+                         {/* <Badge variant="outline" className="absolute top-3 sm:top-6 left-1/2 -translate-x-1/2 bg-white text-xs sm:text-sm">{slide.tags[0]}</Badge>
+                         <Badge variant="outline" className="absolute top-8 sm:top-14 right-2 sm:right-10 bg-white text-xs sm:text-sm">{slide.tags[1]}</Badge>
+                         <Badge variant="outline" className="absolute top-8 sm:top-14 left-2 sm:left-10 bg-white text-xs sm:text-sm">{slide.tags[2]}</Badge>
+                         <Badge variant="outline" className="absolute top-12 sm:top-24 left-4 sm:left-20 bg-white text-xs sm:text-sm">{slide.tags[3] ?? ''}</Badge> */}
+                         {/* explore label */}
+                         {/* <Badge className="absolute -right-2 sm:-right-6 top-12 sm:top-24 bg-white text-gray-900 border text-xs sm:text-sm">Explore TOP</Badge> */}
+                         {/* create profile */}
+                         {/* <Badge className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs sm:text-sm">+ Create profile</Badge> */}
+                       </div>
+                     </div>
+                  </div>
+                   </CarouselItem>
+               ))}
+             </CarouselContent>
 
-            <CarouselPrevious className="hidden md:flex mx-[70px]" />
-            <CarouselNext className="hidden md:flex mx-[70px]" />
-
-            {/* Dots */}
-            <div className="mt-6 flex items-center justify-center gap-2">
-              {Array.from({ length: slideCount }).map((_, i) => (
-                <button
-                  key={i}
-                  aria-label={`Go to slide ${i + 1}`}
-                  onClick={() => carouselApi?.scrollTo(i)}
-                  className={
-                    i === selectedIndex
-                      ? 'h-2.5 w-2.5 rounded-full bg-gray-800'
-                      : 'h-2.5 w-2.5 rounded-full bg-gray-300'
-                  }
-                />
-              ))}
-            </div>
-          </Carousel>
-        </section>
+            <CarouselPrevious className="hidden md:flex absolute left-1 md:left-2 top-1/2 -translate-y-1/2 z-10" />
+            <CarouselNext className="hidden md:flex absolute right-1 md:right-2 top-1/2 -translate-y-1/2 z-10" />
+             {/* Dots */}
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 md:bottom-8 z-30 flex items-center justify-center gap-2">
+               {Array.from({ length: slideCount }).map((_, i) => (
+                 <button
+                   key={i}
+                   aria-label={`Go to slide ${i + 1}`}
+                   onClick={() => carouselApi?.scrollTo(i)}
+                   className={
+                     i === selectedIndex
+                       ? 'h-2.5 w-2.5 rounded-full bg-gray-800'
+                       : 'h-2.5 w-2.5 rounded-full bg-gray-300'
+                   }
+                 />
+               ))}
+             </div>
+           </Carousel>
+         </section>
 
         {/* Stats + Institutional partners band */}
         <section className="bg-[#1f1f1f] text-white">
@@ -339,9 +338,9 @@ export default function LandingPage() {
                       className="basis-1/2 sm:basis-1/3 md:basis-1/5 lg:basis-1/6 xl:basis-1/6 2xl:basis-1/7"
                     >
                       <div className="flex justify-center">
-                       <div className="h-16 md:h-20 w-36 sm:w-40 md:w-44 rounded-xl bg-white text-gray-900 flex items-center justify-center shadow-sm">
+                       {/* <div className="h-16 md:h-20 w-36 sm:w-40 md:w-44 rounded-xl bg-white text-gray-900 flex items-center justify-center shadow-sm">
                          <span className="font-semibold text-xs sm:text-sm md:text-base text-center px-3">{p.name}</span>
-                       </div>
+                       </div> */}
                        <div className="h-16 md:h-20 w-36 sm:w-40 md:w-44 rounded-xl bg-white flex items-center justify-center shadow-sm overflow-hidden">
                          <img src={p.img} alt={p.name} className="h-10 md:h-12 w-auto object-contain" />
                        </div>
@@ -458,10 +457,10 @@ export default function LandingPage() {
             <Carousel opts={{ align: 'start', loop: true }}>
               <CarouselContent>
                 {mentors.map((m, idx) => (
-                  <CarouselItem key={idx} className="basis-1/2 sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                  <CarouselItem key={idx} className="basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                     <div className="group relative mx-auto w-full max-w-[240px] sm:max-w-[260px] md:max-w-[280px]">
                       <div className="rounded-2xl bg-gradient-to-br from-purple-200 via-blue-200 to-indigo-200 h-[280px] sm:h-[300px]">
-                        <img src={`${m.image}`} alt={`${m.name} portrait`} className="absolute inset-0 w-full h-full object-cover rounded-2xl" />
+                        <img src={`${m.image}`} alt={`${m.name} portrait`} className="absolute inset-0 w-full h-full object-cover rounded-2xl border-2 border-white/10" />
                         <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
                           <div className="flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 shadow-sm">
                             <Star className="h-3.5 w-3.5 text-yellow-500" />
@@ -475,15 +474,15 @@ export default function LandingPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="absolute left-1/2 -translate-x-1/2 -bottom-3 w-[88%] bg-white rounded-xl shadow-lg p-3 sm:p-4 text-center">
+                      <div className="absolute left-1/2 -translate-x-1/2 -bottom-3 w-[80%] bg-black/60 text-white rounded-xl shadow-lg p-3 sm:p-4 text-center">
                         <div className="font-semibold text-sm sm:text-base">{m.name}</div>
-                        <div className="mt-1 text-[11px] sm:text-xs text-gray-500">
+                        <div className="mt-1 text-[11px] sm:text-xs text-white-500">
                           {m.role} <span className="ml-1">{m.qualification}</span>
                         </div>
-                        <div className="mt-1 text-[11px] sm:text-xs text-gray-500">{m.experience}</div>
+                        <div className="mt-1 text-[11px] sm:text-xs text-white-500">{m.experience}</div>
                         <div className="mt-2">
                           <Link href="/career-counselling">
-                            <Button size="sm" className="rounded-full px-4">Consult Now</Button>
+                            <Button size="sm" className="rounded-full px-4 bg-white text-black hover:bg-gray-100">Consult Now</Button>
                           </Link>
                         </div>
                       </div>
