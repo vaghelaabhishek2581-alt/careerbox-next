@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/options';
 
 export default async function InstituteDashboard() {
   const session = await getServerSession(authOptions);
-  
+
   // Redirect to login if not authenticated
   if (!session) {
     redirect('/auth/signin');
@@ -22,8 +22,9 @@ export default async function InstituteDashboard() {
   }
 
   // Handle institute users
-  const instituteId = session.user.ownedOrganizations?.[0];
-  
+  const user = session.user as typeof session.user & { ownedOrganizations?: string[] };
+  const instituteId = user.ownedOrganizations?.[0];
+
   if (instituteId) {
     redirect(`/institute/dashboard`);
   } else {

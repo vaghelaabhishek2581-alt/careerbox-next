@@ -264,7 +264,7 @@ export interface PublicUser {
 }
 
 // Utility function to convert database document to public user
-export function toPublicUser (user: UserDocument): PublicUser {
+export function toPublicUser(user: UserDocument): PublicUser {
   return {
     id: user._id?.toString?.() ?? user._id,
     name: user.name,
@@ -465,6 +465,7 @@ declare module 'next-auth' {
       needsOnboarding: boolean
       needsRoleSelection: boolean
       provider: string
+      ownedOrganizations?: string[]
     }
   }
 
@@ -478,6 +479,7 @@ declare module 'next-auth' {
     needsOnboarding?: boolean
     needsRoleSelection?: boolean
     provider?: string
+    ownedOrganizations?: string[]
   }
 }
 
@@ -489,5 +491,6 @@ declare module 'next-auth/jwt' {
     needsOnboarding?: boolean
     needsRoleSelection?: boolean
     provider?: string
+    ownedOrganizations?: string[]
   }
 }

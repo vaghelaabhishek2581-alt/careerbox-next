@@ -39,12 +39,13 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       // The token object has the data we passed in the jwt callback
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.roles = token.roles as string[];
-        session.user.ownedOrganizations = token.ownedOrganizations as string[];
-        session.user.activeRole = token.activeRole as string | null;
-        session.user.needsOnboarding = token.needsOnboarding as boolean;
-        session.user.needsRoleSelection = token.needsRoleSelection as boolean;
+        const user = session.user as any;
+        user.id = token.id as string;
+        user.roles = token.roles as string[];
+        user.ownedOrganizations = token.ownedOrganizations as string[];
+        user.activeRole = token.activeRole as string | null;
+        user.needsOnboarding = token.needsOnboarding as boolean;
+        user.needsRoleSelection = token.needsRoleSelection as boolean;
       }
       return session;
     }

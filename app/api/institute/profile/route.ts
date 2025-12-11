@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const session = await getAuthenticatedUser(req);
 
   if (!session || !session.user) {
-    
+
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const user = await User.findById(userId);
-console.log('rfrew', user)
+    console.log('rfrew', user)
     if (!user || !user.ownedOrganizations || user.ownedOrganizations.length === 0) {
       return NextResponse.json({ message: 'No institute associated with this user' }, { status: 404 });
     }
@@ -39,9 +39,9 @@ console.log('rfrew', user)
   } catch (error: unknown) {
     console.error('Error fetching institute profile:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Internal Server Error',
-      error: process.env.NODE_ENV === 'development' ? errorMessage : undefined 
+      error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     }, { status: 500 });
   }
 }
@@ -106,19 +106,19 @@ interface UpdateInstituteProfileData {
   logo?: string;
   coverImage?: string;
   website?: string;
-  
+
   // Contact Information
   contact?: ContactInfo;
-  
+
   // Location Information
   location?: LocationInfo;
-  
+
   // Accreditation
   accreditation?: AccreditationInfo;
-  
+
   // Overview
   overview?: Array<{ key: string; value: string }>;
-  
+
   // Campus Details
   campusDetails?: {
     area?: string;
@@ -140,7 +140,7 @@ interface UpdateInstituteProfileData {
       facilities?: string[];
     };
   };
-  
+
   // Admissions
   admissions?: {
     admissionProcess?: string;
@@ -153,7 +153,7 @@ interface UpdateInstituteProfileData {
     reservationPolicy?: Record<string, string>;
     documentsRequired?: string[];
   };
-  
+
   // Placements
   placements?: {
     averagePackage?: number;
@@ -167,14 +167,14 @@ interface UpdateInstituteProfileData {
       placementRate: number;
     }>;
   };
-  
+
   // Media Gallery
   mediaGallery?: {
     images?: string[];
     videos?: string[];
     virtualTour?: string;
   };
-  
+
   // Additional Fields
   description?: string;
   awards?: string[];
@@ -216,20 +216,20 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Additional validation can be added here based on requirements
-    if (updateData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updateData.email)) {
+    if (updateData.contact?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updateData.contact.email)) {
       return NextResponse.json({ message: 'Invalid email format' }, { status: 400 });
     }
 
     // Prepare update object with all valid fields from the request
     const updates: Record<string, any> = {};
-    
+
     // Helper function to safely add fields to updates
     const addToUpdates = (field: string, value: any) => {
       if (value !== undefined) {
         updates[field] = value;
       }
     };
-    
+
     // Basic fields
     const {
       name, shortName, slug, establishedYear, type, status,
@@ -238,7 +238,7 @@ export async function PATCH(req: NextRequest) {
       admissions, placements, mediaGallery, rankings,
       researchAndInnovation, alumniNetwork, faculty_student_ratio
     } = updateData;
-    
+
     // Add direct fields
     addToUpdates('name', name);
     addToUpdates('shortName', shortName);
@@ -250,7 +250,7 @@ export async function PATCH(req: NextRequest) {
     addToUpdates('coverImage', coverImage);
     addToUpdates('website', website);
     addToUpdates('description', description);
-    
+
     // Add nested objects if they exist
     if (contact) addToUpdates('contact', contact);
     if (location) addToUpdates('location', location);
@@ -265,17 +265,17 @@ export async function PATCH(req: NextRequest) {
     if (researchAndInnovation) addToUpdates('researchAndInnovation', researchAndInnovation);
     if (alumniNetwork) addToUpdates('alumniNetwork', alumniNetwork);
     if (faculty_student_ratio) addToUpdates('faculty_student_ratio', faculty_student_ratio);
-    
+
     // Add updatedAt timestamp
     updates.updatedAt = new Date();
-    
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ message: 'No valid fields to update' }, { status: 400 });
     }
 
     // Update the institute profile
     let updatedInstitute;
-    
+
     try {
       updatedInstitute = await AdminInstitute.findByIdAndUpdate(
         instituteId,
@@ -295,28 +295,28 @@ export async function PATCH(req: NextRequest) {
       message: 'Profile updated successfully',
       data: updatedInstitute
     }, { status: 200 });
-    
+
   } catch (error: unknown) {
     console.error('Error updating institute profile:', error);
-    
+
     // Handle specific error types
     if (error instanceof Error) {
       if ('name' in error && error.name === 'ValidationError' && 'errors' in error) {
         const validationError = error as { errors: Record<string, { message: string }> };
         const errors = Object.values(validationError.errors).map(err => err.message);
-        return NextResponse.json({ 
+        return NextResponse.json({
           message: 'Validation failed',
-          errors 
+          errors
         }, { status: 400 });
       }
-      
-      return NextResponse.json({ 
+
+      return NextResponse.json({
         message: 'Internal Server Error',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       }, { status: 500 });
     }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       message: 'Internal Server Error',
       error: 'An unknown error occurred'
     }, { status: 500 });
