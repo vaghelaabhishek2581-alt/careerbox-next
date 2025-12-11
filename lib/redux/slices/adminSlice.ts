@@ -33,6 +33,8 @@ export interface AdminRegistrationIntent {
   adminNotes?: string
   reviewedBy?: string
   reviewedAt?: string
+  instituteId?: string
+  isAdminInstitute?: boolean
   createdAt: string
   updatedAt: string
 }

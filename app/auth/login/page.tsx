@@ -56,7 +56,7 @@ export default function LoginPage() {
         // Navigate to intended destination; middleware will handle onboarding if required
         const params = new URLSearchParams(window.location.search);
         const callbackUrl = params.get('callbackUrl');
-        router.push(callbackUrl || "/dashboard");
+        router.push(callbackUrl || "/recommendation-collections");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -65,7 +65,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl: "/recommendation-collections" });
     } catch (error) {
       console.error("Google sign-in failed:", error);
     }

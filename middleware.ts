@@ -83,8 +83,8 @@ export default withAuth(
         return NextResponse.redirect(new URL('/dashboard', req.url))
       }
 
-      // Institute routes - only users with institute role and active subscription can access
-      if (isInstituteRoute && (!userRoles.includes('institute') || !token?.subscriptionActive)) {
+      // Institute routes - only users with institute/admin role and active subscription can access
+      if (isInstituteRoute && !userRoles.includes('admin') && (!userRoles.includes('institute') || !token?.subscriptionActive)) {
         console.log('Access denied to institute route - redirecting to dashboard')
         return NextResponse.redirect(new URL('/dashboard', req.url))
       }

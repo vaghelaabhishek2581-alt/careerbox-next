@@ -9,6 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
+import { SheetTitle } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -44,6 +46,9 @@ export default function DashboardLayout({
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-72">
++         <VisuallyHidden>
++           <SheetTitle>Navigation</SheetTitle>
++         </VisuallyHidden>
           <div className="p-6 border-b">
             <Logo />
           </div>

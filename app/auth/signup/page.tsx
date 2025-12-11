@@ -51,7 +51,7 @@ function AuthPageContent() {
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
-      router.push("/dashboard");
+      router.push("/recommendation-collections");
     }
   }, [session, status, router]);
 

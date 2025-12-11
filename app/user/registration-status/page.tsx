@@ -9,13 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Building2, 
-  Building, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  CreditCard, 
+import {
+  Building2,
+  Building,
+  Clock,
+  CheckCircle,
+  XCircle,
+  CreditCard,
   AlertCircle,
   Plus,
   FileText,
@@ -73,11 +73,11 @@ export default function RegistrationStatusPage() {
 
   const handlePayment = (intentId: string) => {
     // TODO: Implement payment flow
-    router.push(`/dashboard/user/payment/${intentId}`);
+    router.push(`/user/payment/${intentId}`);
   };
 
   const handleNewRegistration = (type: 'institute' | 'business') => {
-    router.push(`/dashboard/user/register-${type}`);
+    router.push(`/user/register-${type}`);
   };
 
   if (loading) {
@@ -99,14 +99,14 @@ export default function RegistrationStatusPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button 
+          <Button
             onClick={() => handleNewRegistration('institute')}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Building2 className="w-4 h-4 mr-2" />
             Register Institute
           </Button>
-          <Button 
+          <Button
             onClick={() => handleNewRegistration('business')}
             className="bg-purple-600 hover:bg-purple-700"
           >
@@ -139,14 +139,14 @@ export default function RegistrationStatusPage() {
               You haven't submitted any registration applications yet. Get started by registering your institute or business.
             </p>
             <div className="flex gap-3 justify-center">
-              <Button 
+              <Button
                 onClick={() => handleNewRegistration('institute')}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Building2 className="w-4 h-4 mr-2" />
                 Register Institute
               </Button>
-              <Button 
+              <Button
                 onClick={() => handleNewRegistration('business')}
                 className="bg-purple-600 hover:bg-purple-700"
               >
@@ -239,7 +239,7 @@ export default function RegistrationStatusPage() {
                   {/* Action Buttons */}
                   <div className="flex gap-3 pt-2">
                     {intent.status === 'payment_required' && (
-                      <Button 
+                      <Button
                         onClick={() => handlePayment(intent.id)}
                         className="bg-blue-600 hover:bg-blue-700"
                       >
@@ -247,14 +247,14 @@ export default function RegistrationStatusPage() {
                         Complete Payment
                       </Button>
                     )}
-                    
+
                     {intent.status === 'approved' && (
-                      <Button 
+                      <Button
                         onClick={() => router.push(`/dashboard/${intent.type}`)}
                         className={cn(
                           "text-white",
-                          intent.type === 'institute' 
-                            ? "bg-blue-600 hover:bg-blue-700" 
+                          intent.type === 'institute'
+                            ? "bg-blue-600 hover:bg-blue-700"
                             : "bg-purple-600 hover:bg-purple-700"
                         )}
                       >
@@ -264,12 +264,12 @@ export default function RegistrationStatusPage() {
                     )}
 
                     {intent.status === 'completed' && (
-                      <Button 
+                      <Button
                         onClick={() => router.push(`/dashboard/${intent.type}`)}
                         className={cn(
                           "text-white",
-                          intent.type === 'institute' 
-                            ? "bg-blue-600 hover:bg-blue-700" 
+                          intent.type === 'institute'
+                            ? "bg-blue-600 hover:bg-blue-700"
                             : "bg-purple-600 hover:bg-purple-700"
                         )}
                       >
@@ -279,7 +279,7 @@ export default function RegistrationStatusPage() {
                     )}
 
                     {intent.status === 'rejected' && (
-                      <Button 
+                      <Button
                         onClick={() => handleNewRegistration(intent.type)}
                         variant="outline"
                       >

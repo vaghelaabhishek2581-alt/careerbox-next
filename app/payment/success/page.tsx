@@ -80,7 +80,7 @@ function PaymentSuccessContent() {
               )}
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <h1 className="text-4xl font-bold text-gray-900">Payment Successful!</h1>
             <p className="text-xl text-gray-600">
@@ -155,7 +155,7 @@ function PaymentSuccessContent() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-          <Button 
+          <Button
             onClick={() => router.push(getDashboardUrl())}
             size="lg"
             className="bg-orange-500 hover:bg-orange-600 flex-1"
@@ -163,8 +163,8 @@ function PaymentSuccessContent() {
             <ArrowRight className="h-4 w-4 mr-2" />
             Go to Dashboard
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={() => router.push('/dashboard/notifications')}
             variant="outline"
             size="lg"
@@ -191,26 +191,26 @@ function PaymentSuccessContent() {
             <CardTitle className="text-center text-lg">Quick Navigation</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/recommendation-collections')}
             >
               <Home className="h-4 w-4 mr-2" />
               Main Dashboard
             </Button>
-            
-            <Button 
-              variant="ghost" 
+
+            <Button
+              variant="ghost"
               className="w-full justify-start"
               onClick={() => router.push(`${getDashboardUrl()}/profile`)}
             >
               <Building className="h-4 w-4 mr-2" />
               Organization Profile
             </Button>
-            
-            <Button 
-              variant="ghost" 
+
+            <Button
+              variant="ghost"
               className="w-full justify-start"
               onClick={() => router.push('/help')}
             >

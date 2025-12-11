@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Home, Search, Users } from 'lucide-react'
 import Image from 'next/image'
-import Header from '@/components/dashboard/Header'
+import Header from '@/components/header'
 
 export default function ProfileNotFound() {
   const router = useRouter()
@@ -20,7 +20,6 @@ export default function ProfileNotFound() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Header />
-      
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-4">
         <div className="max-w-2xl mx-auto text-center space-y-8">
           {/* Illustration */}
@@ -46,7 +45,7 @@ export default function ProfileNotFound() {
                 Profile Not Found
               </h2>
             </div>
-            
+
             <p className="text-gray-600 text-lg max-w-md mx-auto">
               The profile you're looking for doesn't exist, has been made private, or the URL might be incorrect.
             </p>
@@ -63,7 +62,7 @@ export default function ProfileNotFound() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Go Back
             </Button>
-            
+
             <Button
               onClick={() => router.push('/recommendation-collections')}
               size="lg"
@@ -72,7 +71,7 @@ export default function ProfileNotFound() {
               <Users className="mr-2 h-4 w-4" />
               Explore Profiles
             </Button>
-            
+
             <Button
               onClick={() => router.push('/')}
               variant="ghost"
@@ -97,7 +96,7 @@ export default function ProfileNotFound() {
                 </button>
                 {' '}or check if the profile URL is correct.
               </p>
-              
+
               <p className="text-xs text-gray-400">
                 Profile URLs should be in the format: /profile/username
               </p>
