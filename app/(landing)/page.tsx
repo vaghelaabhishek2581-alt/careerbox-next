@@ -19,7 +19,7 @@ import {
 
 // Mentors data for Verified Experts carousel (module-scope)
 const mentors = [
-  { name: 'Mahesh Patel', role: 'Sr. Mentor', qualification: 'M.Sc. Tech', experience: '5 Year Experience', image: '/maheshpatel.png', id: 'maheshpatel', rating: 4.5, reviews: 120, counsellingCount: 150 },
+  // { name: 'Mahesh Patel', role: 'Sr. Mentor', qualification: 'M.Sc. Tech', experience: '5 Year Experience', image: '/maheshpatel.png', id: 'maheshpatel', rating: 4.5, reviews: 120, counsellingCount: 150 },
   { name: 'Anita Sharma', role: 'Sr. Mentor', qualification: 'MBA', experience: '8 Year Experience', image: '/counsellor1.png', id: 'anitasharma', rating: 4.8, reviews: 150, counsellingCount: 200 },
   { name: 'Rahul Verma', role: 'Sr. Mentor', qualification: 'B.Tech', experience: '6 Year Experience', image: '/counsellor2.png', id: 'rahulverma', rating: 4.6, reviews: 130, counsellingCount: 180 },
   { name: 'Neha Gupta', role: 'Sr. Mentor', qualification: 'M.Sc.', experience: '7 Year Experience', image: '/counsellor3.png', id: 'nehagupta', rating: 4.7, reviews: 140, counsellingCount: 200 },
@@ -82,7 +82,7 @@ export default function LandingPage() {
       subtitle: 'Connect with Leading Institutes',
       description:
         'Explore top institutes, compare courses, and take the next step in your academic or professional journey.',
-      primaryCta: { href: '/courses', label: 'Explore Courses' },
+      primaryCta: { href: '/recommendation-collections', label: 'Explore Institutes' },
       secondaryCta: { href: '/auth/signup', label: 'Get Started Free' },
       tags: ['Diploma', 'Degree', 'Masters', 'M.phil', 'Ph.D', 'Certificate Courses', 'Study Abroad', 'Skill Programs', 'Top Institutes'],
       image: '/hero1.jpg',
@@ -103,7 +103,7 @@ export default function LandingPage() {
       description:
         'Reach high-intent candidates and manage verified applications with transparent selection processes.',
       primaryCta: { href: '/institutes-service', label: 'Partner with CareerBox' },
-      secondaryCta: { href: '/business', label: 'Learn More' },
+      secondaryCta: { href: '/contact', label: 'Contact Us' },
       tags: ['Verified Applications', 'High-Intent Leads', 'Placement & Outreach'],
       image: '/hero3.jpg',
     },
@@ -199,14 +199,17 @@ export default function LandingPage() {
   // Institutional partners list (replace with real logos when available)
   
   const partners = [
-     { name: 'LPU Online', img: '/uni1.webp' },
-     { name: 'JAIN', img: '/uni2.webp' },
-     { name: 'upGrad BIMTECH', img: '/uni3.webp' },
-     { name: 'SASTRA University', img: '/uni4.webp' },
-     { name: 'CU Online Learning', img: '/uni5.webp' },
-     { name: 'Amity', img: '/uni6.webp' },
-     { name: 'VIT', img: '/uni7.webp' },
-     { name: 'Manipal', img: '/uni8.webp' },
+     { name: 'Adani University', img: '/uni1.jpg' },
+     { name: 'Ahmedabad University', img: '/uni2.jpg' },
+     { name: 'GLS University', img: '/uni3.jpg' },
+     { name: 'Gandhinagar University', img: '/uni4.jpg' },
+     { name: 'Institute of Advance Research', img: '/uni5.jpg' },
+     { name: 'JG University', img: '/uni6.jpg' },
+     { name: 'Karnavati University', img: '/uni7.jpg' },
+     { name: 'Nirma University', img: '/uni8.jpg' },
+     { name: 'PD Energy University', img: '/uni9.jpg' },
+     { name: 'SVGU', img: '/uni10.jpg' },
+     { name: 'Silver Oak University', img: '/uni11.jpg' },
   ];
 
   // Explore Courses program chips with eligibility lines
@@ -313,13 +316,17 @@ export default function LandingPage() {
         <section className="bg-[#1f1f1f] text-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 text-center items-start justify-items-center">
-              <div>
+              {/* <div>
                 <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold">1M+</div>
                 <div className="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300">Learners Joined</div>
-              </div>
+              </div> */}
               <div>
                 <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold">200+</div>
                 <div className="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300">Learning Institutions</div>
+              </div>
+              <div>
+                <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold">700+</div>
+                <div className="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300">Specialization Courses</div>
               </div>
               <div>
                 <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold">100+</div>
@@ -353,7 +360,7 @@ export default function LandingPage() {
 
             <div className="mt-8 text-center">
               <div className="inline-block text-gray-300 text-sm md:text-base tracking-wide">
-                Institutional Partners
+                Popular Institutes
                 <div className="mt-1 h-[2px] w-full bg-white/30" />
               </div>
             </div>
@@ -372,7 +379,8 @@ export default function LandingPage() {
 
           <div className="mt-10 sm:mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-6 lg:gap-8 mx-[70px]">
             {programCategories.map((item) => (
-              <Link key={item.title} href={`/courses?category=${encodeURIComponent(item.title)}`} className="block" aria-label={item.title}>
+              <Link key={item.title} href={`/recommendation-collections`} className="block" aria-label={item.title}>
+                {/* href={`/courses?category=${encodeURIComponent(item.title)}`} */}
                 <div className="mx-auto w-full max-w-[340px] sm:max-w-[400px] md:max-w-[460px] rounded-full bg-blue-600 text-white px-6 sm:px-8 lg:px-10 py-4 sm:py-5 shadow-sm transition-colors hover:bg-blue-700">
                   <div className="text-center">
                     <div className="text-lg sm:text-xl md:text-2xl font-semibold leading-tight">{item.title}</div>
@@ -384,9 +392,9 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 sm:mt-14 flex justify-center">
-            <Link href="/courses">
+            <Link href="/career-counselling">
               <Button className="rounded-full px-8 py-5 md:py-6 text-base md:text-xl bg-black text-white">
-                Explore <ArrowRight className="ml-2 h-5 w-5" />
+                Get Free Counselling <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
@@ -570,7 +578,7 @@ export default function LandingPage() {
         </section>
 
         {/* Business Partnerships hero (Coming Soon) */}
-        <section className="bg-blue-600 text-white">
+        {/* <section className="bg-blue-600 text-white">
           <div className="mx-[70px] py-24 md:py-32 text-center">
             <div className="text-3xl md:text-4xl font-bold tracking-tight">Business Partnerships</div>
             <div className="mt-2 text-sm md:text-base opacity-90">Exciting Opportunities on the Horizon</div>
@@ -586,7 +594,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Connect With the CareerBox Team */}
 

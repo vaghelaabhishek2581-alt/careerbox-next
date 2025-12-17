@@ -28,9 +28,10 @@ import SearchSuggestions from "./SearchSuggestions";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 
 const navigation = [
-  { name: "Explore", href: "/services", mobile: true, icon: Compass },
-  { name: "For Institutes", href: "/institutes-service", mobile: true, icon: Building2 },
-  { name: "Expert Advisor", href: "/services", mobile: true, icon: UserCheck },
+  // { name: "Explore", href: "/services", mobile: true, icon: Compass },
+  // { name: "For Institutes", href: "/institutes-service", mobile: true, icon: Building2 },
+  // { name: "Expert Advisor", href: "/services", mobile: true, icon: UserCheck },
+  { name: "Get Free Counselling", href: "/career-counselling", mobile: true, icon: Phone }
 ];
 
 export default function Header() {
@@ -45,16 +46,16 @@ export default function Header() {
     "college",
     "course",
     "specialization",
-    "placement partners",
-    "exam",
-    "job",
-    "internship",
-    "people",
-    "group",
-    "company",
-    "service",
-    "product",
-    "event",
+    // "placement partners",
+    // "exam",
+    // "job",
+    // "internship",
+    // "people",
+    // "group",
+    // "company",
+    // "service",
+    // "product",
+    // "event",
   ];
   const [termIndex, setTermIndex] = useState(0);
   const rotatingPlaceholder = `search "${searchTerms[termIndex]}"`;
@@ -158,7 +159,7 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            {/* <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
+            <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -178,7 +179,7 @@ export default function Header() {
                   </Link>
                 );
               })}
-            </nav> */}
+            </nav>
 
             {/* Desktop CTA Buttons or User Profile */}
             <div className="hidden lg:flex items-center space-x-4">
