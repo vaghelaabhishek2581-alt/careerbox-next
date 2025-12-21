@@ -16,9 +16,11 @@ import {
   Home,
   MessageCircle,
   ChevronDown,
+  ChevronRight,
   Compass,
   Building2,
   UserCheck,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "./logo";
@@ -58,7 +60,7 @@ export default function Header() {
     // "event",
   ];
   const [termIndex, setTermIndex] = useState(0);
-  const rotatingPlaceholder = `search "${searchTerms[termIndex]}"`;
+  const rotatingPlaceholder = `Search "${searchTerms[termIndex]}"`;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -90,14 +92,14 @@ export default function Header() {
       {/* Main Header */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-[990] transition-all duration-300 bg-black",
+          "fixed top-0 left-0 right-0 z-[990] transition-all duration-300",
           isScrolled
-            ? "bg-white backdrop-blur-lg shadow-xl border-b border-gray-100/80 "
+            ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100"
             : "bg-transparent"
         )}
       >
         {/* Top Contact Bar */}
-        <div className="bg-gray-900 text-white py-2 text-sm">
+        {/* <div className="bg-gray-900 text-white py-2 text-sm">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-6">
@@ -115,7 +117,7 @@ export default function Header() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20 gap-4">
             {/* Logo */}
@@ -133,7 +135,7 @@ export default function Header() {
                 placeholder={rotatingPlaceholder}
                 className="w-full"
                 inputClassName={cn(
-                  "h-9 w-full rounded-full border border-gray-300 pl-4 pr-[72px] bg-white shadow-sm",
+                  "h-10 w-full rounded-full border border-gray-300 pl-4 bg-white shadow-sm",
                   "focus:border-blue-600"
                 )}
               />
@@ -142,14 +144,14 @@ export default function Header() {
               </Button>
             </div>
 
-            {/* Search Bar */}
+            {/* Desktop Search Bar */}
             <div className="hidden md:flex flex-1 max-w-lg relative">
               <SearchSuggestions
                 variant="header"
                 placeholder={rotatingPlaceholder}
                 className="w-full"
                 inputClassName={cn(
-                  "h-10 md:h-12 w-full rounded-full border border-gray-300 pl-5 pr-[92px] shadow-sm transition-all",
+                  "h-10 md:h-12 w-full rounded-full border border-gray-300 pl-5 shadow-sm transition-all",
                   isScrolled ? "bg-white focus:border-blue-600" : "bg-white/90 backdrop-blur-sm focus:bg-white focus:border-blue-600"
                 )}
               />
@@ -269,7 +271,7 @@ export default function Header() {
                     </div>
 
                     {/* Mobile Navigation */}
-                    <nav className="flex flex-col space-y-2">
+                    <nav className="flex flex-col space-y-1">
                       {navigation.map((item) => {
                         const IconComponent = item.icon;
                         const isActive = pathname === item.href;
@@ -279,18 +281,20 @@ export default function Header() {
                             href={item.href}
                             onClick={() => setIsMobileMenuOpen(false)}
                             className={cn(
-                              "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-600",
-                              isActive ? "text-blue-600" : "text-gray-700"
+                              "flex items-center gap-4 px-2 py-4 text-[16px] font-medium transition-all duration-200",
+                              isActive
+                                ? "text-blue-600"
+                                : "text-slate-600 hover:text-slate-900"
                             )}
                           >
-                            <IconComponent className="h-5 w-5" />
+                            <IconComponent className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-slate-500")} />
                             {item.name}
                           </Link>
                         );
                       })}
                     </nav>
 
-                    <div className="pt-4 border-t border-gray-200 space-y-3">
+                    <div className="pt-6 border-t border-gray-100 space-y-4 px-2">
                       {/* Increased spacing between Login and Get Started buttons */}
                       {status === "loading" ? (
                         <div className="px-4 space-y-3">

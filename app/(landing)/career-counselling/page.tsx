@@ -23,12 +23,15 @@ interface CounsellingFormData {
 }
 
 const courseLevels = [
-  { value: 'undergraduate', label: 'Undergraduate (B.Tech, B.E, B.Sc, etc.)' },
-  { value: 'postgraduate', label: 'Postgraduate (MBA, M.Tech, M.Sc, etc.)' },
-  { value: 'professional', label: 'Professional Courses (CA, CS, CMA, etc.)' },
-  { value: 'medical', label: 'Medical (MBBS, BDS, BAMS, etc.)' },
-  { value: 'diploma', label: 'Diploma Courses' },
-  { value: 'certification', label: 'Certification Programs' },
+  { value: 'undergraduate', label: 'Undergraduate (After 12th)' },
+  { value: 'postgraduate', label: 'Postgraduate (After Graduation)' },
+  { value: 'professional', label: 'Executive Education (For Working Professionals & CXOs)' },
+  { value: 'medical', label: 'Doctorate / Ph.D (After UG or PG + Work Ex)' },
+  { value: 'Advance_diploma', label: 'Advance Diploma Courses (After 12th)' },
+  { value: 'diploma', label: 'Diploma Courses (After 10th & 12th)' },
+  { value: 'certification', label: 'Skilling & Certification Programs (After 10th & 12th)' },
+  { value: 'abroad', label: 'Abroad Education (Pathway / Hybrid Mode)' },
+  { value: 'Job_guarantee', label: 'Job Guarantee Program (100% Placement)' },
   { value: 'other', label: 'Other' }
 ];
 
@@ -85,152 +88,177 @@ export default function CareerCounsellingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-white relative">
+      {/* Subtle Grid Background Pattern */}
+      <div className="absolute inset-0 pointer-events-none" />
+
       {/* Add top padding to account for fixed header */}
-      <div className="pt-24 pb-16">
+      <div className="pt-16 pb-20 relative z-10">
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
               
               {/* Left Content */}
-              <div className="space-y-8">
-                <Badge className="inline-flex px-6 py-3 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border-blue-200 text-base font-medium rounded-full">
+              <div className="space-y-10">
+                <div className="inline-flex px-4 py-2 bg-white/60 backdrop-blur-sm border border-blue-100 text-blue-700 text-sm font-semibold rounded-full shadow-sm">
                   🚀 Empowering Careers, Transforming Lives
-                </Badge>
+                </div>
                 
                 <div className="space-y-6">
-                  <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                    <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                      Your Pathway to
-                    </span>
+                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-slate-900">
+                    Your Pathway to
                     <br />
-                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      Professional Excellence
-                    </span>
-                    <br />
-                    <span className="text-4xl lg:text-5xl text-gray-700">
-                      right now
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                      Excellence
                     </span>
                   </h1>
                   
-                  <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
-                    Discover personalized career guidance, skill development, and 
-                    opportunities that propel you towards your professional goals.
+                  <p className="text-xl text-slate-600 leading-relaxed max-w-xl font-light">
+                    Unlock your potential with personalized career guidance. We help you navigate the complexities of education and career choices to find your perfect fit.
                   </p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link href="/auth/signup">
-                    <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 rounded-xl">
-                      Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                    <Button size="lg" className="h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg rounded-xl shadow-xl shadow-slate-900/10 hover:shadow-blue-600/20 transition-all duration-300">
+                      Get Started Free
                     </Button>
                   </Link>
-                  <Button size="lg" variant="outline" className="bg-green-500 hover:bg-green-600 text-white border-green-500 hover:border-green-600 px-8 py-6 text-lg rounded-xl transition-all duration-300">
+                  <Button size="lg" variant="outline" className="h-14 px-8 border-slate-200 text-slate-700 hover:bg-blue-100/50 hover:text-blue-600 text-lg rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-300">
                     <MessageCircle className="mr-2 h-5 w-5" />
                     Join Community
                   </Button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-8 pt-8">
+                    <div>
+                        <div className="text-3xl font-bold text-slate-900">10k+</div>
+                        <div className="text-sm text-slate-500 font-medium">Students Guided</div>
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold text-slate-900">500+</div>
+                        <div className="text-sm text-slate-500 font-medium">Partner Institutes</div>
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold text-slate-900">95%</div>
+                        <div className="text-sm text-slate-500 font-medium">Success Rate</div>
+                    </div>
+                </div>
+
+                <div className="mt-8 text-center text-xs text-slate-400 pt-10">
+                  &copy; {new Date().getFullYear()} CareerBox. All rights reserved.
                 </div>
               </div>
 
               {/* Right Form */}
               <div className="relative">
-                <Card className="shadow-2xl border-0 backdrop-blur-sm bg-white/95">
-                  <CardContent className="p-8">
+                {/* Decorative blob behind the form only */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-purple-100 rounded-[2.5rem] blur-xl opacity-50 pointer-events-none" />
+                
+                <Card className="relative shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 bg-white rounded-3xl overflow-hidden">
+                  <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600" />
+                  <CardContent className="p-8 lg:p-10">
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                      <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
                         Free Career Counselling
                       </h2>
-                      <p className="text-gray-600">
-                        Get personalized guidance for your career path
+                      <p className="text-slate-500 text-lg">
+                        Fill out the form below to request a callback
                       </p>
                     </div>
 
                     {submitStatus === 'success' && (
-                      <Alert className="border-green-200 bg-green-50 mb-6">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <AlertDescription className="text-green-800">
-                          Thank you! We'll contact you within 24 hours for your free career counselling session.
+                      <Alert className="border-green-100 bg-green-50/80 backdrop-blur-sm mb-8 rounded-xl">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <AlertDescription className="text-green-800 font-medium ml-2">
+                          Request received! We'll contact you shortly.
                         </AlertDescription>
                       </Alert>
                     )}
 
                     {submitStatus === 'error' && (
-                      <Alert variant="destructive" className="mb-6">
+                      <Alert variant="destructive" className="mb-8 rounded-xl bg-red-50 border-red-100 text-red-700">
                         <AlertDescription>
-                          Something went wrong. Please try again or contact us directly.
+                          Something went wrong. Please try again.
                         </AlertDescription>
                       </Alert>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                       {/* Name Field */}
-                      <div className="relative">
-                        <Label htmlFor="name" className="sr-only">Your Name</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-slate-700 font-medium ml-1">Full Name</Label>
                         <div className="relative">
-                          <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                           <Input
                             id="name"
                             type="text"
-                            placeholder="Your Name"
+                            placeholder="Enter your full name"
                             value={formData.name}
                             onChange={(e) => handleInputChange('name', e.target.value)}
                             required
-                            className="pl-12 h-14 text-base border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                            className="pl-12 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl shadow-sm hover:border-blue-300"
                           />
                         </div>
                       </div>
 
                       {/* Email Field */}
-                      <div className="relative">
-                        <Label htmlFor="email" className="sr-only">Email Address</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-slate-700 font-medium ml-1">Email Address</Label>
                         <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                           <Input
                             id="email"
                             type="email"
-                            placeholder="Email Address"
+                            placeholder="email_id@example.com"
                             value={formData.email}
                             onChange={(e) => handleInputChange('email', e.target.value)}
                             required
-                            className="pl-12 h-14 text-base border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                            className="pl-12 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl shadow-sm hover:border-blue-300"
                           />
                         </div>
                       </div>
 
                       {/* Phone Field */}
-                      <div className="relative">
-                        <Label htmlFor="phone" className="sr-only">Phone Number</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                          <div className="flex">
-                            <span className="inline-flex items-center px-4 text-base text-gray-500 bg-gray-50 border border-r-0 border-gray-200 rounded-l-md">
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="text-slate-700 font-medium ml-1">Phone Number</Label>
+                        <div className="relative flex">
+                          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
+                             <Phone className="h-5 w-5 text-slate-400" />
+                          </div>
+                          <div className="flex w-full">
+                            <span className="inline-flex items-center pl-12 pr-3 text-slate-500 bg-white border border-r-0 border-slate-200 rounded-l-xl font-medium shadow-sm">
                               +91
                             </span>
                             <Input
                               id="phone"
                               type="tel"
-                              placeholder="Phone Number"
+                              placeholder="98765 43210"
                               value={formData.phone}
                               onChange={(e) => handleInputChange('phone', e.target.value)}
                               required
-                              className="pl-4 h-14 text-base border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-l-none"
+                              className="pl-4 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-l-none rounded-r-xl border-l-0 shadow-sm hover:border-blue-300"
                             />
                           </div>
                         </div>
                       </div>
 
                       {/* Course Level Dropdown */}
-                      <div className="relative">
-                        <Label htmlFor="courseLevel" className="sr-only">Course Level</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="courseLevel" className="text-slate-700 font-medium ml-1">Current Level</Label>
                         <div className="relative">
-                          <GraduationCap className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
+                          <GraduationCap className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 z-10" />
                           <Select value={formData.courseLevel} onValueChange={(value) => handleInputChange('courseLevel', value)}>
-                            <SelectTrigger className="pl-12 h-14 text-base border-gray-200 focus:border-blue-500 focus:ring-blue-500">
-                              <SelectValue placeholder="Select Course Level" />
+                            <SelectTrigger className="pl-12 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl text-slate-600 shadow-sm hover:border-blue-300">
+                              <SelectValue placeholder="Select Education Level" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border-slate-100 shadow-xl rounded-xl p-1">
                               {courseLevels.map((level) => (
-                                <SelectItem key={level.value} value={level.value}>
+                                <SelectItem 
+                                  key={level.value} 
+                                  value={level.value}
+                                  className="focus:bg-blue-50 focus:text-blue-700 cursor-pointer text-slate-600 py-3 rounded-lg my-0.5"
+                                >
                                   {level.label}
                                 </SelectItem>
                               ))}
@@ -240,37 +268,37 @@ export default function CareerCounsellingPage() {
                       </div>
 
                       {/* Course Interest Field */}
-                      <div className="relative">
-                        <Label htmlFor="courseInterest" className="sr-only">Course of Interest</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="courseInterest" className="text-slate-700 font-medium ml-1">Interested Course</Label>
                         <div className="relative">
-                          <BookOpen className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <BookOpen className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                           <Input
                             id="courseInterest"
                             type="text"
-                            placeholder="Course of Interest (e.g., MBA, M.B.B.S, B.Tech, B.E)"
+                            placeholder="e.g. MBA, B.Tech, MBBS"
                             value={formData.courseInterest}
                             onChange={(e) => handleInputChange('courseInterest', e.target.value)}
                             required
-                            className="pl-12 h-14 text-base border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                            className="pl-12 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl shadow-sm hover:border-blue-300"
                           />
                         </div>
                       </div>
 
                       {/* Terms Checkbox */}
-                      <div className="flex items-start space-x-3">
+                      <div className="flex items-start space-x-3 pt-2">
                         <Checkbox
                           id="terms"
                           checked={formData.agreeToTerms}
                           onCheckedChange={(checked) => handleInputChange('agreeToTerms', checked as boolean)}
-                          className="mt-1"
+                          className="mt-1 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-slate-300"
                         />
-                        <Label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed cursor-pointer">
-                          I agree to Careerbox's{' '}
-                          <Link href="/privacy" className="text-blue-600 hover:text-blue-700 underline">
+                        <Label htmlFor="terms" className="text-sm text-slate-500 leading-relaxed cursor-pointer font-normal">
+                          I agree to CareerBox's{' '}
+                          <Link href="/privacy" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
                             Privacy Policy
                           </Link>{' '}
                           and{' '}
-                          <Link href="/terms" className="text-blue-600 hover:text-blue-700 underline">
+                          <Link href="/terms" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
                             Terms & Conditions
                           </Link>
                         </Label>
@@ -280,27 +308,27 @@ export default function CareerCounsellingPage() {
                       <Button
                         type="submit"
                         disabled={isSubmitting || !formData.agreeToTerms}
-                        className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 rounded-xl mt-4"
                       >
                         {isSubmitting ? (
-                          'Requesting Callback...'
+                          <div className="flex items-center gap-2">
+                            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>Processing...</span>
+                          </div>
                         ) : (
                           <>
-                            Request Callback <ArrowRight className="ml-2 h-5 w-5" />
+                            Request Free Callback <ArrowRight className="ml-2 h-5 w-5" />
                           </>
                         )}
                       </Button>
                     </form>
 
-                    <p className="text-center text-xs text-gray-500 mt-6">
-                      📞 We'll call you within 24 hours • 🔒 Your information is secure
+                    <p className="text-center text-xs text-slate-400 mt-6 flex items-center justify-center gap-4">
+                      <span>🔒 Secure Information</span>
+                      <span>📞 24hr Response Time</span>
                     </p>
                   </CardContent>
                 </Card>
-
-                {/* Floating decorative elements */}
-                <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-20 animate-pulse"></div>
-                <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full opacity-20 animate-pulse"></div>
               </div>
             </div>
           </div>

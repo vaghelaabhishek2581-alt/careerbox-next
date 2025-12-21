@@ -103,15 +103,14 @@ export const teamMembers: TeamMember[] = [
     name: 'Mahesh Patel',
     role: 'CEO & Founder',
     bio: 'Passionate about democratizing career growth.',
-    linkedin: 'https://linkedin.com/in/mahesh-patel'
+    linkedin: 'https://www.linkedin.com/in/maheshpatel3112/'
   },
   {
     id: '2',
     name: 'Mahesh Patel',
-    role: 'Founder',
+    role: 'Managing Director',
     bio: 'Passionate about democratizing career growth.',
-
-    linkedin: 'https://linkedin.com/in/mahesh-patel'
+    linkedin: 'https://www.linkedin.com/in/mahesh-patel-290621247/'
   },
   
 ];

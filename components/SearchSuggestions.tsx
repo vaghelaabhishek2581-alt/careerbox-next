@@ -163,7 +163,7 @@ export default function SearchSuggestions({
   return (
     <div className={cn("relative", className)} ref={searchContainerRef}>
       <Search className={cn(
-        "absolute top-1/2 transform -translate-y-1/2 text-gray-400",
+        "absolute top-1/2 transform -translate-y-1/2 text-gray-400 z-10 pointer-events-none",
         variant === 'header' ? "left-3 h-5 w-5" : "left-5 h-6 w-6"
       )} />
       <Input

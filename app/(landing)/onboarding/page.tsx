@@ -316,17 +316,17 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
+    <div className="min-h-screen bg-white py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Progress Indicator */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-12">
             <div className="flex items-center space-x-4">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-colors duration-300 ${currentStep >= 1 ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-400'}`}>
                 1
               </div>
-              <div className={`w-16 h-1 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+              <div className={`w-20 h-1 rounded-full transition-colors duration-300 ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-100'}`}></div>
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-colors duration-300 ${currentStep >= 2 ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-400'}`}>
                 2
               </div>
             </div>
@@ -337,19 +337,19 @@ export default function OnboardingPage() {
             <>
               {/* Header */}
               <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
                   Welcome to CareerBox, {session?.user?.name}!
                 </h1>
                 <p className="text-xl text-gray-600 mb-2">
                   Let's get you started by choosing your primary role
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-400">
                   Don't worry, you can always change this later in your settings
                 </p>
               </div>
 
           {/* Role Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             {roleOptions.map((role) => {
               const IconComponent = role.icon
               const isSelected = selectedRole === role.id
@@ -357,38 +357,42 @@ export default function OnboardingPage() {
               return (
                 <Card
                   key={role.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
+                  className={`cursor-pointer transition-all duration-300 border-2 ${isSelected ? 'border-blue-600 ring-4 ring-blue-50 shadow-xl scale-[1.02]' : 'border-gray-100 hover:border-blue-200 hover:shadow-lg hover:-translate-y-1'
                     }`}
                   onClick={() => setSelectedRole(role.id)}
                 >
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-3 rounded-lg ${role.color} text-white`}>
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-4 rounded-xl ${role.color} text-white shadow-md`}>
                           <IconComponent className="h-6 w-6" />
                         </div>
                         <div>
-                          <CardTitle className="text-xl">{role.title}</CardTitle>
+                          <CardTitle className="text-xl font-bold text-gray-900">{role.title}</CardTitle>
                           {role.badge && (
-                            <Badge variant="secondary" className="mt-1">
+                            <Badge variant="secondary" className="mt-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100">
                               {role.badge}
                             </Badge>
                           )}
                         </div>
                       </div>
                       {isSelected && (
-                        <CheckCircle className="h-6 w-6 text-blue-500" />
+                        <div className="bg-blue-600 rounded-full p-1">
+                          <CheckCircle className="h-5 w-5 text-white" />
+                        </div>
                       )}
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-base mb-4">
+                    <CardDescription className="text-base mb-6 text-gray-600 leading-relaxed">
                       {role.description}
                     </CardDescription>
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {role.features.map((feature, index) => (
                         <li key={index} className="flex items-center text-sm text-gray-600">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                          <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mr-3 flex-shrink-0">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                          </div>
                           {feature}
                         </li>
                       ))}
@@ -405,7 +409,7 @@ export default function OnboardingPage() {
                   size="lg"
                   onClick={() => selectedRole && handleRoleSelection(selectedRole)}
                   disabled={!selectedRole || isLoading}
-                  className="px-8 py-3 text-lg"
+                  className="px-10 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 >
                   {isLoading ? (
                     'Setting up your account...'
@@ -419,8 +423,8 @@ export default function OnboardingPage() {
               </div>
 
               {/* Help Text */}
-              <div className="text-center mt-6">
-                <p className="text-sm text-gray-500">
+              <div className="text-center mt-8">
+                <p className="text-sm text-gray-400">
                   Need help choosing? You can always change your role later in your profile settings.
                 </p>
               </div>
@@ -430,7 +434,7 @@ export default function OnboardingPage() {
           {/* Step 2: Student Profile (only for students) */}
           {currentStep === 2 && selectedRole === 'student' && (
             <>
-              <div className="text-center mb-8">
+              <div className="text-center mb-10">
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">
                   Complete Your Student Profile
                 </h2>
@@ -439,14 +443,16 @@ export default function OnboardingPage() {
                     <p className="text-lg text-gray-600 mb-2">
                       We just need a few more details to complete your profile
                     </p>
-                    <p className="text-sm text-blue-600 font-medium">
-                      ✅ We already have your {session?.user?.name ? 'name' : ''} {session?.user?.name && session?.user?.email ? 'and ' : ''}{session?.user?.email ? 'email' : ''}
-                    </p>
-                    <p className="text-sm text-orange-600 font-medium mt-1">
-                      📝 Please provide: {missingFields.filter(f => f !== 'name' && f !== 'email').map(field => 
-                        field === 'phone' ? 'phone number' : field
-                      ).join(', ')}
-                    </p>
+                    <div className="flex flex-col items-center gap-2 mt-4">
+                      <Badge variant="outline" className="px-4 py-1 text-sm bg-green-50 text-green-700 border-green-200">
+                        ✅ We already have your {session?.user?.name ? 'name' : ''} {session?.user?.name && session?.user?.email ? 'and ' : ''}{session?.user?.email ? 'email' : ''}
+                      </Badge>
+                      <Badge variant="outline" className="px-4 py-1 text-sm bg-orange-50 text-orange-700 border-orange-200">
+                        📝 Please provide: {missingFields.filter(f => f !== 'name' && f !== 'email').map(field => 
+                          field === 'phone' ? 'phone number' : field
+                        ).join(', ')}
+                      </Badge>
+                    </div>
                   </>
                 ) : (
                   <p className="text-lg text-gray-600 mb-2">
@@ -455,25 +461,29 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              <Card className="max-w-2xl mx-auto">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5" />
-                    Student Information
-                  </CardTitle>
-                  <CardDescription>
-                    This information will be used for institute applications and career guidance
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Basic Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="max-w-3xl mx-auto border-gray-100 shadow-xl rounded-2xl overflow-hidden">
+                <div className="bg-gray-50 px-8 py-6 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center">
+                      <GraduationCap className="h-5 w-5 text-blue-600" />
+                    </div>
                     <div>
-                      <Label htmlFor="name" className="flex items-center gap-2">
+                      <CardTitle className="text-xl font-bold text-gray-900">Student Information</CardTitle>
+                      <CardDescription className="text-gray-500">
+                        This information will be used for institute applications and career guidance
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-8 space-y-8">
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                         Full Name *
                         {session?.user?.name && (
-                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                            ✅ Pre-filled
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 hover:bg-green-100">
+                            Pre-filled
                           </Badge>
                         )}
                       </Label>
@@ -482,16 +492,16 @@ export default function OnboardingPage() {
                         value={studentProfile.name}
                         onChange={(e) => setStudentProfile(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="Enter your full name"
-                        className="mt-1"
+                        className="h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
                         disabled={!!session?.user?.name}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="email" className="flex items-center gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                         Email Address *
                         {session?.user?.email && (
-                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                            ✅ Pre-filled
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 hover:bg-green-100">
+                            Pre-filled
                           </Badge>
                         )}
                       </Label>
@@ -501,55 +511,58 @@ export default function OnboardingPage() {
                         value={studentProfile.email}
                         onChange={(e) => setStudentProfile(prev => ({ ...prev, email: e.target.value }))}
                         placeholder="Enter your email"
-                        className="mt-1"
+                        className="h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
                         disabled={!!session?.user?.email}
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="phone" className="flex items-center gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                         Phone Number *
-                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                          📝 Required
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-orange-50 text-orange-700 border-orange-200">
+                          Required
                         </Badge>
                       </Label>
                       <Input
                         id="phone"
                         value={studentProfile.phone}
                         onChange={(e) => setStudentProfile(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="Enter your phone number (e.g., +91 9876543210)"
-                        className="mt-1 border-orange-200 focus:border-orange-500"
+                        placeholder="Enter your phone number"
+                        className="h-11 bg-white border-orange-200 focus:border-orange-500 focus:ring-orange-200"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="city" className="flex items-center gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="city" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                         City *
-                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                          📝 Required
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-orange-50 text-orange-700 border-orange-200">
+                          Required
                         </Badge>
                       </Label>
                       <Input
                         id="city"
                         value={studentProfile.city}
                         onChange={(e) => setStudentProfile(prev => ({ ...prev, city: e.target.value }))}
-                        placeholder="Enter your city (e.g., Mumbai, Delhi)"
-                        className="mt-1 border-orange-200 focus:border-orange-500"
+                        placeholder="Enter your city"
+                        className="h-11 bg-white border-orange-200 focus:border-orange-500 focus:ring-orange-200"
                       />
                     </div>
                   </div>
 
                   {/* Eligibility Exams */}
-                  <div>
-                    <Label className="text-base font-semibold">Eligibility Exams (Optional)</Label>
-                    <p className="text-sm text-gray-600 mb-4">Add your exam scores to improve application matching</p>
+                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+                    <Label className="text-base font-bold text-gray-900 flex items-center gap-2 mb-2">
+                      <BookOpen className="h-4 w-4 text-blue-600" />
+                      Eligibility Exams (Optional)
+                    </Label>
+                    <p className="text-sm text-gray-500 mb-6">Add your exam scores to improve application matching</p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <Label htmlFor="exam">Exam</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="exam" className="text-sm font-medium text-gray-700">Exam Name</Label>
                         <Select value={currentExam} onValueChange={setCurrentExam}>
-                          <SelectTrigger className="mt-1">
+                          <SelectTrigger className="h-11 bg-white border-gray-200">
                             <SelectValue placeholder="Select exam" />
                           </SelectTrigger>
                           <SelectContent>
@@ -576,22 +589,24 @@ export default function OnboardingPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
-                        <Label htmlFor="score">Score/Rank</Label>
-                        <div className="flex gap-2 mt-1">
+                      <div className="space-y-2">
+                        <Label htmlFor="score" className="text-sm font-medium text-gray-700">Score/Rank</Label>
+                        <div className="flex gap-2">
                           <Input
                             value={currentScore}
                             onChange={(e) => setCurrentScore(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            placeholder="e.g., 95 percentile, 1500 rank"
+                            placeholder="e.g., 95 percentile"
+                            className="h-11 bg-white border-gray-200"
                           />
                           <Button
                             type="button"
                             onClick={addEligibilityExam}
                             disabled={!currentExam.trim() || !currentScore.trim()}
-                            size="sm"
+                            size="icon"
+                            className="h-11 w-11 bg-blue-600 hover:bg-blue-700 text-white shrink-0"
                           >
-                            <Plus className="h-4 w-4" />
+                            <Plus className="h-5 w-5" />
                           </Button>
                         </div>
                       </div>
@@ -599,16 +614,18 @@ export default function OnboardingPage() {
 
                     {/* Display Added Exams */}
                     {studentProfile.eligibilityExams.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200/50">
                         {studentProfile.eligibilityExams.map((exam, index) => (
-                          <div key={index} className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                            <span>{exam.exam}: {exam.score}</span>
+                          <div key={index} className="inline-flex items-center gap-2 bg-white border border-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm shadow-sm">
+                            <span className="font-medium">{exam.exam}</span>
+                            <span className="text-blue-300">|</span>
+                            <span>{exam.score}</span>
                             <button
                               type="button"
                               onClick={() => removeEligibilityExam(index)}
-                              className="text-blue-600 hover:text-blue-800"
+                              className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-4 w-4" />
                             </button>
                           </div>
                         ))}
@@ -617,38 +634,39 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-4 pt-4">
+                  <div className="flex gap-4 pt-4 border-t border-gray-100">
                     <Button
                       variant="outline"
                       onClick={() => setCurrentStep(1)}
-                      className="flex-1"
+                      className="flex-1 h-12 text-base font-medium border-gray-200 hover:bg-gray-50 hover:text-gray-900"
                     >
                       Back
                     </Button>
                     <Button
                       onClick={() => completeOnboardingProcess('student')}
                       disabled={!isStudentProfileComplete() || isLoading}
-                      className="flex-1"
+                      className="flex-1 h-12 text-base font-medium bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
                     >
                       {isLoading ? (
                         'Setting up your account...'
                       ) : missingFields.filter(f => f !== 'name' && f !== 'email').length === 0 ? (
                         <>
                           Complete Setup & Go to Dashboard
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          <ArrowRight className="ml-2 h-5 w-5" />
                         </>
                       ) : (
                         <>
                           Complete Profile Setup
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          <ArrowRight className="ml-2 h-5 w-5" />
                         </>
                       )}
                     </Button>
                   </div>
 
                   {!isStudentProfileComplete() && (
-                    <div className="text-center">
-                      <p className="text-sm text-red-600">
+                    <div className="text-center bg-red-50 p-3 rounded-lg border border-red-100">
+                      <p className="text-sm text-red-600 flex items-center justify-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
                         Please provide your {missingFields.filter(f => f !== 'name' && f !== 'email').map(field => 
                           field === 'phone' ? 'phone number' : field
                         ).join(' and ')} to continue

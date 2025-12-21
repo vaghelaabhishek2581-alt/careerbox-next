@@ -226,11 +226,11 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {/* Add top padding to account for fixed header */}
       <div>
         {/* Hero Section (Slider) */}
-        <section className="container mx-auto px-4 sm:px-6 lg:px-8 pt-12 min-h-[calc(100vh-110px)] relative">
+        <section className="container mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-10 lg:pt-20 min-h-[calc(90vh)] relative">
            <Carousel
              opts={{ align: 'start', loop: true }}
             setApi={setCarouselApi}

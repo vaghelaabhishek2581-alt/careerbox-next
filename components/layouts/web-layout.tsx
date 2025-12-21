@@ -18,7 +18,7 @@ const WebLayout = ({children}: {children: React.ReactNode   }) => {
   return (
     <div>
       <Header />
-      <div className={showsBreadcrumb ? 'pt-[140px] lg:pt-[160px]' : 'pt-28'}>
+      <div className={showsBreadcrumb ? 'pt-20 lg:pt-24' : 'pt-20'}>
       {children}
       </div>
     </div>

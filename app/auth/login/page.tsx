@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { loginUser } from "@/lib/redux/slices/authSlice";
-import apiClient from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import Logo from "@/components/logo";
 
 export default function LoginPage() {
@@ -72,54 +71,87 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-      <div className="w-full max-w-md">
-        {/* Back to home */}
-        <Link
-          href="/"
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Home
-        </Link>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-100/40 blur-[100px]" />
+        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-100/40 blur-[100px]" />
+        <div className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-indigo-100/40 blur-[100px]" />
+      </div>
 
-        <Card className="shadow-2xl border-0">
-          <CardHeader className="text-center pb-4">
-            <div className="flex justify-center mb-4">
-              <Logo />
+      <div className="w-full max-w-[440px] p-4 relative z-10">
+        {/* Back to home */}
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors group"
+          >
+            <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center mr-3 shadow-sm group-hover:shadow-md transition-all">
+              <ArrowLeft className="h-4 w-4 text-slate-600 group-hover:text-slate-900" />
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-            <CardDescription>
-              Sign in to your Career-Box account to continue your journey
+            Back to Home
+          </Link>
+        </div>
+
+        <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.08)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
+          <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500" />
+          
+          <CardHeader className="text-center pb-2 pt-8 px-8">
+            <div className="flex justify-center mb-6">
+              <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100">
+                <Logo />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold text-slate-900 tracking-tight">Welcome Back</CardTitle>
+            <CardDescription className="text-slate-500 text-base mt-2">
+              Sign in to access your dashboard
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          
+          <CardContent className="p-8 pt-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="bg-red-50 border-red-100 text-red-700">
+                  <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  required
-                  className="h-12"
-                  disabled={isLoading}
-                />
+                <Label htmlFor="email" className="text-slate-700 font-medium">Email Address</Label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Mail className="h-5 w-5" />
+                  </div>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    required
+                    className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Lock className="h-5 w-5" />
+                  </div>
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -129,21 +161,21 @@ export default function LoginPage() {
                       setFormData({ ...formData, password: e.target.value })
                     }
                     required
-                    className="h-12 pr-12"
+                    className="h-12 pl-12 pr-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                     disabled={isLoading}
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    className="absolute right-1 top-1 h-10 w-10 p-0 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoading}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-500" />
+                      <EyeOff className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-500" />
+                      <Eye className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
@@ -151,30 +183,36 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 rounded-xl text-base"
                 disabled={isLoading}
               >
-                {isLoading ? "Signing In..." : "Sign In"}
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Signing In...</span>
+                  </div>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
 
-            {/* OAuth Providers */}
-            <div className="mt-6">
+            <div className="mt-8">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-300" />
+                  <span className="w-full border-t border-slate-200" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-gray-500">
+                <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                  <span className="bg-white px-4 text-slate-400 font-medium">
                     Or continue with
                   </span>
                 </div>
               </div>
 
-              <div className="mt-6">
+              <div className="mt-8">
                 <Button
                   variant="outline"
-                  className="w-full h-12"
+                  className="w-full h-12 bg-white hover:bg-slate-50 border-slate-200 text-slate-700 font-medium rounded-xl transition-all"
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
                 >
@@ -196,24 +234,28 @@ export default function LoginPage() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Continue with Google
+                  Google
                 </Button>
               </div>
             </div>
 
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
+            <div className="mt-8 text-center">
+              <p className="text-slate-600">
                 Don&apos;t have an account?{" "}
                 <Link
                   href="/auth/signup"
-                  className="text-blue-600 hover:text-blue-700 font-semibold"
+                  className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition-all"
                 >
-                  Sign up here
+                  Create account
                 </Link>
               </p>
             </div>
           </CardContent>
         </Card>
+        
+        <div className="mt-8 text-center text-xs text-slate-400">
+          &copy; {new Date().getFullYear()} CareerBox. All rights reserved.
+        </div>
       </div>
     </div>
   );

@@ -105,7 +105,7 @@ export async function authenticateRequest(
   try {
     // Try NextAuth session first (for web app)
     const { getServerSession } = await import("next-auth");
-    const { authOptions } = await import("../app/api/auth/[...nextauth]/route");
+    const { authOptions } = await import("@/lib/auth/options");
 
     try {
       const session = await getServerSession(authOptions);

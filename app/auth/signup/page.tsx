@@ -232,77 +232,86 @@ function AuthPageContent() {
 
   if (status === "loading") {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium">Loading your experience...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden bg-white">
       {/* Video Background - Desktop Only */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-purple-600 to-blue-700">
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-slate-900/90">
         <video
           autoPlay
           muted
           loop
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
         >
           <source src="/signup.mp4" type="video/mp4" />
         </video>
 
-        {/* Video Overlay */}
-        <div className="absolute inset-0 bg-black/30"></div>
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-purple-900 mix-blend-multiply" />
 
         {/* Content Overlay */}
-        <div className="relative z-10 flex flex-col justify-center items-start p-12 text-white max-w-lg">
-          <div className="mb-8">
-            <Logo />
+        <div className="relative z-10 flex flex-col justify-center items-start p-16 text-white max-w-2xl h-full">
+          <div className="mb-12">
+            {/* <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl inline-block border border-white/10"> */}
+            <Link href="/" className="hidden md:flex items-center space-x-2 group flex-shrink-0">
+              <Logo className="text-white" />
+            </Link>  
           </div>
-          <h1 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
+          
+          <h1 className="text-5xl xl:text-6xl font-bold mb-8 leading-tight tracking-tight">
             {mode === "signup" ? (
               <>
                 Start Your Journey to
                 <br />
-                <span className="text-purple-300">Professional Excellence</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-purple-200">Professional Excellence</span>
               </>
             ) : (
               <>
                 Welcome Back to
                 <br />
-                <span className="text-blue-300">Your Career Journey</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-purple-200">Your Career Journey</span>
               </>
             )}
           </h1>
-          <p className="text-lg xl:text-xl text-purple-100 mb-8 leading-relaxed">
+          
+          <p className="text-xl text-blue-100/80 mb-12 leading-relaxed max-w-lg font-light">
             {mode === "signup"
               ? "Join thousands of professionals who have transformed their careers with our personalized guidance platform."
               : "Continue your path to professional excellence with personalized guidance and opportunities."}
           </p>
-          <div className="flex items-center gap-8">
-            <div className="text-center">
-              <div className="text-2xl xl:text-3xl font-bold text-purple-300">
+
+          <div className="grid grid-cols-3 gap-12 w-full max-w-lg border-t border-white/10 pt-12">
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
                 {mode === "signup" ? "10K+" : "50K+"}
               </div>
-              <div className="text-xs xl:text-sm text-purple-200">
-                {mode === "signup" ? "New Users Monthly" : "Active Users"}
+              <div className="text-sm text-blue-200/60 uppercase tracking-wider font-medium">
+                {mode === "signup" ? "New Users" : "Active Users"}
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl xl:text-3xl font-bold text-blue-300">
-                {mode === "signup" ? "500+" : "1,200+"}
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
+                {mode === "signup" ? "500+" : "1.2K+"}
               </div>
-              <div className="text-xs xl:text-sm text-blue-200">
-                {mode === "signup" ? "Career Paths" : "Partner Companies"}
+              <div className="text-sm text-blue-200/60 uppercase tracking-wider font-medium">
+                {mode === "signup" ? "Career Paths" : "Partners"}
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl xl:text-3xl font-bold text-green-300">
+            <div>
+              <div className="text-3xl font-bold text-white mb-1">
                 {mode === "signup" ? "95%" : "96%"}
               </div>
-              <div className="text-xs xl:text-sm text-green-200">
-                {mode === "signup" ? "Satisfaction Rate" : "Success Rate"}
+              <div className="text-sm text-blue-200/60 uppercase tracking-wider font-medium">
+                Success Rate
               </div>
             </div>
           </div>
@@ -310,140 +319,131 @@ function AuthPageContent() {
       </div>
 
       {/* Auth Form */}
-      <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-slate-50 to-purple-50 lg:bg-white overflow-auto">
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md">
-            {/* Back to home - Mobile Only */}
-            <Link
-              href="/"
-              className="lg:hidden inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Link>
+      <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-auto relative">
+        {/* Mobile Header */}
+        <div className="lg:hidden p-6 flex justify-between items-center bg-white border-b border-slate-100 sticky top-0 z-20">
+          <Logo />
+          <Link
+            href="/"
+            className="text-sm font-medium text-slate-500 hover:text-slate-900"
+          >
+            Back to Home
+          </Link>
+        </div>
 
-            {/* Desktop Header */}
-            <div className="hidden lg:block mb-6">
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+          <div className="w-full max-w-[480px]">
+            {/* Desktop Back Link */}
+            <div className="hidden lg:block mb-8">
               <Link
                 href="/"
-                className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+                className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors group"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center mr-3 shadow-sm group-hover:shadow-md transition-all">
+                  <ArrowLeft className="h-4 w-4 text-slate-600 group-hover:text-slate-900" />
+                </div>
                 Back to Home
               </Link>
-              <div className="mb-4">
-                <Logo />
-              </div>
             </div>
 
-            <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl font-bold text-gray-900">
-                  {mode === "signup" ? "Create Your Account" : "Welcome Back"}
+            <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.05)] border-0 bg-white rounded-3xl overflow-hidden">
+              <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500" />
+              
+              <CardHeader className="text-center pb-2 pt-8 px-8">
+                <CardTitle className="text-3xl font-bold text-slate-900 tracking-tight">
+                  {mode === "signup" ? "Create Account" : "Welcome Back"}
                 </CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-slate-500 text-base mt-2">
                   {mode === "signup"
-                    ? "Start your journey to professional excellence"
-                    : "Sign in to continue your professional journey"}
+                    ? "Enter your details to get started"
+                    : "Enter your credentials to access your account"}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+
+              <CardContent className="p-8 pt-6 space-y-6">
                 {error && (
-                  <Alert
-                    variant="destructive"
-                    className="border-red-200 bg-red-50"
-                  >
+                  <Alert variant="destructive" className="bg-red-50 border-red-100 text-red-700 rounded-xl">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-red-800">
-                      {error}
-                    </AlertDescription>
+                    <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
 
                 {successMessage && (
-                  <Alert className="border-green-200 bg-green-50">
+                  <Alert className="bg-green-50 border-green-100 text-green-700 rounded-xl">
                     <AlertCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      {successMessage}
-                    </AlertDescription>
+                    <AlertDescription>{successMessage}</AlertDescription>
                   </Alert>
                 )}
 
                 {isVerificationSent && (
-                  <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="text-blue-800 font-medium mb-2">
-                      📧 Verification Email Sent
+                  <div className="text-center p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Mail className="h-6 w-6 text-blue-600" />
                     </div>
-                    <p className="text-sm text-blue-700 mb-3">
+                    <h3 className="text-blue-900 font-semibold mb-2">Check your inbox</h3>
+                    <p className="text-sm text-blue-700 mb-4 leading-relaxed">
                       We've sent a verification link to <strong>{email}</strong>.
-                      Please check your email and click the link to verify your account.
+                      Click the link to activate your account.
                     </p>
-                    <p className="text-xs text-blue-600">
-                      Didn't receive the email? Check your spam folder or{" "}
-                      <button
-                        className="underline hover:no-underline font-medium"
-                        onClick={handleResendVerification}
-                        disabled={isLoading}
-                      >
-                        resend verification email
-                      </button>
-                    </p>
+                    <button
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800 underline decoration-blue-300 hover:decoration-blue-800 transition-all"
+                      onClick={handleResendVerification}
+                      disabled={isLoading}
+                    >
+                      Resend verification email
+                    </button>
                   </div>
                 )}
 
-                {/* Google Auth */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-12 text-gray-700 border-2 hover:bg-gray-50 font-medium"
-                  onClick={handleGoogleAuth}
-                  disabled={isLoading}
-                >
-                  <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  {isLoading ? "Connecting..." : "Continue with Google"}
-                </Button>
+                <div className="space-y-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 bg-white hover:bg-slate-50 border-slate-200 text-slate-700 font-medium rounded-xl transition-all relative"
+                    onClick={handleGoogleAuth}
+                    disabled={isLoading}
+                  >
+                    <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      />
+                    </svg>
+                    Continue with Google
+                  </Button>
 
-                {/* Divider */}
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-gray-500">
-                      Or continue with email
-                    </span>
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-slate-100" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                      <span className="bg-white px-4 text-slate-400 font-medium">
+                        Or continue with email
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Email Form */}
-                <form onSubmit={handleEmailAuth} className="space-y-4">
+                <form onSubmit={handleEmailAuth} className="space-y-5">
                   {mode === "signup" && (
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="name"
-                        className="text-gray-700 font-medium"
-                      >
-                        Full Name
-                      </Label>
+                      <Label htmlFor="name" className="text-slate-700 font-medium ml-1">Full Name</Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <User className="h-5 w-5" />
+                        </div>
                         <Input
                           id="name"
                           type="text"
@@ -451,7 +451,7 @@ function AuthPageContent() {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           required
-                          className="pl-10 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                           disabled={isLoading}
                         />
                       </div>
@@ -459,22 +459,19 @@ function AuthPageContent() {
                   )}
 
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="email"
-                      className="text-gray-700 font-medium"
-                    >
-                      Email Address
-                    </Label>
+                    <Label htmlFor="email" className="text-slate-700 font-medium ml-1">Email Address</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        <Mail className="h-5 w-5" />
+                      </div>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder="name@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="pl-10 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                        className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                         disabled={isLoading}
                       />
                     </div>
@@ -482,22 +479,19 @@ function AuthPageContent() {
 
                   {mode === "signup" && (
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="phone"
-                        className="text-gray-700 font-medium"
-                      >
-                        Phone Number
-                      </Label>
+                      <Label htmlFor="phone" className="text-slate-700 font-medium ml-1">Phone Number</Label>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <Phone className="h-5 w-5" />
+                        </div>
                         <Input
                           id="phone"
                           type="tel"
-                          placeholder="Enter your phone number"
+                          placeholder="+91 xxxxx xxxxx"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           required
-                          className="pl-10 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                           disabled={isLoading}
                         />
                       </div>
@@ -505,41 +499,44 @@ function AuthPageContent() {
                   )}
 
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="password"
-                      className="text-gray-700 font-medium"
-                    >
-                      Password
-                    </Label>
+                    <div className="flex items-center justify-between ml-1">
+                      <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
+                      {mode === "signin" && (
+                        <Link
+                          href="/auth/forgot-password"
+                          className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          Forgot password?
+                        </Link>
+                      )}
+                    </div>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        <Lock className="h-5 w-5" />
+                      </div>
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder={
-                          mode === "signup"
-                            ? "Create a password (min. 6 characters)"
-                            : "Enter your password"
-                        }
+                        placeholder={mode === "signup" ? "Min. 8 characters" : "Enter your password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         minLength={mode === "signup" ? 6 : undefined}
-                        className="pl-10 pr-12 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                        className="h-12 pl-12 pr-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                         disabled={isLoading}
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        className="absolute right-1 top-1 h-10 w-10 p-0 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600"
                         onClick={() => setShowPassword(!showPassword)}
                         disabled={isLoading}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
@@ -547,38 +544,35 @@ function AuthPageContent() {
 
                   {mode === "signup" && (
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="confirmPassword"
-                        className="text-gray-700 font-medium"
-                      >
-                        Confirm Password
-                      </Label>
+                      <Label htmlFor="confirmPassword" className="text-slate-700 font-medium ml-1">Confirm Password</Label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <Lock className="h-5 w-5" />
+                        </div>
                         <Input
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Confirm your password"
+                          placeholder="Re-enter your password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
-                          className="pl-10 pr-12 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="h-12 pl-12 pr-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                           disabled={isLoading}
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                          className="absolute right-1 top-1 h-10 w-10 p-0 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600"
                           onClick={() =>
                             setShowConfirmPassword(!showConfirmPassword)
                           }
                           disabled={isLoading}
                         >
                           {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4 text-gray-400" />
+                            <EyeOff className="h-4 w-4" />
                           ) : (
-                            <Eye className="h-4 w-4 text-gray-400" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </Button>
                       </div>
@@ -587,24 +581,25 @@ function AuthPageContent() {
 
                   <Button
                     type="submit"
-                    className={`w-full h-12 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 ${mode === "signup"
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    className={`w-full h-12 text-white font-semibold shadow-lg transition-all duration-300 rounded-xl text-base ${mode === "signup"
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-purple-500/20 hover:shadow-purple-500/30"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-blue-500/20 hover:shadow-blue-500/30"
                       }`}
                     disabled={isLoading}
                   >
-                    {isLoading
-                      ? mode === "signup"
-                        ? "Creating Account..."
-                        : "Signing In..."
-                      : mode === "signup"
-                        ? "Create Account"
-                        : "Sign In"}
+                    {isLoading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>{mode === "signup" ? "Creating Account..." : "Signing In..."}</span>
+                      </div>
+                    ) : (
+                      mode === "signup" ? "Create Account" : "Sign In"
+                    )}
                   </Button>
                 </form>
 
-                <div className="text-center space-y-2">
-                  <p className="text-gray-600">
+                <div className="text-center">
+                  <p className="text-slate-600 mb-2">
                     {mode === "signup"
                       ? "Already have an account?"
                       : "Don't have an account?"}{" "}
@@ -616,43 +611,37 @@ function AuthPageContent() {
                         }`}
                       disabled={isLoading}
                     >
-                      {mode === "signup" ? "Sign in here" : "Sign up here"}
+                      {mode === "signup" ? "Sign in here" : "Create account"}
                     </button>
                   </p>
-
-                  {mode === "signin" && (
-                    <p className="text-gray-600">
-                      <Link
-                        href="/auth/forgot-password"
-                        className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
-                      >
-                        Forgot your password?
-                      </Link>
-                    </p>
-                  )}
                 </div>
 
                 {mode === "signup" && (
-                  <div className="text-xs text-gray-500 text-center">
+                  <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 text-center leading-relaxed">
                     By creating an account, you agree to our{" "}
                     <Link
                       href="/terms"
-                      className="text-blue-600 hover:underline"
+                      className="text-slate-700 hover:text-blue-600 hover:underline font-medium"
                     >
                       Terms of Service
                     </Link>{" "}
                     and{" "}
                     <Link
                       href="/privacy"
-                      className="text-blue-600 hover:underline"
+                      className="text-slate-700 hover:text-blue-600 hover:underline font-medium"
                     >
                       Privacy Policy
                     </Link>
+                    .
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        <div className="mb-8 text-center text-xs text-slate-400">
+          &copy; {new Date().getFullYear()} CareerBox. All rights reserved.
         </div>
       </div>
     </div>
@@ -662,10 +651,9 @@ function AuthPageContent() {
 export default function AuthPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
         </div>
       </div>
     }>
