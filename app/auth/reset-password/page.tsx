@@ -38,7 +38,7 @@ function ResetPasswordContent() {
   }, [token])
 
   const verifyToken = async (resetToken: string) => {
-    try {
+    try { 
       const response = await fetch(`/api/auth/reset-password?token=${resetToken}`)
       const data = await response.json()
 
@@ -106,14 +106,14 @@ function ResetPasswordContent() {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
         {/* Decorative Background Elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-100/40 blur-[100px]" />
           <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-100/40 blur-[100px]" />
         </div>
-
-        <Card className="w-full max-w-md shadow-[0_20px_50px_rgb(0,0,0,0.08)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl z-10">
+        
+        <Card className="w-full max-w-md shadow-[0_20px_50px_rgb(0,0,0,0.2)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl z-10">
           <CardContent className="flex flex-col items-center justify-center p-12">
             <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center mb-6">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -128,7 +128,7 @@ function ResetPasswordContent() {
 
   if (!tokenValid) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
         {/* Decorative Background Elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-red-100/40 blur-[100px]" />
@@ -148,7 +148,7 @@ function ResetPasswordContent() {
             </Link>
           </div>
 
-          <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.08)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
+          <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.2)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
             <div className="h-1.5 w-full bg-red-500" />
             
             <CardHeader className="text-center pb-2 pt-8 px-8">
@@ -196,7 +196,7 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-100/40 blur-[100px]" />
@@ -217,7 +217,7 @@ function ResetPasswordContent() {
           </Link>
         </div>
 
-        <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.08)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
+        <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.2)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
           <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500" />
           
           <CardHeader className="text-center pb-2 pt-8 px-8">
@@ -378,7 +378,7 @@ function ResetPasswordContent() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
         </div>

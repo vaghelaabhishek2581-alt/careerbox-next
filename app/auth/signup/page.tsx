@@ -267,29 +267,29 @@ function AuthPageContent() {
             </Link>  
           </div>
           
-          <h1 className="text-5xl xl:text-6xl font-bold mb-8 leading-tight tracking-tight">
+          <h1 className="text-4xl xl:text-5xl font-bold mb-8 leading-tight tracking-tight">
             {mode === "signup" ? (
               <>
                 Start Your Journey to
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-purple-200">Professional Excellence</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">Professional Excellence</span>
               </>
             ) : (
               <>
                 Welcome Back to
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-purple-200">Your Career Journey</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Your Career Journey</span>
               </>
             )}
           </h1>
           
-          <p className="text-xl text-blue-100/80 mb-12 leading-relaxed max-w-lg font-light">
+          <p className="text-xl text-blue-100 mb-12 leading-relaxed max-w-lg font-light">
             {mode === "signup"
               ? "Join thousands of professionals who have transformed their careers with our personalized guidance platform."
               : "Continue your path to professional excellence with personalized guidance and opportunities."}
           </p>
 
-          <div className="grid grid-cols-3 gap-12 w-full max-w-lg border-t border-white/10 pt-12">
+          <div className="grid grid-cols-3 gap-12 w-full max-w-lg border-t border-white/50 pt-12">
             <div>
               <div className="text-3xl font-bold text-white mb-1">
                 {mode === "signup" ? "10K+" : "50K+"}
@@ -319,7 +319,7 @@ function AuthPageContent() {
       </div>
 
       {/* Auth Form */}
-      <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-auto relative">
+      <div className="flex-1 flex flex-col h-full overflow-auto relative">
         {/* Mobile Header */}
         <div className="lg:hidden p-6 flex justify-between items-center bg-white border-b border-slate-100 sticky top-0 z-20">
           <Logo />
@@ -346,7 +346,7 @@ function AuthPageContent() {
               </Link>
             </div>
 
-            <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.05)] border-0 bg-white rounded-3xl overflow-hidden">
+            <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.2)] border-0 bg-white rounded-3xl overflow-hidden">
               <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500" />
               
               <CardHeader className="text-center pb-2 pt-8 px-8">

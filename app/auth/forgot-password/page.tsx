@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-100/40 blur-[100px]" />
@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.08)] border-0 bg-white backdrop-blur-xl rounded-3xl overflow-hidden">
+        <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.2)] border-0 bg-white backdrop-blur-xl rounded-3xl overflow-hidden">
           <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500" />
           
           <CardHeader className="text-center pb-2 pt-8 px-8">

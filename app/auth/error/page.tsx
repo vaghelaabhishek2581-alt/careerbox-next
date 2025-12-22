@@ -39,7 +39,7 @@ function AuthErrorContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-red-100/40 blur-[100px]" />
@@ -48,7 +48,7 @@ function AuthErrorContent() {
       </div>
 
       <div className="w-full max-w-[480px] p-4 relative z-10">
-        <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.08)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
+        <Card className="shadow-[0_20px_50px_rgb(0,0,0,0.2)] border-0 bg-white/80 backdrop-blur-xl rounded-3xl overflow-hidden">
           <div className="h-1.5 w-full bg-red-500" />
           
           <CardHeader className="text-center pb-2 pt-8 px-8">
@@ -127,7 +127,7 @@ function AuthErrorContent() {
 export default function AuthError() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
         </div>

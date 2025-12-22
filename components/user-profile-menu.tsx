@@ -1,387 +1,17 @@
-// "use client";
-
-// import { useSession, signOut } from "next-auth/react";
-// import { useRouter } from "next/navigation";
-// import { useEffect, useState } from "react";
-// import { useSelector, useDispatch } from "react-redux";
-// import { RootState, AppDispatch } from "@/lib/redux/store";
-// import { fetchProfile } from "@/lib/redux/slices/profileSlice";
-// import { switchRole } from "@/lib/redux/slices/authSlice";
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuLabel,
-//   DropdownMenuSeparator,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Button } from "@/components/ui/button";
-// import { ScrollArea } from "@/components/ui/scroll-area";
-// import {
-//   Home,
-//   Users,
-//   GraduationCap,
-//   User,
-//   Building2,
-//   Briefcase,
-//   Settings,
-//   LogOut,
-//   FileText,
-//   Activity,
-// } from "lucide-react";
-// import InstituteSelector from "@/components/institute-selector";
-// import { handleUserSignOut } from "@/src/services/auth/auth.service";
-// import { usePathname } from "next/navigation";
-// import { API } from "@/lib/api/services";
-
-// // Define role configurations outside component to avoid recreation on every render
-// const ROLE_CONFIGS = {
-//   student: { icon: GraduationCap, label: "Student Account", color: "bg-blue-500" },
-//   professional: { icon: User, label: "Professional Account", color: "bg-green-500" },
-//   user: { icon: User, label: "User Account", color: "bg-green-500" },
-//   business: { icon: Briefcase, label: "Business Account", color: "bg-purple-500" },
-//   institute: { icon: Building2, label: "Institute Account", color: "bg-orange-500" },
-//   admin: { icon: Settings, label: "Admin Account", color: "bg-red-500" },
-// } as const;
-
-// type RoleType = keyof typeof ROLE_CONFIGS;
-
-// export default function UserProfileMenu() {
-//   const { data: session, status, update } = useSession();
-//   const router = useRouter();
-//   const pathname = usePathname();
-//   const dispatch = useDispatch<AppDispatch>();
-//   const { profile } = useSelector((state: RootState) => state.profile) as { profile: any };
-
-//   // Fetch profile data when component mounts
-//   useEffect(() => {
-//     if (session?.user?.id && !profile) {
-//       dispatch(fetchProfile());
-//     }
-//   }, [session?.user?.id, profile, dispatch]);
-
-//   if (status === "loading") {
-//     return null;
-//   }
-
-//   if (!session) {
-//     return null;
-//   }
-
-//   const userNavigation = [
-//     { name: "Explore", href: "/recommendation-collections", icon: Home },
-//     { name: "Profile", href: "/user", icon: Users },
-//     { name: "Applied Courses", href: "/user/applied-courses", icon: GraduationCap },
-//   ];
-
-//   const registrationNavigation = [
-//     { name: "Registration Status", href: "/user/registration-status", icon: FileText },
-//     { name: "Register Institute", href: "/user/register-institute", icon: Building2 },
-//     { name: "Register Business", href: "/user/register-business", icon: Briefcase },
-//   ];
-
-//   const roleBasedNavigation = {
-//     student: [{ name: "My Applications", href: "/user/applications", icon: Briefcase }],
-//     institute: [{ name: "My Institute", href: "/institute", icon: Building2 }],
-//     admin: [{ name: "Admin Panel", href: "/admin", icon: Activity }],
-//   };
-
-//   const userRole = session.user?.activeRole || session.user?.roles?.[0] || "student";
-//   const roleNavigation = roleBasedNavigation[userRole as keyof typeof roleBasedNavigation] || [];
-
-//   const handleNavigation = async (href: string, targetRole?: string) => {
-//     // Switch role if specified and different from current role
-//     if (targetRole && targetRole !== userRole && session?.user?.roles?.includes(targetRole)) {
-//       try {
-//         // Update Redux state first (for immediate UI feedback)
-//         dispatch(switchRole(targetRole));
-
-//         // Call API to update role in database (async, don't wait)
-//         API.user
-//           .switchRole(targetRole)
-//           .then((response) => {
-//             if (response.success) {
-//               console.log(`Role switched to: ${targetRole} (persisted to database)`);
-//               // Update NextAuth session quietly in background
-//               update({
-//                 ...session,
-//                 user: { ...session.user, activeRole: targetRole },
-//               });
-//             } else {
-//               console.error("Failed to persist role switch:", response.error);
-//               // Revert Redux state if API call failed
-//               dispatch(switchRole(userRole));
-//             }
-//           })
-//           .catch((error) => {
-//             console.error("Failed to switch role:", error);
-//             // Revert Redux state if API call failed
-//             dispatch(switchRole(userRole));
-//           });
-//       } catch (error) {
-//         console.error("Failed to switch role:", error);
-//         return; // Don't navigate if role switch failed
-//       }
-//     }
-//     router.push(href);
-//   };
-
-//   const isActive = (href: string) => pathname === href;
-
-//   // Get role icon using the same configuration
-//   const RoleIcon = ROLE_CONFIGS[userRole as RoleType]?.icon || User;
-
-//   // Get user initials for avatar fallback
-//   const userInitials = session.user?.name
-//     ?.split(" ")
-//     .map((n) => n[0])
-//     .join("")
-//     .toUpperCase() || "U";
-
-//   return (
-//     <DropdownMenu>
-//       <DropdownMenuTrigger asChild>
-//         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-//           <Avatar className="h-10 w-10">
-//             <AvatarImage src={undefined} alt={session.user?.name || "User"} />
-//             <AvatarFallback className="bg-purple-600 text-white font-semibold">
-//               {userInitials}
-//             </AvatarFallback>
-//           </Avatar>
-//           {/* Role indicator badge */}
-//           <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-white flex items-center justify-center border border-gray-200">
-//             <RoleIcon className="h-2.5 w-2.5 text-gray-600" />
-//           </div>
-//         </Button>
-//       </DropdownMenuTrigger>
-
-//       <DropdownMenuContent className="w-80 max-h-[80vh]" align="end" forceMount>
-//         <ScrollArea className="max-h-[calc(80vh-2rem)]">
-//           {/* User Profile Header */}
-//           <div className="p-4">
-//             <div className="flex items-center gap-3">
-//               <Avatar className="h-12 w-12">
-//                 <AvatarImage src={undefined} alt={session.user?.name || "User"} />
-//                 <AvatarFallback className="bg-purple-600 text-white font-semibold text-lg">
-//                   {userInitials}
-//                 </AvatarFallback>
-//               </Avatar>
-//               <div className="flex flex-col flex-1">
-//                 <p className="text-base font-semibold leading-none">{session.user?.name || "User"}</p>
-//                 <div className="flex items-center gap-2 mt-1.5">
-//                   <span className="text-xs text-muted-foreground capitalize">
-//                     {userRole}
-//                   </span>
-//                 </div>
-//                 <p className="text-sm text-muted-foreground mt-1">{session.user?.email}</p>
-//               </div>
-//             </div>
-//           </div>
-
-//           <DropdownMenuSeparator />
-
-//           {/* Role Switcher - Show when user has multiple roles */}
-//           {session.user?.roles && session.user.roles.length > 1 && (
-//             <>
-//               <div className="px-2 py-2">
-//                 <p className="px-2 text-sm font-bold text-gray-900 mb-2">Switch Role</p>
-//                 <div className="space-y-1">
-//                   {session.user.roles.map((role) => {
-//                     const RoleConfig = ROLE_CONFIGS[role as RoleType];
-//                     const isCurrentRole = role === userRole;
-
-//                     if (!RoleConfig) return null;
-
-//                     const RoleIconComponent = RoleConfig.icon;
-
-//                     return (
-//                       <DropdownMenuItem
-//                         key={role}
-//                         onClick={async () => {
-//                           if (role !== userRole) {
-//                             try {
-//                               // Call API to switch role
-//                               const response = await fetch('/api/user/switch-role', {
-//                                 method: 'POST',
-//                                 headers: { 'Content-Type': 'application/json' },
-//                                 body: JSON.stringify({ activeRole: role }),
-//                               });
-
-//                               if (!response.ok) {
-//                                 throw new Error('Failed to switch role');
-//                               }
-
-//                               // Update Redux state
-//                               dispatch(switchRole(role));
-
-//                               // Update NextAuth session
-//                               await update({ activeRole: role });
-
-//                               // Navigate to appropriate dashboard
-//                               const dashboardRoutes: Record<string, string> = {
-//                                 admin: '/admin',
-//                                 institute: '/institute',
-//                                 business: '/business',
-//                                 user: '/user',
-//                                 student: '/user',
-//                                 professional: '/user',
-//                               };
-
-//                               router.push(dashboardRoutes[role] || '/user');
-//                             } catch (error) {
-//                               console.error('Failed to switch role:', error);
-//                               alert('Failed to switch role. Please try again.');
-//                             }
-//                           }
-//                         }}
-//                         className={`cursor-pointer ${isCurrentRole
-//                           ? 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
-//                           : 'hover:bg-gray-50'
-//                           }`}
-//                       >
-//                         <div className="flex items-center gap-3 w-full">
-//                           <div className={`p-2 rounded-lg ${RoleConfig.color} bg-opacity-10`}>
-//                             <RoleIconComponent className={`h-4 w-4 ${RoleConfig.color.replace('bg-', 'text-')}`} />
-//                           </div>
-//                           <div className="flex-1">
-//                             <p className="text-sm font-medium capitalize">{role}</p>
-//                             <p className="text-xs text-muted-foreground">{RoleConfig.label}</p>
-//                           </div>
-//                           {isCurrentRole && (
-//                             <div className="flex items-center gap-1">
-//                               <span className="text-xs font-medium text-blue-600">Active</span>
-//                               <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-//                             </div>
-//                           )}
-//                         </div>
-//                       </DropdownMenuItem>
-//                     );
-//                   })}
-//                 </div>
-//               </div>
-//               <DropdownMenuSeparator />
-//             </>
-//           )}
-
-//           {/* User Name Link */}
-//           <DropdownMenuItem onClick={() => handleNavigation("/user", "user")} className="cursor-pointer">
-//             <span className="text-blue-600 font-medium">{session.user?.name}</span>
-//           </DropdownMenuItem>
-
-//           <DropdownMenuSeparator />
-
-//           {/* Sign Out Button */}
-//           <DropdownMenuItem onClick={() => handleUserSignOut()} className="cursor-pointer text-red-600">
-//             <LogOut className="mr-2 h-4 w-4" />
-//             <span>Sign Out</span>
-//           </DropdownMenuItem>
-
-//           <DropdownMenuSeparator />
-
-//           {/* Institute Selector - Show when user has institute role */}
-//           {userRole === "institute" && (
-//             <>
-//               <div className="p-2">
-//                 <InstituteSelector />
-//               </div>
-//               <DropdownMenuSeparator />
-//             </>
-//           )}
-
-//           {/* Quick Navigation */}
-//           <div className="px-2 py-2">
-//             <p className="px-2 text-sm font-bold text-gray-900 mb-2">Quick Navigation</p>
-//             {userNavigation.map((item) => {
-//               const IconComponent = item.icon;
-//               const active = isActive(item.href);
-//               return (
-//                 <DropdownMenuItem
-//                   key={item.name}
-//                   onClick={() => {
-//                     // Switch to 'user' role when clicking on Profile navigation
-//                     const targetRole = item.name === "Profile" ? "user" : undefined;
-//                     handleNavigation(item.href, targetRole);
-//                   }}
-//                   className={`cursor-pointer ${active ? "bg-blue-50 text-blue-700" : ""}`}
-//                 >
-//                   <IconComponent className="mr-2 h-4 w-4" />
-//                   <span>{item.name}</span>
-//                   {active && <span className="ml-auto text-blue-600">●</span>}
-//                 </DropdownMenuItem>
-//               );
-//             })}
-//           </div>
-
-//           <DropdownMenuSeparator />
-
-//           {/* Registration Navigation - Only show for user role */}
-//           {userRole === "user" && (
-//             <>
-//               <div className="px-2 py-2">
-//                 <p className="px-2 text-sm font-bold text-gray-900 mb-2">Registration</p>
-//                 {registrationNavigation.map((item) => {
-//                   const IconComponent = item.icon;
-//                   const active = isActive(item.href);
-//                   return (
-//                     <DropdownMenuItem
-//                       key={item.name}
-//                       onClick={() => handleNavigation(item.href)}
-//                       className={`cursor-pointer ${active ? "bg-blue-50 text-blue-700" : ""}`}
-//                     >
-//                       <IconComponent className="mr-2 h-4 w-4" />
-//                       <span>{item.name}</span>
-//                       {active && <span className="ml-auto text-blue-600">●</span>}
-//                     </DropdownMenuItem>
-//                   );
-//                 })}
-//               </div>
-//               <DropdownMenuSeparator />
-//             </>
-//           )}
-
-//           {/* Role-based Navigation */}
-//           {roleNavigation.length > 0 && (
-//             <div className="px-2 py-2">
-//               <p className="px-2 text-sm font-bold text-gray-900 mb-2">
-//                 {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Tools
-//               </p>
-//               {roleNavigation.map((item) => {
-//                 const IconComponent = item.icon;
-//                 const active = isActive(item.href);
-//                 return (
-//                   <DropdownMenuItem
-//                     key={item.name}
-//                     onClick={() => handleNavigation(item.href)}
-//                     className={`cursor-pointer ${active ? "bg-blue-50 text-blue-700" : ""}`}
-//                   >
-//                     <IconComponent className="mr-2 h-4 w-4" />
-//                     <span>{item.name}</span>
-//                     {active && <span className="ml-auto text-blue-600">●</span>}
-//                   </DropdownMenuItem>
-//                 );
-//               })}
-//             </div>
-//           )}
-//         </ScrollArea>
-//       </DropdownMenuContent>
-//     </DropdownMenu>
-//   );
-// }
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/lib/redux/store";
 import { fetchProfile } from "@/lib/redux/slices/profileSlice";
 import { switchRole } from "@/lib/redux/slices/authSlice";
+import { fetchUserInstitutes, setSelectedInstitute } from "@/lib/redux/slices/instituteSlice";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -399,20 +29,26 @@ import {
   LogOut,
   FileText,
   Activity,
+  ChevronRight,
+  HelpCircle,
+  MessageSquare,
+  Moon,
+  RefreshCw,
+  LayoutGrid
 } from "lucide-react";
 import InstituteSelector from "@/components/institute-selector";
 import { handleUserSignOut } from "@/src/services/auth/auth.service";
-import { usePathname } from "next/navigation";
 import { API } from "@/lib/api/services";
+import Link from "next/link";
 
-// Define role configurations outside component to avoid recreation on every render
+// Define role configurations
 const ROLE_CONFIGS = {
-  student: { icon: GraduationCap, label: "Student Account", color: "bg-blue-500" },
-  professional: { icon: User, label: "Professional Account", color: "bg-green-500" },
-  user: { icon: User, label: "User Account", color: "bg-green-500" },
-  business: { icon: Briefcase, label: "Business Account", color: "bg-purple-500" },
-  institute: { icon: Building2, label: "Institute Account", color: "bg-orange-500" },
-  admin: { icon: Settings, label: "Admin Account", color: "bg-red-500" },
+  student: { icon: GraduationCap, label: "Student Account", color: "bg-blue-100 text-blue-600" },
+  professional: { icon: User, label: "Professional Account", color: "bg-green-100 text-green-600" },
+  user: { icon: User, label: "User", color: "bg-gray-100 text-gray-600" },
+  business: { icon: Briefcase, label: "Business Account", color: "bg-purple-100 text-purple-600" },
+  institute: { icon: Building2, label: "Institute Account", color: "bg-orange-100 text-orange-600" },
+  admin: { icon: Settings, label: "Admin Account", color: "bg-red-100 text-red-600" },
 } as const;
 
 type RoleType = keyof typeof ROLE_CONFIGS;
@@ -423,335 +59,468 @@ export default function UserProfileMenu() {
   const pathname = usePathname();
   const dispatch = useDispatch<AppDispatch>();
   const { profile } = useSelector((state: RootState) => state.profile) as { profile: any };
-  const [userInstitutes, setUserInstitutes] = useState<any[]>([]);
+  const { userInstitutes, selectedInstitute } = useSelector((state: RootState) => state.institute);
+  const { currentBusiness } = useSelector((state: RootState) => state.business);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [view, setView] = useState<'main' | 'profiles'>('main');
 
   // Fetch profile data when component mounts
   useEffect(() => {
     if (session?.user?.id && !profile) {
       dispatch(fetchProfile());
     }
+    
+    // Fetch institutes if user has institute role
+    if (session?.user?.roles?.includes('institute')) {
+      dispatch(fetchUserInstitutes());
+    }
+  }, [session?.user?.id, profile, dispatch, session?.user?.roles]);
 
-    const fetchUserInstitutes = async () => {
-      if (session?.user?.activeRole === 'institute') {
-        try {
-          const res = await API.institutes.getUserInstitutes();
-          const institutes = (res?.data as any)?.data ?? [];
-          if (Array.isArray(institutes) && institutes.length > 0) {
-            setUserInstitutes(institutes);
-          }
-        } catch (error) {
-          console.error('Failed to fetch user institutes:', error);
-        }
+  if (status === "loading" || !session) {
+    return null;
+  }
+
+  // Derive user name from profile (database) or session (auth provider)
+  const userName = profile?.personalDetails?.firstName 
+    ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName || ''}`.trim()
+    : session.user?.name || "User";
+
+  const userRole = session.user?.activeRole || session.user?.roles?.[0] || "student";
+  const userInitials = session.user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() || "U";
+  const RoleIcon = ROLE_CONFIGS[userRole as RoleType]?.icon || User;
+  const RoleConfig = ROLE_CONFIGS[userRole as RoleType];
+
+  // Helper to get display name based on role
+  const getDisplayName = (role: string) => {
+    if (role === 'institute' && selectedInstitute) return selectedInstitute.name;
+    if (role === 'business' && currentBusiness) return currentBusiness.name;
+    return userName;
+  };
+
+  // Compile all available profiles
+  const allProfiles = [
+    // Generic Roles (excluding institute as they are handled separately)
+    ...(session.user?.roles || [])
+      .filter(r => r !== 'institute')
+      .map(role => {
+        const config = ROLE_CONFIGS[role as RoleType];
+        return {
+          id: role,
+          type: 'role',
+          data: role,
+          name: userName,
+          label: config?.label || role,
+          icon: config?.icon || User,
+          color: config?.color || "bg-gray-100 text-gray-600",
+          isActive: userRole === role
+        };
+      }),
+    
+    // Institutes
+    ...(session.user?.roles?.includes('institute') && Array.isArray(userInstitutes) ? userInstitutes : []).map((inst: any) => ({
+      id: inst._id,
+      type: 'institute',
+      data: inst,
+      name: inst.name,
+      label: 'Institute Account',
+      icon: Building2,
+      color: "bg-orange-100 text-orange-600",
+      isActive: userRole === 'institute' && selectedInstitute?._id === inst._id
+    }))
+  ];
+
+  // Sort: Active first, then others
+  const sortedProfiles = [
+    ...allProfiles.filter(p => p.isActive),
+    ...allProfiles.filter(p => !p.isActive)
+  ];
+
+  // Recent profiles for the main view (excluding the active one)
+  const otherProfiles = allProfiles.filter(p => !p.isActive).slice(0, 2);
+
+  const handleRoleSwitch = async (targetRole: string) => {
+    if (targetRole === userRole) return;
+    
+    setIsSwitching(true);
+    try {
+      dispatch(switchRole(targetRole));
+      
+      const response = await API.user.switchRole(targetRole);
+      
+      if (response.success) {
+        await update({ ...session, user: { ...session.user, activeRole: targetRole } });
+        
+        const dashboardRoutes: Record<string, string> = {
+          admin: '/admin',
+          institute: '/institute/dashboard',
+          business: '/business',
+          user: '/user',
+          student: '/user',
+          professional: '/user',
+        };
+        
+        router.push(dashboardRoutes[targetRole] || '/user');
+      } else {
+        dispatch(switchRole(userRole));
       }
-    };
+    } catch (error) {
+      console.error("Failed to switch role:", error);
+      dispatch(switchRole(userRole));
+    } finally {
+      setIsSwitching(false);
+    }
+  };
 
-    fetchUserInstitutes();
-  }, [session?.user?.id, profile, dispatch, session?.user?.activeRole]);
+  const handleInstituteSwitch = async (institute: any) => {
+    if (institute._id === selectedInstitute?._id && userRole === 'institute') return;
+    
+    setIsSwitching(true);
+    try {
+      // 1. Switch to institute role if needed
+      if (userRole !== 'institute') {
+        dispatch(switchRole('institute'));
+        const response = await API.user.switchRole('institute');
+        if (!response.success) throw new Error("Failed to switch role");
+        await update({ ...session, user: { ...session.user, activeRole: 'institute' } });
+      }
 
-  if (status === "loading") {
-    return null;
-  }
+      // 2. Select the institute
+      dispatch(setSelectedInstitute(institute));
+      
+      // 3. Navigate
+      router.push('/institute/dashboard');
+    } catch (error) {
+      console.error("Failed to switch institute:", error);
+    } finally {
+      setIsSwitching(false);
+    }
+  };
 
-  if (!session) {
-    return null;
-  }
-
-  const userNavigation = [
+  const menuItems = [
     { name: "Explore", href: "/recommendation-collections", icon: Home },
     { name: "Profile", href: "/user", icon: Users },
     { name: "Applied Courses", href: "/user/applied-courses", icon: GraduationCap },
   ];
 
-  const registrationNavigation = [
+  const registrationItems = [
     { name: "Registration Status", href: "/user/registration-status", icon: FileText },
     { name: "Register Institute", href: "/user/register-institute", icon: Building2 },
     { name: "Register Business", href: "/user/register-business", icon: Briefcase },
   ];
 
-  const instituteHref = '/institute/dashboard';
-
-  const roleBasedNavigation = {
-    student: [{ name: "My Applications", href: "/user/applications", icon: Briefcase }],
-    institute: [{ name: "My Institute", href: instituteHref, icon: Building2 }],
-    admin: [{ name: "Admin Panel", href: "/admin", icon: Activity }],
-  };
-
-  const userRole = session.user?.activeRole || session.user?.roles?.[0] || "student";
-  const roleNavigation = roleBasedNavigation[userRole as keyof typeof roleBasedNavigation] || [];
-
-  const handleNavigation = async (href: string, targetRole?: string) => {
-    // Switch role if specified and different from current role
-    if (targetRole && targetRole !== userRole && session?.user?.roles?.includes(targetRole)) {
-      try {
-        // Update Redux state first (for immediate UI feedback)
-        dispatch(switchRole(targetRole));
-
-        // Call API to update role in database (async, don't wait)
-        API.user
-          .switchRole(targetRole)
-          .then((response) => {
-            if (response.success) {
-              console.log(`Role switched to: ${targetRole} (persisted to database)`);
-              // Update NextAuth session quietly in background
-              update({
-                ...session,
-                user: { ...session.user, activeRole: targetRole },
-              });
-            } else {
-              console.error("Failed to persist role switch:", response.error);
-              // Revert Redux state if API call failed
-              dispatch(switchRole(userRole));
-            }
-          })
-          .catch((error) => {
-            console.error("Failed to switch role:", error);
-            // Revert Redux state if API call failed
-            dispatch(switchRole(userRole));
-          });
-      } catch (error) {
-        console.error("Failed to switch role:", error);
-        return; // Don't navigate if role switch failed
-      }
+  const settingsItems = [
+    {
+      icon: Settings,
+      name: "Settings & privacy",
+      href: "/settings/accounts",
+      hasSubmenu: true
+    },
+    {
+      icon: HelpCircle,
+      name: "Help & support",
+      href: "/contact",
+      hasSubmenu: true
+    },
+    {
+      icon: MessageSquare,
+      name: "Give feedback",
+      href: "/contact",
+      hasSubmenu: false
     }
-    router.push(href);
+  ];
+
+
+  // Combine role-specific tools into the main menu
+  const roleTools = {
+    institute: { icon: Building2, label: "My Institute Dashboard", href: "/institute/dashboard" },
+    admin: { icon: Activity, label: "Admin Panel", href: "/admin" },
+    student: { icon: Briefcase, label: "My Applications", href: "/user/applications" },
+    business: { icon: Briefcase, label: "Business Dashboard", href: "/business" },
   };
 
-  const isActive = (href: string) => pathname === href;
-
-  // Get role icon using the same configuration
-  const RoleIcon = ROLE_CONFIGS[userRole as RoleType]?.icon || User;
-
-  // Get user initials for avatar fallback
-  const userInitials = session.user?.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase() || "U";
+  const currentRoleTool = roleTools[userRole as keyof typeof roleTools];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-transparent focus:ring-0">
+          <Avatar className="h-10 w-10 border border-gray-200 shadow-sm transition-transform hover:scale-105">
             <AvatarImage src={undefined} alt={session.user?.name || "User"} />
-            <AvatarFallback className="bg-purple-600 text-white font-semibold">
+            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold">
               {userInitials}
             </AvatarFallback>
           </Avatar>
-          {/* Role indicator badge */}
-          <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-white flex items-center justify-center border border-gray-200">
-            <RoleIcon className="h-2.5 w-2.5 text-gray-600" />
+          <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-white flex items-center justify-center border-2 border-white shadow-sm">
+            <div className={`h-full w-full rounded-full flex items-center justify-center ${RoleConfig?.color.split(' ')[0]}`}>
+              <RoleIcon className={`h-3 w-3 ${RoleConfig?.color.split(' ')[1]}`} />
+            </div>
           </div>
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="p-0 w-[90vw] max-w-sm sm:w-80 max-h-[80vh]" align="end" forceMount>
-        {/* User Profile Header (non-scrolling) */}
-        <div className="p-4 border-b bg-white">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={undefined} alt={session.user?.name || "User"} />
-              <AvatarFallback className="bg-purple-600 text-white font-semibold text-lg">
-                {userInitials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col flex-1">
-              <p className="text-base font-semibold leading-none">{session.user?.name || "User"}</p>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-xs text-muted-foreground capitalize">
-                  {userRole}
-                </span>
+      <DropdownMenuContent className="w-[320px] p-0 rounded-xl shadow-2xl border-gray-200 bg-white overflow-hidden" align="end" forceMount>
+        <div className="p-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
+        {view === 'main' ? (
+          <>
+            {/* Profile Switching Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+              {/* Active Profile */}
+              <div className="p-3 mx-1 mt-1 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer group" onClick={() => router.push('/user')}>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 border border-gray-100">
+                    <AvatarImage src={undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                <p className="text-[15px] font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                  {getDisplayName(userRole)}
+                </p>
+                <p className="text-[13px] text-gray-500 truncate flex items-center gap-1.5">
+                  <span className={`inline-block w-2 h-2 rounded-full ${RoleConfig?.color.split(' ')[1].replace('text-', 'bg-')}`}></span>
+                  {userRole === 'institute' ? 'Institute' : RoleConfig?.label}
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">{session.user?.email}</p>
-            </div>
-          </div>
-        </div>
-        <ScrollArea type="always" className="max-h-[calc(80vh-88px)]">
-          {/* <DropdownMenuSeparator /> */}
+                </div>
+              </div>
 
-          {/* Role Switcher - Show when user has multiple roles */}
-          {session.user?.roles && session.user.roles.length > 1 && (
-            <>
-              <div className="px-2 py-2">
-                <p className="px-2 text-sm font-bold text-gray-900 mb-2">Switch Role</p>
-                <div className="space-y-1">
-                  {session.user.roles.map((role) => {
-                    const RoleConfig = ROLE_CONFIGS[role as RoleType];
-                    const isCurrentRole = role === userRole;
+              <div className="h-px bg-gray-100 mx-4 my-1" />
 
-                    if (!RoleConfig) return null;
-
-                    const RoleIconComponent = RoleConfig.icon;
-
+              {/* Recent Profiles (Max 2) */}
+              {otherProfiles.length > 0 && (
+                <div className="px-2 pt-1">
+                  {otherProfiles.map((item, idx) => {
+                    const Icon = item.icon;
                     return (
-                      <DropdownMenuItem
-                        key={role}
-                        onClick={async () => {
-                          if (role !== userRole) {
-                            try {
-                              // Call API to switch role
-                              const response = await fetch('/api/user/switch-role', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ activeRole: role }),
-                              });
-
-                              if (!response.ok) {
-                                throw new Error('Failed to switch role');
-                              }
-
-                              // Update Redux state
-                              dispatch(switchRole(role));
-
-                              // Update NextAuth session
-                              await update({ activeRole: role });
-
-                              // Navigate to appropriate dashboard
-                              const dashboardRoutes: Record<string, string> = {
-                                admin: '/admin',
-                                institute: '/institute/dashboard',
-                                business: '/business',
-                                user: '/user',
-                                student: '/user',
-                                professional: '/user',
-                              };
-
-                              router.push(dashboardRoutes[role] || '/user');
-                            } catch (error) {
-                              console.error('Failed to switch role:', error);
-                              alert('Failed to switch role. Please try again.');
-                            }
-                          }
-                        }}
-                        className={`cursor-pointer ${isCurrentRole
-                          ? 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
-                          : 'hover:bg-gray-50'
-                          }`}
+                      <div
+                        key={`recent-${item.type}-${item.id}`}
+                        onClick={() => item.type === 'role' ? handleRoleSwitch(item.data as string) : handleInstituteSwitch(item.data)}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all group"
                       >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className={`p-2 rounded-lg ${RoleConfig.color} bg-opacity-10`}>
-                            <RoleIconComponent className={`h-4 w-4 ${RoleConfig.color.replace('bg-', 'text-')}`} />
+                        <div className="relative">
+                          <div className={`w-10 h-10 rounded-full ${item.type === 'institute' ? 'bg-orange-50' : 'bg-gray-100'} flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-200`}>
+                             {item.type === 'institute' ? (
+                               <span className="text-orange-600 font-bold text-sm">{(item.data as any).name.substring(0, 2).toUpperCase()}</span>
+                             ) : (
+                               <RefreshCw className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
+                             )}
                           </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium capitalize">{role}</p>
-                            <p className="text-xs text-muted-foreground">{RoleConfig.label}</p>
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-sm">
+                            <Icon className={`h-3 w-3 ${item.type === 'institute' ? 'text-gray-500' : 'text-gray-500'}`} />
                           </div>
-                          {isCurrentRole && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs font-medium text-blue-600">Active</span>
-                              <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-                            </div>
-                          )}
                         </div>
-                      </DropdownMenuItem>
+                        <div className="flex-1">
+                          <p className="text-[15px] font-semibold text-gray-900 group-hover:text-gray-900 truncate">
+                            {item.name}
+                          </p>
+                          <p className="text-[13px] text-gray-500">{item.label}</p>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
-              </div>
-              {/* <DropdownMenuSeparator /> */}
-            </>
-          )}
+              )}
 
-          {/* User Name Link */}
-          {/* <DropdownMenuItem onClick={() => handleNavigation("/user", "user")} className="cursor-pointer">
-            <span className="text-blue-600 font-medium">{session.user?.name}</span>
-          </DropdownMenuItem> */}
-
-          {/* <DropdownMenuSeparator /> */}
-
-          {/* Sign Out Button */}
-          <DropdownMenuItem onClick={() => handleUserSignOut()} className="cursor-pointer text-red-600">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Sign Out</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
-          {/* Institute Selector - Show when user has institute role */}
-          {userRole === "institute" && (
-            <>
-              <div className="p-2">
-                <InstituteSelector />
-              </div>
-              <DropdownMenuSeparator />
-            </>
-          )}
-
-          {/* Quick Navigation */}
-          <div className="px-2 py-2">
-            <p className="px-2 text-sm font-bold text-gray-900 mb-2">Quick Navigation</p>
-            {userNavigation.map((item) => {
-              const IconComponent = item.icon;
-              const active = isActive(item.href);
-              return (
-                <DropdownMenuItem
-                  key={item.name}
-                  onClick={() => {
-                    // Switch to 'user' role when clicking on Profile navigation
-                    const targetRole = item.name === "Profile" ? "user" : undefined;
-                    handleNavigation(item.href, targetRole);
-                  }}
-                  className={`cursor-pointer ${active ? "bg-blue-50 text-blue-700" : ""}`}
+              {/* See all profiles button */}
+              <div className="px-2 pb-2">
+                <Button 
+                  variant="ghost" 
+                  className="w-full mt-1 bg-white hover:bg-gray-50 text-gray-600 font-medium h-9 rounded-lg text-sm transition-colors border-0 justify-start px-2"
+                  onClick={() => setView('profiles')}
                 >
-                  <IconComponent className="mr-2 h-4 w-4" />
-                  <span>{item.name}</span>
-                  {active && <span className="ml-auto text-blue-600">●</span>}
-                </DropdownMenuItem>
-              );
-            })}
-          </div>
-
-          <DropdownMenuSeparator />
-
-          {/* Registration Navigation - Only show for user role */}
-          {userRole === "user" && (
-            <>
-              <div className="px-2 py-2">
-                <p className="px-2 text-sm font-bold text-gray-900 mb-2">Registration</p>
-                {registrationNavigation.map((item) => {
-                  const IconComponent = item.icon;
-                  const active = isActive(item.href);
-                  return (
-                    <DropdownMenuItem
-                      key={item.name}
-                      onClick={() => handleNavigation(item.href)}
-                      className={`cursor-pointer ${active ? "bg-blue-50 text-blue-700" : ""}`}
-                    >
-                      <IconComponent className="mr-2 h-4 w-4" />
-                      <span>{item.name}</span>
-                      {active && <span className="ml-auto text-blue-600">●</span>}
-                    </DropdownMenuItem>
-                  );
-                })}
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                    <RefreshCw className="h-4 w-4 text-gray-600" />
+                  </div>
+                  See all profiles
+                </Button>
               </div>
-              <DropdownMenuSeparator />
-            </>
-          )}
+            </div>
 
-          {/* Role-based Navigation */}
-          {roleNavigation.length > 0 && (
-            <div className="px-2 py-2">
-              <p className="px-2 text-sm font-bold text-gray-900 mb-2">
-                {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Tools
-              </p>
-              {roleNavigation.map((item) => {
-                const IconComponent = item.icon;
-                const active = isActive(item.href);
+            {/* Menu Items */}
+            <div className="space-y-1">
+              {/* Current Role Dashboard Link (Dynamic) */}
+              {currentRoleTool && (
+                <div 
+                  onClick={() => router.push(currentRoleTool.href)}
+                  className="flex items-center p-2 rounded-lg hover:bg-gray-200/50 cursor-pointer transition-colors group"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gray-200 group-hover:bg-blue-100 flex items-center justify-center mr-3 transition-colors">
+                    <LayoutGrid className="h-5 w-5 text-gray-700 group-hover:text-blue-600" />
+                  </div>
+                  <span className="flex-1 font-medium text-[15px] text-gray-900">{currentRoleTool.label}</span>
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                </div>
+              )}
+
+              {/* User Navigation (Old items restored) */}
+              {menuItems.map((item) => (
+                <div
+                  key={item.name}
+                  onClick={() => router.push(item.href)}
+                  className="flex items-center p-2 rounded-lg hover:bg-gray-200/50 cursor-pointer transition-colors group"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gray-200 group-hover:bg-gray-300 flex items-center justify-center mr-3 transition-colors">
+                    <item.icon className="h-5 w-5 text-gray-700" />
+                  </div>
+                  <span className="flex-1 font-medium text-[15px] text-gray-900">{item.name}</span>
+                </div>
+              ))}
+
+              {/* Registration Items (User role only) */}
+              {userRole === "user" && (
+                <>
+                  <div className="my-2 h-px bg-gray-200/50 mx-2" />
+                  <p className="px-2 text-xs font-semibold text-gray-500 uppercase mb-1">Registration</p>
+                  {registrationItems.map((item) => (
+                    <div
+                      key={item.name}
+                      onClick={() => router.push(item.href)}
+                      className="flex items-center p-2 rounded-lg hover:bg-gray-200/50 cursor-pointer transition-colors group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-gray-200 group-hover:bg-gray-300 flex items-center justify-center mr-3 transition-colors">
+                        <item.icon className="h-5 w-5 text-gray-700" />
+                      </div>
+                      <span className="flex-1 font-medium text-[15px] text-gray-900">{item.name}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              <div className="my-2 h-px bg-gray-200/50 mx-2" />
+
+              {/* Settings & Support */}
+              {/* {settingsItems.map((item) => (
+                <div
+                  key={item.name}
+                  onClick={() => router.push(item.href)}
+                  className="flex items-center p-2 rounded-lg hover:bg-gray-200/50 cursor-pointer transition-colors group"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gray-200 group-hover:bg-gray-300 flex items-center justify-center mr-3 transition-colors">
+                    <item.icon className="h-5 w-5 text-gray-700" />
+                  </div>
+                  <span className="flex-1 font-medium text-[15px] text-gray-900">{item.name}</span>
+                  {item.hasSubmenu && <ChevronRight className="h-5 w-5 text-gray-400" />}
+                </div>
+              ))} */}
+
+              {/* Log Out */}
+              <div
+                onClick={() => handleUserSignOut()}
+                className="flex items-center p-2 rounded-lg hover:bg-gray-200/50 cursor-pointer transition-colors group"
+              >
+                <div className="w-9 h-9 rounded-full bg-gray-200 group-hover:bg-red-100 flex items-center justify-center mr-3 transition-colors">
+                  <LogOut className="h-5 w-5 text-gray-700 group-hover:text-red-600" />
+                </div>
+                <span className="flex-1 font-medium text-[15px] text-gray-900 group-hover:text-red-600">Log out</span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 px-2 text-[13px] text-gray-500 leading-relaxed">
+              <div className="flex flex-wrap gap-x-1">
+                <Link href="/privacy" className="hover:underline">Privacy</Link> · 
+                <Link href="/terms" className="hover:underline">Terms</Link> · 
+                <Link href="/business-service" className="hover:underline">Advertising</Link> · 
+                <Link href="/cookie-policy" className="hover:underline">Cookies</Link> · 
+                <span className="cursor-pointer hover:underline">More</span> · 
+                <span>CareerBox © 2024</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Profiles View */
+          <div className="animate-in slide-in-from-right-5 duration-200">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4 px-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full hover:bg-gray-200"
+                onClick={() => setView('main')}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-600">
+                  <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z" fill="currentColor"/>
+                </svg>
+              </Button>
+              <h2 className="text-lg font-bold text-gray-900">Select profile</h2>
+            </div>
+
+            <div className="space-y-1">
+              {/* Sorted Profiles List */}
+              {sortedProfiles.map((item) => {
+                const Icon = item.icon;
+                
                 return (
-                  <DropdownMenuItem
-                    key={item.name}
-                    onClick={() => handleNavigation(item.href, item.name === 'My Institute' ? 'institute' : undefined)}
-                    className={`cursor-pointer ${active ? 'bg-blue-50 text-blue-700' : ''}`}
+                  <div
+                    key={`${item.type}-${item.id}`}
+                    onClick={() => item.type === 'role' ? handleRoleSwitch(item.data as string) : handleInstituteSwitch(item.data)}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer transition-all group"
                   >
-                    <IconComponent className="mr-2 h-4 w-4" />
-                    <span>{item.name}</span>
-                    {active && <span className="ml-auto text-blue-600">●</span>}
-                  </DropdownMenuItem>
+                    <div className="relative">
+                      <div className={`w-10 h-10 rounded-full ${item.type === 'institute' ? 'bg-orange-50' : 'bg-gray-100'} flex items-center justify-center border border-gray-200`}>
+                        {item.isActive ? (
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={undefined} />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold">
+                              {userInitials}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          item.type === 'institute' ? (
+                            <span className="text-orange-600 font-bold text-sm">{(item.data as any).name.substring(0, 2).toUpperCase()}</span>
+                          ) : (
+                            <Icon className="h-5 w-5 text-gray-500" />
+                          )
+                        )}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-sm">
+                        <div className={`w-full h-full rounded-full flex items-center justify-center ${item.color.split(' ')[0]}`}>
+                           <Icon className={`h-3 w-3 ${item.color.split(' ')[1]}`} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-semibold text-gray-900 truncate">
+                        {item.name}
+                      </p>
+                      <div className="flex items-center gap-2">
+                         <p className="text-[13px] text-gray-500">{item.label}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center w-6 h-6">
+                      {item.isActive ? (
+                        <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center border-2 border-white shadow-sm">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
+
+              <div className="my-2 h-px bg-gray-200/50 mx-2" />
+              
+              {/* Create Page Link */}
+              <div
+                onClick={() => router.push('/user/register-institute')}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer transition-all group mt-2"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                  <div className="h-5 w-5 text-gray-600 font-light flex items-center justify-center text-xl">+</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                   <p className="text-[15px] font-semibold text-gray-900">Create New Profile</p>
+                </div>
+              </div>
             </div>
-          )}
-        </ScrollArea>
+          </div>
+        )}
+      </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

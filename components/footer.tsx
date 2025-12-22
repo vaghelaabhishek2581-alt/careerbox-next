@@ -4,8 +4,8 @@ import Logo from "./logo";
 const navigation = {
   platform: [
     { name: "For Professionals", href: "/services" },
-    { name: "For Businesses", href: "/business-services" },
-    { name: "For Institutes", href: "/institutes-services" },
+    { name: "For Businesses", href: "/business-service" },
+    { name: "For Institutes", href: "/institutes-service" },
     { name: "About Us", href: "/about" },
   ],
   resources: [
@@ -23,7 +23,7 @@ const navigation = {
   legal: [
     { name: "Privacy Policy", href: "/privacy" },
     { name: "Terms of Service", href: "/terms" },
-    { name: "Cookie Policy", href: "/cookies" },
+    { name: "Cookie Policy", href: "/cookie-policy" },
     { name: "GDPR", href: "/gdpr" },
   ],
 };
