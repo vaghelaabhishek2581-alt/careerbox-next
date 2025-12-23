@@ -7,19 +7,19 @@ export const companyStats: CompanyStats[] = [
     value: '50K+',
     description: 'Professionals using our platform'
   },
+  // {
+  //   label: 'Enrolled Businesses',
+  //   value: '1,200+',
+  //   description: 'Businesses trust our solutions'
+  // },
   {
-    label: 'Partner Companies',
-    value: '1,200+',
-    description: 'Businesses trust our solutions'
-  },
-  {
-    label: 'Educational Partners',
+    label: 'Popular Institutes',
     value: '300+',
-    description: 'Institutes in our network'
+    description: 'Popular Institutes in our network'
   },
   {
     label: 'Success Rate',
-    value: '96%',
+    value: '95%',
     description: 'Career advancement rate'
   }
 ];
@@ -102,17 +102,30 @@ export const teamMembers: TeamMember[] = [
     id: '1',
     name: 'Mahesh Patel',
     role: 'CEO & Founder',
-    bio: 'Passionate about democratizing career growth.',
+    bio: 'A visionary technology and business leader specializing in solution architecture, and leads the vision of CareerBox to bridge the gap between education and employment.',
     linkedin: 'https://www.linkedin.com/in/maheshpatel3112/'
   },
   {
     id: '2',
     name: 'Mahesh Patel',
     role: 'Managing Director',
-    bio: 'Passionate about democratizing career growth.',
+    bio: 'A strategic leader with deep expertise in operational excellence and global education markets, driving the company\'s mission to transform career development.',
     linkedin: 'https://www.linkedin.com/in/mahesh-patel-290621247/'
   },
-  
+  {
+    id: '3',
+    name: 'Abhishek Vaghela',
+    role: 'Tech. Project Head',
+    bio: 'An innovative technology leader overseeing the architectural vision and delivery of CareerBox, ensuring scalable and robust solutions for our global user base.',
+    linkedin: 'https://www.linkedin.com/in/abhishek-vaghela-0b996b239/'
+  },
+  {
+    id: '4',
+    name: 'Vatsal Zinzuvadiya',
+    role: 'Sr. Developer',
+    bio: 'A highly skilled senior developer responsible for crafting the core functionalities of the platform, with a focus on performance, security, and user experience.',
+    linkedin: 'https://www.linkedin.com/in/vatsal-zinzuwadiya-2a88a11b7/'
+  }
 ];
 
 export const faqs: FAQ[] = [

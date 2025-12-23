@@ -92,10 +92,10 @@ export default function Header() {
       {/* Main Header */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-[990] transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-[990] transition-all duration-300 bg-white/90 backdrop-blur-md border-b",
           isScrolled
-            ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100"
-            : "bg-transparent"
+            ? "shadow-sm border-gray-100"
+            : "border-gray-200"
         )}
       >
         {/* Top Contact Bar */}
@@ -169,7 +169,7 @@ export default function Header() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center text-sm font-medium",
+                      "flex items-center text-md font-semibold",
                       isActive
                         ? "text-blue-600"
                         : isScrolled

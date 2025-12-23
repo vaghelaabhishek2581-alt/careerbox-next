@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Mail, Phone, MapPin, Globe, FileText, CheckCircle, Calendar, Search, Check, ChevronsUpDown } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Globe, FileText, CheckCircle, Calendar, Search, Check, ChevronsUpDown, User } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -370,44 +370,44 @@ export default function InstituteRegistrationForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-      <div className="w-full max-w-7xl mx-auto">
-        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur">
-          <CardHeader className="text-center pb-6">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mb-4">
-              <Building2 className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-white py-6 px-4">
+      <div className="w-full max-w-5xl mx-auto">
+        <div className="bg-white">
+          <div className="text-center pb-6 border-b border-gray-100 mb-6">
+            <div className="mx-auto w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-3">
+              <Building2 className="h-7 w-7 text-blue-600" />
             </div>
-            <CardTitle className="text-3xl font-bold text-gray-900">Institute Registration</CardTitle>
-            <CardDescription className="text-lg text-gray-600 mt-2">
+            <h1 className="text-2xl font-bold text-gray-900">Institute Registration</h1>
+            <p className="text-base text-gray-500 mt-1">
               Join CareerBox and connect with thousands of students
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </div>
 
-          <CardContent className="px-6 lg:px-8 pb-8">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="px-0">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
                 {/* LEFT COLUMN */}
                 <div className="space-y-6">
                   {/* Institute Information Section */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-blue-100 rounded-lg">
+                    <div className="flex items-center gap-3 pb-2 border-b border-gray-50">
+                      <div className="p-2 bg-blue-50 rounded-lg">
                         <Building2 className="h-5 w-5 text-blue-600" />
                       </div>
+                      <h3 className="text-lg font-semibold text-gray-900">Institute Information</h3>
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900">Institute Information</h3>
                   </div>
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="instituteSelect">Institute/College/University Name *</Label>
+                      <Label htmlFor="instituteSelect" className="text-slate-700 font-medium ml-1">Institute/College/University Name *</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             role="combobox"
                             className={cn(
-                              "w-full justify-between h-12 text-left font-normal",
+                              "w-full justify-between h-12 text-left font-normal bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl hover:bg-slate-100",
                               !selectedInstituteId && "text-muted-foreground",
                               errors.organizationName && "border-red-500"
                             )}
@@ -480,7 +480,7 @@ export default function InstituteRegistrationForm() {
                       {/* Input field for 'Other' institute name */}
                       {selectedInstituteId === 'other' && (
                         <div className="mt-4">
-                          <Label htmlFor="otherInstituteName">Enter Institute Name *</Label>
+                          <Label htmlFor="otherInstituteName" className="text-slate-700 font-medium ml-1">Enter Institute Name *</Label>
                           <Input
                             id="otherInstituteName"
                             type="text"
@@ -501,7 +501,10 @@ export default function InstituteRegistrationForm() {
                                 }));
                               }
                             }}
-                            className={errors.organizationName ? "border-red-500 mt-2" : "mt-2"}
+                            className={cn(
+                              "mt-2 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl",
+                              errors.organizationName ? "border-red-500" : ""
+                            )}
                           />
                         </div>
                       )}
@@ -512,11 +515,11 @@ export default function InstituteRegistrationForm() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="instituteType" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="instituteType" className="text-slate-700 font-medium ml-1">
                           Institute Type *
                         </Label>
                         <Select value={formData.instituteType} onValueChange={(value) => handleInputChange('instituteType', value)}>
-                          <SelectTrigger className={cn("mt-2 h-12", errors.instituteType && 'border-red-500')}>
+                          <SelectTrigger className={cn("mt-2 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.instituteType && 'border-red-500')}>
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -531,11 +534,11 @@ export default function InstituteRegistrationForm() {
                       </div>
 
                       <div>
-                        <Label htmlFor="instituteCategory" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="instituteCategory" className="text-slate-700 font-medium ml-1">
                           Category *
                         </Label>
                         <Select value={formData.instituteCategory} onValueChange={(value) => handleInputChange('instituteCategory', value)}>
-                          <SelectTrigger className={cn("mt-2 h-12", errors.instituteCategory && 'border-red-500')}>
+                          <SelectTrigger className={cn("mt-2 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.instituteCategory && 'border-red-500')}>
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
@@ -551,18 +554,20 @@ export default function InstituteRegistrationForm() {
                     </div>
 
                     <div>
-                      <Label htmlFor="establishmentYear" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="establishmentYear" className="text-slate-700 font-medium ml-1">
                         Establishment Year *
                       </Label>
                       <div className="relative mt-2">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <Calendar className="h-5 w-5" />
+                        </div>
                         <Input
                           id="establishmentYear"
                           type="number"
                           placeholder="e.g. 1995"
                           value={formData.establishmentYear}
                           onChange={(e) => handleInputChange('establishmentYear', e.target.value)}
-                          className={cn("pl-10 h-12", errors.establishmentYear && 'border-red-500')}
+                          className={cn("pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.establishmentYear && 'border-red-500')}
                           min="1800"
                           max={currentYear}
                         />
@@ -574,33 +579,40 @@ export default function InstituteRegistrationForm() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="contactName" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="contactName" className="text-slate-700 font-medium ml-1">
                           Contact Person Name *
                         </Label>
-                        <Input
-                          id="contactName"
-                          placeholder="Enter contact person name"
-                          value={formData.contactName}
-                          onChange={(e) => handleInputChange('contactName', e.target.value)}
-                          className={cn("mt-2 h-12", errors.contactName && 'border-red-500')}
-                        />
+                        <div className="relative mt-2">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <User className="h-5 w-5" />
+                          </div>
+                          <Input
+                            id="contactName"
+                            placeholder="Enter contact person name"
+                            value={formData.contactName}
+                            onChange={(e) => handleInputChange('contactName', e.target.value)}
+                            className={cn("pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.contactName && 'border-red-500')}
+                          />
+                        </div>
                         {errors.contactName && (
                           <p className="text-sm text-red-600 mt-1">{errors.contactName}</p>
                         )}
                       </div>
 
                       <div>
-                        <Label htmlFor="contactPhone" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="contactPhone" className="text-slate-700 font-medium ml-1">
                           Contact Phone Number *
                         </Label>
                         <div className="relative mt-2">
-                          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <Phone className="h-5 w-5" />
+                          </div>
                           <Input
                             id="contactPhone"
                             placeholder="+91 9876543210"
                             value={formData.contactPhone}
                             onChange={(e) => handleInputChange('contactPhone', e.target.value)}
-                            className={cn("pl-10 h-12", errors.contactPhone && 'border-red-500')}
+                            className={cn("pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.contactPhone && 'border-red-500')}
                           />
                         </div>
                         {errors.contactPhone && (
@@ -611,50 +623,52 @@ export default function InstituteRegistrationForm() {
                   </div>
 
                   {/* Additional Information Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-purple-100 rounded-lg">
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center gap-3 pb-2 border-b border-gray-50">
+                      <div className="p-2 bg-purple-50 rounded-lg">
                         <FileText className="h-5 w-5 text-purple-600" />
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-900">Additional Information</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Additional Information</h3>
                     </div>
-
+                  </div>
 
                     <div>
-                      <Label htmlFor="website" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="website" className="text-slate-700 font-medium ml-1">
                         Website*
                       </Label>
                       <div className="relative mt-2">
-                        <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <Globe className="h-5 w-5" />
+                        </div>
                         <Input
                           id="website"
                           type="url"
                           placeholder="https://www.yourinstitute.com"
                           value={formData.website}
                           onChange={(e) => handleInputChange('website', e.target.value)}
-                          className={cn("pl-10 h-12", errors.website && 'border-red-500')}
+                          className={cn("pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.website && 'border-red-500')}
                         />
                       </div>
                       {errors.website && (
                         <p className="text-sm text-red-600 mt-1">{errors.website}</p>
                       )}
                     </div>
-                  </div>
                 </div>
 
                 {/* RIGHT COLUMN */}
                 <div className="space-y-6">
                   {/* Address Section */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-green-100 rounded-lg">
+                    <div className="flex items-center gap-3 pb-2 border-b border-gray-50">
+                      <div className="p-2 bg-green-50 rounded-lg">
                         <MapPin className="h-5 w-5 text-green-600" />
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-900">Address Details</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Address Details</h3>
                     </div>
+                  </div>
 
                     <div>
-                      <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="address" className="text-slate-700 font-medium ml-1">
                         Complete Address *
                       </Label>
                       <Textarea
@@ -662,7 +676,7 @@ export default function InstituteRegistrationForm() {
                         placeholder="Enter your institute's complete address"
                         value={formData.address}
                         onChange={(e) => handleInputChange('address', e.target.value)}
-                        className={cn("mt-2 min-h-[100px]", errors.address && 'border-red-500')}
+                        className={cn("mt-2 min-h-[100px] bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.address && 'border-red-500')}
                         rows={3}
                       />
                       {errors.address && (
@@ -672,7 +686,7 @@ export default function InstituteRegistrationForm() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="state" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="state" className="text-slate-700 font-medium ml-1">
                           State *
                         </Label>
                         <Select 
@@ -680,7 +694,7 @@ export default function InstituteRegistrationForm() {
                           onValueChange={(value) => handleInputChange('state', value)}
                           disabled={loadingStates}
                         >
-                          <SelectTrigger className={cn("mt-2 h-12", errors.state && 'border-red-500')}>
+                          <SelectTrigger className={cn("mt-2 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.state && 'border-red-500')}>
                             <SelectValue placeholder={loadingStates ? "Loading states..." : "Select state"} />
                           </SelectTrigger>
                           <SelectContent>
@@ -695,7 +709,7 @@ export default function InstituteRegistrationForm() {
                       </div>
 
                       <div>
-                        <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="city" className="text-slate-700 font-medium ml-1">
                           City *
                         </Label>
                         <Select
@@ -703,7 +717,7 @@ export default function InstituteRegistrationForm() {
                           onValueChange={(value) => handleInputChange('city', value)}
                           disabled={!formData.state || loadingCities}
                         >
-                          <SelectTrigger className={cn("mt-2 h-12", errors.city && 'border-red-500')}>
+                          <SelectTrigger className={cn("mt-2 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.city && 'border-red-500')}>
                             <SelectValue placeholder={
                               loadingCities ? "Loading cities..." : 
                               formData.state ? "Select city" : 
@@ -727,7 +741,7 @@ export default function InstituteRegistrationForm() {
                     </div>
 
                     <div>
-                      <Label htmlFor="zipCode" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="zipCode" className="text-slate-700 font-medium ml-1">
                         PIN Code *
                       </Label>
                       <Input
@@ -735,23 +749,23 @@ export default function InstituteRegistrationForm() {
                         placeholder="e.g. 400001"
                         value={formData.zipCode}
                         onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                        className={cn("mt-2 h-12", errors.zipCode && 'border-red-500')}
+                        className={cn("mt-2 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl", errors.zipCode && 'border-red-500')}
                         maxLength={6}
                       />
                       {errors.zipCode && (
                         <p className="text-sm text-red-600 mt-1">{errors.zipCode}</p>
                       )}
                     </div>
-                  </div>
 
                   {/* Preferences and Terms Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-orange-100 rounded-lg">
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center gap-3 pb-2 border-b border-gray-50">
+                      <div className="p-2 bg-orange-50 rounded-lg">
                         <CheckCircle className="h-5 w-5 text-orange-600" />
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-900">Preferences & Terms</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Preferences & Terms</h3>
                     </div>
+                  </div>
 
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3">
@@ -807,7 +821,6 @@ export default function InstituteRegistrationForm() {
                         </div>
                       </div>
                     </div>
-                  </div>
                 </div>
               </div>
 
@@ -822,7 +835,7 @@ export default function InstituteRegistrationForm() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                  className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 rounded-xl"
                 >
                   {loading ? (
                     <>
@@ -838,8 +851,8 @@ export default function InstituteRegistrationForm() {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

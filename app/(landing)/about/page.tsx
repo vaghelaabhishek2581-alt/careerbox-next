@@ -41,29 +41,29 @@ const companyValues = [
 
 const milestones = [
   {
-    year: '2020',
-    title: 'Founded',
-    description: 'CareerBox was founded with a vision to democratize career growth.'
-  },
-  {
-    year: '2021',
-    title: 'First 1K Users',
-    description: 'Reached our first thousand users and launched business solutions.'
-  },
-  {
-    year: '2022',
-    title: 'Educational Partnerships',
-    description: 'Partnered with 100+ educational institutions globally.'
+    year: '2008 - 2022',
+    title: 'A Legacy of Expertise',
+    description: 'Before CareerBox, our leadership spent over 15 years as trusted Admission Counsellors. We successfully guided thousands of students in Foreign Education (MBBS, Engineering), Work Visas, and career planning across the globe.'
   },
   {
     year: '2023',
-    title: 'AI Integration',
-    description: 'Launched AI-powered career matching and personalization features.'
+    title: 'Inception & Vision',
+    description: 'Leveraging our deep industry experience, CareerBox was founded with a bold vision to democratize career growth through technology. We began frameworking a platform to scale our expertise.'
   },
   {
     year: '2024',
-    title: '50K+ Users',
-    description: 'Expanded to serve over 50,000 professionals worldwide.'
+    title: 'Building the Foundation',
+    description: 'Development kicked off in full swing. Our dedicated team started turning the vision into reality, focusing on creating a robust, scalable, and user-centric ecosystem.'
+  },
+  {
+    year: 'June 2025',
+    title: 'Official Establishment',
+    description: 'A major milestone achieved as we formally incorporated as a Private Limited Company, solidifying our commitment to long-term growth and industry compliance.'
+  },
+  {
+    year: 'January 2026',
+    title: 'The Launch (MVP)',
+    description: 'We successfully launched our Minimum Viable Product (MVP), introducing the world to the first version of CareerBox and beginning our journey of transforming lives.'
   }
 ];
 
@@ -74,7 +74,7 @@ const structuredData = {
   "description": "Professional career development platform empowering careers and transforming lives.",
   "url": "https://careerbox.com",
   "logo": "https://careerbox.com/images/logo.png",
-  "foundingDate": "2020",
+  "foundingDate": "2023",
   "founders": [
     {
       "@type": "Person",
@@ -101,7 +101,7 @@ export default function AboutPage() {
              {/* Left side content */}
              <div className="space-y-4 sm:space-y-5 md:space-y-6 pb-8 sm:pb-12 md:pb-16">
                <Badge className="mb-4 px-4 py-2 bg-blue-50 text-blue-700 border-blue-200 text-sm font-medium rounded-full">
-                 🚀 Founded in 2020
+                 🚀 Founded in 2023
                </Badge>
                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
                  Empowering Careers, <span className="text-blue-600">Transforming Lives Worldwide</span>
@@ -123,7 +123,7 @@ export default function AboutPage() {
                  </Link>
                </div>
 
-               <div className="grid grid-cols-3 gap-8 pt-8 border-t border-gray-100 mt-8">
+               <div className="grid grid-cols-4 gap-4 pt-8 border-t border-gray-100 mt-8">
                   {companyStats.map((stat, idx) => (
                     <div key={idx}>
                       <div className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</div>
@@ -294,7 +294,7 @@ export default function AboutPage() {
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-8xl mx-auto">
               {teamMembers.map((member) => (
                 <Card key={member.id} className="text-center hover:shadow-xl transition-all duration-300 border-gray-100 overflow-hidden group">
                   <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600"></div>

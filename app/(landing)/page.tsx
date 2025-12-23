@@ -321,8 +321,8 @@ export default function LandingPage() {
                 <div className="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300">Learners Joined</div>
               </div> */}
               <div>
-                <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold">200+</div>
-                <div className="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300">Learning Institutions</div>
+                <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold">300+</div>
+                <div className="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300">Popular Institutions</div>
               </div>
               <div>
                 <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold">700+</div>
@@ -456,7 +456,7 @@ export default function LandingPage() {
               Expert Advisor for <span className="underline decoration-blue-600 decoration-4 underline-offset-6 md:underline-offset-8">Right Guidance</span>
             </div>
             <p className="mt-6 text-gray-600 max-w-3xl md:max-w-4xl mx-auto text-sm sm:text-base">
-              Our team of 500+ Senior Mentors have been delivering personalized, data-backed career success since 2019.
+              Our team of 100+ Senior Mentors have been delivering personalized, data-backed career success since 2019.
               Get the strategic insight you need for your successful future.
             </p>
           </div>

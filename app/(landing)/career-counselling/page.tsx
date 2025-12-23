@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,14 +9,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, GraduationCap, BookOpen, ArrowRight, MessageCircle, CheckCircle } from 'lucide-react';
+import { User, Mail, Phone, GraduationCap, BookOpen, ArrowRight, MessageCircle, CheckCircle, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/api/client';
+import { getStateNames, getCityNames } from "@/lib/utils/indian-locations";
 
 interface CounsellingFormData {
   name: string;
   email: string;
   phone: string;
+  state: string;
+  city: string;
   courseLevel: string;
   courseInterest: string;
   agreeToTerms: boolean;
@@ -40,6 +43,8 @@ export default function CareerCounsellingPage() {
     name: '',
     email: '',
     phone: '',
+    state: '',
+    city: '',
     courseLevel: '',
     courseInterest: '',
     agreeToTerms: false
@@ -48,8 +53,31 @@ export default function CareerCounsellingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
 
+  const [states, setStates] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+
+  // Load states on mount
+  useEffect(() => {
+    getStateNames().then(setStates);
+  }, []);
+
+  // Load cities when state changes
+  useEffect(() => {
+    if (formData.state) {
+      getCityNames(formData.state).then(setCities);
+    } else {
+      setCities([]);
+    }
+  }, [formData.state]);
+
   const handleInputChange = (field: keyof CounsellingFormData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      // If state changes, reset city
+      if (field === 'state') {
+        return { ...prev, [field]: value as string, city: '' };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,6 +100,8 @@ export default function CareerCounsellingPage() {
           name: '',
           email: '',
           phone: '',
+          state: '',
+          city: '',
           courseLevel: '',
           courseInterest: '',
           agreeToTerms: false
@@ -93,7 +123,7 @@ export default function CareerCounsellingPage() {
       <div className="absolute inset-0 pointer-events-none" />
 
       {/* Add top padding to account for fixed header */}
-      <div className="pt-16 pb-20 relative z-10">
+      <div className="pt-8 pb-20 relative z-10">
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -105,7 +135,7 @@ export default function CareerCounsellingPage() {
                 </div>
                 
                 <div className="space-y-6">
-                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-slate-900">
+                  <h1 className="text-4xl lg:text-6xl font-bold leading-tight tracking-tight text-slate-900">
                     Your Pathway to
                     <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
@@ -136,8 +166,8 @@ export default function CareerCounsellingPage() {
                         <div className="text-sm text-slate-500 font-medium">Students Guided</div>
                     </div>
                     <div>
-                        <div className="text-3xl font-bold text-slate-900">500+</div>
-                        <div className="text-sm text-slate-500 font-medium">Partner Institutes</div>
+                        <div className="text-3xl font-bold text-slate-900">300+</div>
+                        <div className="text-sm text-slate-500 font-medium">Popular Institutes</div>
                     </div>
                     <div>
                         <div className="text-3xl font-bold text-slate-900">95%</div>
@@ -159,7 +189,7 @@ export default function CareerCounsellingPage() {
                   <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600" />
                   <CardContent className="p-8 lg:p-10">
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
+                      <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
                         Free Career Counselling
                       </h2>
                       <p className="text-slate-500 text-lg">
@@ -184,7 +214,7 @@ export default function CareerCounsellingPage() {
                       </Alert>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                       {/* Name Field */}
                       <div className="space-y-2">
                         <Label htmlFor="name" className="text-slate-700 font-medium ml-1">Full Name</Label>
@@ -197,69 +227,88 @@ export default function CareerCounsellingPage() {
                             value={formData.name}
                             onChange={(e) => handleInputChange('name', e.target.value)}
                             required
-                            className="pl-12 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl shadow-sm hover:border-blue-300"
+                            className="pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                           />
                         </div>
                       </div>
 
-                      {/* Email Field */}
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-slate-700 font-medium ml-1">Email Address</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="email_id@example.com"
-                            value={formData.email}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
-                            required
-                            className="pl-12 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl shadow-sm hover:border-blue-300"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Phone Field */}
-                      <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-slate-700 font-medium ml-1">Phone Number</Label>
-                        <div className="relative flex">
-                          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
-                             <Phone className="h-5 w-5 text-slate-400" />
-                          </div>
-                          <div className="flex w-full">
-                            <span className="inline-flex items-center pl-12 pr-3 text-slate-500 bg-white border border-r-0 border-slate-200 rounded-l-xl font-medium shadow-sm">
-                              +91
-                            </span>
+                      {/* Email and Phone */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email" className="text-slate-700 font-medium ml-1">Email Address</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                             <Input
-                              id="phone"
-                              type="tel"
-                              placeholder="98765 43210"
-                              value={formData.phone}
-                              onChange={(e) => handleInputChange('phone', e.target.value)}
+                              id="email"
+                              type="email"
+                              placeholder="email_id@example.com"
+                              value={formData.email}
+                              onChange={(e) => handleInputChange('email', e.target.value)}
                               required
-                              className="pl-4 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-l-none rounded-r-xl border-l-0 shadow-sm hover:border-blue-300"
+                              className="pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                             />
                           </div>
                         </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="phone" className="text-slate-700 font-medium ml-1">Phone Number</Label>
+                          <div className="relative flex">
+                            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
+                               <Phone className="h-5 w-5 text-slate-400" />
+                            </div>
+                            <div className="flex w-full">
+                              <span className="inline-flex items-center pl-12 pr-3 text-slate-500 bg-slate-50 border border-r-0 border-slate-200 rounded-l-xl font-medium">
+                                +91
+                              </span>
+                              <Input
+                                id="phone"
+                                type="tel"
+                                placeholder="98765 43210"
+                                value={formData.phone}
+                                onChange={(e) => handleInputChange('phone', e.target.value)}
+                                required
+                                className="pl-4 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-l-none rounded-r-xl border-l-0"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Course Level Dropdown */}
-                      <div className="space-y-2">
-                        <Label htmlFor="courseLevel" className="text-slate-700 font-medium ml-1">Current Level</Label>
-                        <div className="relative">
-                          <GraduationCap className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 z-10" />
-                          <Select value={formData.courseLevel} onValueChange={(value) => handleInputChange('courseLevel', value)}>
-                            <SelectTrigger className="pl-12 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl text-slate-600 shadow-sm hover:border-blue-300">
-                              <SelectValue placeholder="Select Education Level" />
+                      {/* State and City */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="state" className="text-slate-700 font-medium ml-1">State</Label>
+                          <Select value={formData.state} onValueChange={(value) => handleInputChange('state', value)}>
+                            <SelectTrigger className="h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl text-slate-600">
+                              <SelectValue placeholder="Select State" />
                             </SelectTrigger>
-                            <SelectContent className="bg-white border-slate-100 shadow-xl rounded-xl p-1">
-                              {courseLevels.map((level) => (
+                            <SelectContent className="bg-white border-slate-100 shadow-xl rounded-xl p-1 max-h-60">
+                              {states.map((state) => (
                                 <SelectItem 
-                                  key={level.value} 
-                                  value={level.value}
-                                  className="focus:bg-blue-50 focus:text-blue-700 cursor-pointer text-slate-600 py-3 rounded-lg my-0.5"
+                                  key={state} 
+                                  value={state}
+                                  className="focus:bg-blue-50 focus:text-blue-700 cursor-pointer text-slate-600 py-2 rounded-lg my-0.5"
                                 >
-                                  {level.label}
+                                  {state}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="city" className="text-slate-700 font-medium ml-1">City</Label>
+                          <Select value={formData.city} onValueChange={(value) => handleInputChange('city', value)} disabled={!formData.state}>
+                            <SelectTrigger className="h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl text-slate-600 disabled:opacity-50">
+                              <SelectValue placeholder={formData.state ? "Select City" : "Select State First"} />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border-slate-100 shadow-xl rounded-xl p-1 max-h-60">
+                              {cities.map((city) => (
+                                <SelectItem 
+                                  key={city} 
+                                  value={city}
+                                  className="focus:bg-blue-50 focus:text-blue-700 cursor-pointer text-slate-600 py-2 rounded-lg my-0.5"
+                                >
+                                  {city}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -267,20 +316,45 @@ export default function CareerCounsellingPage() {
                         </div>
                       </div>
 
-                      {/* Course Interest Field */}
-                      <div className="space-y-2">
-                        <Label htmlFor="courseInterest" className="text-slate-700 font-medium ml-1">Interested Course</Label>
-                        <div className="relative">
-                          <BookOpen className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                          <Input
-                            id="courseInterest"
-                            type="text"
-                            placeholder="e.g. MBA, B.Tech, MBBS"
-                            value={formData.courseInterest}
-                            onChange={(e) => handleInputChange('courseInterest', e.target.value)}
-                            required
-                            className="pl-12 h-12 bg-white border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl shadow-sm hover:border-blue-300"
-                          />
+                      {/* Course Level and Interest */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="courseLevel" className="text-slate-700 font-medium ml-1">Course Level</Label>
+                          <div className="relative">
+                            <GraduationCap className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 z-10" />
+                            <Select value={formData.courseLevel} onValueChange={(value) => handleInputChange('courseLevel', value)}>
+                              <SelectTrigger className="pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl text-slate-600">
+                                <SelectValue placeholder="Select Level" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white border-slate-100 shadow-xl rounded-xl p-1">
+                                {courseLevels.map((level) => (
+                                  <SelectItem 
+                                    key={level.value} 
+                                    value={level.value}
+                                    className="focus:bg-blue-50 focus:text-blue-700 cursor-pointer text-slate-600 py-3 rounded-lg my-0.5"
+                                  >
+                                    {level.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="courseInterest" className="text-slate-700 font-medium ml-1">Interested Course</Label>
+                          <div className="relative">
+                            <BookOpen className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                            <Input
+                              id="courseInterest"
+                              type="text"
+                              placeholder="e.g. MBA, B.Tech"
+                              value={formData.courseInterest}
+                              onChange={(e) => handleInputChange('courseInterest', e.target.value)}
+                              required
+                              className="pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -308,7 +382,7 @@ export default function CareerCounsellingPage() {
                       <Button
                         type="submit"
                         disabled={isSubmitting || !formData.agreeToTerms}
-                        className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 rounded-xl mt-4"
+                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 rounded-xl mt-4"
                       >
                         {isSubmitting ? (
                           <div className="flex items-center gap-2">

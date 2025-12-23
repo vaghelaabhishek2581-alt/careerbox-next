@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ContactFormData } from '@/lib/types';
-import { Mail, Phone, MapPin, Clock, Send, MessageSquare, Building2, GraduationCap, HelpCircle, ArrowRight } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, MessageSquare, Building2, GraduationCap, HelpCircle, ArrowRight, User } from 'lucide-react';
 import Link from 'next/link';
 import Footer from '@/components/footer';
 
@@ -150,7 +150,7 @@ export default function ContactPage() {
                    <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-200"></div>
                    <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-300"></div>
                    <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-400"></div>
-                   <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">+10</div>
+                   <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">+49</div>
                  </div>
                  <div className="text-sm text-gray-600">
                    <span className="font-bold text-gray-900">50+ Support Agents</span><br/>
@@ -271,74 +271,99 @@ export default function ContactPage() {
 
                       <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Full Name</Label>
-                          <Input
-                            id="name"
-                            placeholder="John Doe"
-                            value={formData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
-                            required
-                            className="h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white transition-colors"
-                          />
+                          <Label htmlFor="name" className="text-slate-700 font-medium ml-1">Full Name</Label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                              <User className="h-5 w-5" />
+                            </div>
+                            <Input
+                              id="name"
+                              placeholder="John Doe"
+                              value={formData.name}
+                              onChange={(e) => handleInputChange('name', e.target.value)}
+                              required
+                              className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
+                            />
+                          </div>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email Address</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="john@example.com"
-                            value={formData.email}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
-                            required
-                            className="h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white transition-colors"
-                          />
+                          <Label htmlFor="email" className="text-slate-700 font-medium ml-1">Email Address</Label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                              <Mail className="h-5 w-5" />
+                            </div>
+                            <Input
+                              id="email"
+                              type="email"
+                              placeholder="john@example.com"
+                              value={formData.email}
+                              onChange={(e) => handleInputChange('email', e.target.value)}
+                              required
+                              className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
+                            />
+                          </div>
                         </div>
                       </div>
 
                       <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <Label htmlFor="company" className="text-sm font-semibold text-gray-700">Company</Label>
-                          <Input
-                            id="company"
-                            placeholder="Optional"
-                            value={formData.company}
-                            onChange={(e) => handleInputChange('company', e.target.value)}
-                            className="h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white transition-colors"
-                          />
+                          <Label htmlFor="company" className="text-slate-700 font-medium ml-1">Company</Label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                              <Building2 className="h-5 w-5" />
+                            </div>
+                            <Input
+                              id="company"
+                              placeholder="Optional"
+                              value={formData.company}
+                              onChange={(e) => handleInputChange('company', e.target.value)}
+                              className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
+                            />
+                          </div>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="type" className="text-sm font-semibold text-gray-700">Inquiry Type</Label>
-                          <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value as ContactFormData['type'])}>
-                            <SelectTrigger className="h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white transition-colors">
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {departments.map((dept) => (
-                                <SelectItem key={dept.value} value={dept.value}>
-                                  {dept.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Label htmlFor="type" className="text-slate-700 font-medium ml-1">Inquiry Type</Label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                              <HelpCircle className="h-5 w-5" />
+                            </div>
+                            <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value as ContactFormData['type'])}>
+                              <SelectTrigger className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {departments.map((dept) => (
+                                  <SelectItem key={dept.value} value={dept.value}>
+                                    {dept.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="subject" className="text-sm font-semibold text-gray-700">Subject</Label>
-                        <Input
-                          id="subject"
-                          placeholder="How can we help?"
-                          value={formData.subject}
-                          onChange={(e) => handleInputChange('subject', e.target.value)}
-                          required
-                          className="h-12 rounded-xl bg-gray-50 border-gray-200 focus:bg-white transition-colors"
-                        />
+                        <Label htmlFor="subject" className="text-slate-700 font-medium ml-1">Subject</Label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <MessageSquare className="h-5 w-5" />
+                          </div>
+                          <Input
+                            id="subject"
+                            placeholder="How can we help?"
+                            value={formData.subject}
+                            onChange={(e) => handleInputChange('subject', e.target.value)}
+                            required
+                            className="h-12 pl-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="message" className="text-sm font-semibold text-gray-700">Message</Label>
+                        <Label htmlFor="message" className="text-slate-700 font-medium ml-1">Message</Label>
                         <Textarea
                           id="message"
                           placeholder="Tell us more about your needs..."
@@ -346,16 +371,23 @@ export default function ContactPage() {
                           value={formData.message}
                           onChange={(e) => handleInputChange('message', e.target.value)}
                           required
-                          className="min-h-[120px] rounded-xl bg-gray-50 border-gray-200 focus:bg-white transition-colors resize-none"
+                          className="min-h-[120px] bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl resize-none p-4"
                         />
                       </div>
 
                       <Button
                         type="submit"
-                        className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl shadow-lg transition-all duration-300"
+                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 rounded-xl"
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? 'Sending...' : 'Send Message'}
+                        {isSubmitting ? (
+                          <div className="flex items-center gap-2">
+                            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>Sending...</span>
+                          </div>
+                        ) : (
+                          'Send Message'
+                        )}
                       </Button>
                     </form>
                   </CardContent>

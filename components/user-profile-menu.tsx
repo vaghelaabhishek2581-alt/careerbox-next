@@ -85,8 +85,17 @@ export default function UserProfileMenu() {
     ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName || ''}`.trim()
     : session.user?.name || "User";
 
+  // Helper to get initials from name
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].substring(0, 2).toUpperCase();
+  };
+
   const userRole = session.user?.activeRole || session.user?.roles?.[0] || "student";
-  const userInitials = session.user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() || "U";
   const RoleIcon = ROLE_CONFIGS[userRole as RoleType]?.icon || User;
   const RoleConfig = ROLE_CONFIGS[userRole as RoleType];
 
@@ -96,6 +105,10 @@ export default function UserProfileMenu() {
     if (role === 'business' && currentBusiness) return currentBusiness.name;
     return userName;
   };
+  
+  // Get active profile initials
+  const activeDisplayName = getDisplayName(userRole);
+  const activeInitials = getInitials(activeDisplayName);
 
   // Compile all available profiles
   const allProfiles = [
@@ -241,24 +254,28 @@ export default function UserProfileMenu() {
   const currentRoleTool = roleTools[userRole as keyof typeof roleTools];
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-transparent focus:ring-0">
-          <Avatar className="h-10 w-10 border border-gray-200 shadow-sm transition-transform hover:scale-105">
-            <AvatarImage src={undefined} alt={session.user?.name || "User"} />
-            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold">
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-white flex items-center justify-center border-2 border-white shadow-sm">
+        <Button variant="ghost" className="relative h-12 w-12 rounded-full hover:bg-transparent focus:ring-0">
+          <div className="rounded-full bg-gradient-to-br from-blue-600 to-purple-600 p-[2px] shadow-sm transition-transform hover:scale-105">
+            <div className="rounded-full bg-white p-[2px]">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={undefined} alt={activeDisplayName} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold text-lg">
+                  {activeInitials}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+          {/* <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-white flex items-center justify-center border-2 border-white shadow-sm z-10">
             <div className={`h-full w-full rounded-full flex items-center justify-center ${RoleConfig?.color.split(' ')[0]}`}>
               <RoleIcon className={`h-3 w-3 ${RoleConfig?.color.split(' ')[1]}`} />
             </div>
-          </div>
+          </div> */}
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-[320px] p-0 rounded-xl shadow-2xl border-gray-200 bg-white overflow-hidden" align="end" forceMount>
+      <DropdownMenuContent className="w-[320px] mt-2 p-0 rounded-xl shadow-2xl border-gray-200 bg-white overflow-hidden" align="end" forceMount>
         <div className="p-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
         {view === 'main' ? (
           <>
@@ -267,12 +284,16 @@ export default function UserProfileMenu() {
               {/* Active Profile */}
               <div className="p-3 mx-1 mt-1 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer group" onClick={() => router.push('/user')}>
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border border-gray-100">
-                    <AvatarImage src={undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold">
-                      {userInitials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="rounded-full bg-gradient-to-br from-blue-600 to-purple-600 p-[2px]">
+                    <div className="rounded-full bg-white p-[2px]">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold text-lg">
+                          {activeInitials}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </div>
                   <div className="flex-1 min-w-0">
                 <p className="text-[15px] font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
                   {getDisplayName(userRole)}
@@ -300,12 +321,10 @@ export default function UserProfileMenu() {
                       >
                         <div className="relative">
                           <div className={`w-10 h-10 rounded-full ${item.type === 'institute' ? 'bg-orange-50' : 'bg-gray-100'} flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-200`}>
-                             {item.type === 'institute' ? (
-                               <span className="text-orange-600 font-bold text-sm">{(item.data as any).name.substring(0, 2).toUpperCase()}</span>
-                             ) : (
-                               <RefreshCw className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
-                             )}
-                          </div>
+                           <span className={`font-bold text-lg ${item.type === 'institute' ? 'text-orange-600' : 'text-blue-600'}`}>
+                             {getInitials(item.name)}
+                           </span>
+                        </div>
                           <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-sm">
                             <Icon className={`h-3 w-3 ${item.type === 'institute' ? 'text-gray-500' : 'text-gray-500'}`} />
                           </div>
@@ -463,15 +482,13 @@ export default function UserProfileMenu() {
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={undefined} />
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold">
-                              {userInitials}
+                              {activeInitials}
                             </AvatarFallback>
                           </Avatar>
                         ) : (
-                          item.type === 'institute' ? (
-                            <span className="text-orange-600 font-bold text-sm">{(item.data as any).name.substring(0, 2).toUpperCase()}</span>
-                          ) : (
-                            <Icon className="h-5 w-5 text-gray-500" />
-                          )
+                          <span className={`font-bold text-lg ${item.type === 'institute' ? 'text-orange-600' : 'text-gray-600'}`}>
+                             {getInitials(item.name)}
+                          </span>
                         )}
                       </div>
                       <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-sm">

@@ -146,7 +146,7 @@ export default function ServicesPage() {
                    </div>
                    <div>
                      <div className="text-sm text-gray-500">Courses</div>
-                     <div className="text-xl font-bold text-gray-900">500+ Verified</div>
+                     <div className="text-xl font-bold text-gray-900">700+ Verified</div>
                    </div>
                  </div>
                </div>

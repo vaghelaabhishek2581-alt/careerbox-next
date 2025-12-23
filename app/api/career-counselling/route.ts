@@ -5,6 +5,8 @@ interface CounsellingRequest {
   name: string;
   email: string;
   phone: string;
+  state: string;
+  city: string;
   courseLevel: string;
   courseInterest: string;
   agreeToTerms: boolean;
@@ -105,9 +107,9 @@ export async function POST(request: NextRequest) {
     const body: CounsellingRequest = await request.json();
     
     // Validate required fields
-    const { name, email, phone, courseLevel, courseInterest, agreeToTerms } = body;
+    const { name, email, phone, state, city, courseLevel, courseInterest, agreeToTerms } = body;
     
-    if (!name || !email || !phone || !courseLevel || !courseInterest || !agreeToTerms) {
+    if (!name || !email || !phone || !state || !city || !courseLevel || !courseInterest || !agreeToTerms) {
       return NextResponse.json(
         { 
           success: false, 
@@ -151,6 +153,8 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       phone: phone.trim(),
+      state,
+      city,
       courseLevel,
       courseInterest: courseInterest.trim(),
       agreeToTerms,
