@@ -26,12 +26,12 @@ interface CounsellingFormData {
 }
 
 const courseLevels = [
+  { value: 'diploma', label: 'Diploma Courses (After 10th & 12th)' },
   { value: 'undergraduate', label: 'Undergraduate (After 12th)' },
   { value: 'postgraduate', label: 'Postgraduate (After Graduation)' },
   { value: 'professional', label: 'Executive Education (For Working Professionals & CXOs)' },
-  { value: 'medical', label: 'Doctorate / Ph.D (After UG or PG + Work Ex)' },
+  { value: 'Doctorate', label: 'M.Phil / Ph.D (After PG + Work Ex)' },
   { value: 'Advance_diploma', label: 'Advance Diploma Courses (After 12th)' },
-  { value: 'diploma', label: 'Diploma Courses (After 10th & 12th)' },
   { value: 'certification', label: 'Skilling & Certification Programs (After 10th & 12th)' },
   { value: 'abroad', label: 'Abroad Education (Pathway / Hybrid Mode)' },
   { value: 'Job_guarantee', label: 'Job Guarantee Program (100% Placement)' },
@@ -348,7 +348,7 @@ export default function CareerCounsellingPage() {
                             <Input
                               id="courseInterest"
                               type="text"
-                              placeholder="e.g. MBA, B.Tech"
+                              placeholder="e.g. MBBS, MBA, B.Tech"
                               value={formData.courseInterest}
                               onChange={(e) => handleInputChange('courseInterest', e.target.value)}
                               required
