@@ -21,6 +21,11 @@ import {
   Building2,
   UserCheck,
   Search,
+  Bell,
+  Briefcase,
+  Users,
+  Calendar,
+  ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "./logo";
@@ -29,11 +34,19 @@ import Breadcrumb from "./breadcrumb";
 import SearchSuggestions from "./SearchSuggestions";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 
-const navigation = [
-  // { name: "Explore", href: "/services", mobile: true, icon: Compass },
-  // { name: "For Institutes", href: "/institutes-service", mobile: true, icon: Building2 },
-  // { name: "Expert Advisor", href: "/services", mobile: true, icon: UserCheck },
-  { name: "Get Free Counselling", href: "/career-counselling", mobile: true, icon: Phone }
+const publicNavigation = [
+  { name: "Get Free Counselling", href: "/career-counselling" }
+];
+
+const privateNavigation = [
+  { name: "Home", href: "/recommendation-collections", icon: Home },
+  { name: "Discover", href: "/explore", icon: Compass },
+  { name: "Jobs", href: "/jobs", icon: Briefcase },
+  // { name: "Connections", href: "/connections", icon: Users },
+  { name: "Messages", href: "/messages", icon: MessageCircle },
+  { name: "Notifications", href: "/notifications", icon: Bell },
+  // { name: "Events", href: "/events", icon: Calendar },
+  // { name: "Marketplace", href: "/marketplace", icon: ShoppingBag },
 ];
 
 export default function Header() {
@@ -41,6 +54,10 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { data: session, status } = useSession();
+
+  // Determine navigation items
+  const isLoggedIn = status === "authenticated" && !!session?.user;
+  const navigation = isLoggedIn ? [] : publicNavigation;
 
   // Rotating search placeholder terms
   const searchTerms = [
@@ -160,64 +177,65 @@ export default function Header() {
               </Button>
             </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center text-md font-semibold",
-                      isActive
-                        ? "text-blue-600"
-                        : isScrolled
-                          ? "text-gray-700 hover:text-blue-600"
-                          : "text-gray-800 hover:text-blue-600"
-                    )}
-                  >
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
+            {/* Desktop Navigation (Public Only) */}
+            {!isLoggedIn && (
+              <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
+                {navigation.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={cn(
+                        "text-sm font-medium transition-colors",
+                        isActive
+                          ? "text-blue-600"
+                          : isScrolled
+                            ? "text-gray-700 hover:text-blue-600"
+                            : "text-gray-800 hover:text-blue-600"
+                      )}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
 
             {/* Desktop CTA Buttons or User Profile */}
             <div className="hidden lg:flex items-center space-x-4">
               {status === "loading" ? (
                 <div className="flex items-center gap-3">
-                  <div className="text-right space-y-1.5">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-40" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
                   <Skeleton className="h-10 w-10 rounded-full" />
                 </div>
-              ) : status === "authenticated" && session?.user ? (
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className={cn(
-                      "text-sm font-medium",
-                      isScrolled ? "text-gray-900" : "text-gray-800"
-                    )}>
-                      {session.user.name || session.user.email?.split('@')[0] || 'User'}
-                    </p>
-                    <p className={cn(
-                      "text-xs",
-                      isScrolled ? "text-gray-500" : "text-gray-600"
-                    )}>
-                      {session.user.email}
-                    </p>
-                    {session.user.activeRole && (
-                      <p className={cn(
-                        "text-xs font-medium capitalize",
-                        isScrolled ? "text-blue-600" : "text-blue-700"
-                      )}>
-                        {session.user.activeRole}
-                      </p>
-                    )}
+              ) : isLoggedIn ? (
+                <div className="flex items-center gap-1">
+                  {/* Private Navigation Icons */}
+                  <div className="flex items-center gap-1 mr-4">
+                    {privateNavigation.map((item) => {
+                      const isActive = pathname === item.href;
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          title={item.name}
+                          className={cn(
+                            "p-2.5 rounded-xl transition-all duration-200 group relative",
+                            isActive
+                              ? "bg-blue-50 text-blue-600"
+                              : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                          )}
+                        >
+                          <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "fill-current")} />
+                          {isActive && (
+                            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />
+                          )}
+                        </Link>
+                      );
+                    })}
                   </div>
+                  <div className="h-8 w-[1px] bg-gray-200 mx-2" />
                   <UserProfileMenu />
                 </div>
               ) : (
@@ -246,10 +264,13 @@ export default function Header() {
 
             {/* Mobile User/Profile or Menu */}
             {status === "authenticated" && session?.user ? (
-              <div className="lg:hidden">
-                {/* Show user avatar; clicking opens the dropdown menu */}
-                <UserProfileMenu />
-              </div>
+              <>
+                {/* Mobile Notification Icon (Top Right) */}
+                <Link href="/notifications" className="lg:hidden p-2 text-gray-600 hover:text-blue-600 relative">
+                    <Bell className="h-6 w-6" />
+                    {/* Optional: Add notification badge here */}
+                </Link>
+              </>
             ) : (
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
@@ -273,7 +294,8 @@ export default function Header() {
                     {/* Mobile Navigation */}
                     <nav className="flex flex-col space-y-1">
                       {navigation.map((item) => {
-                        const IconComponent = item.icon;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const IconComponent = (item as any).icon;
                         const isActive = pathname === item.href;
                         return (
                           <Link
@@ -287,7 +309,7 @@ export default function Header() {
                                 : "text-slate-600 hover:text-slate-900"
                             )}
                           >
-                            <IconComponent className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-slate-500")} />
+                            {IconComponent && <IconComponent className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-slate-500")} />}
                             {item.name}
                           </Link>
                         );
@@ -335,6 +357,40 @@ export default function Header() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Bottom Navigation (Outside Header) */}
+      {status === "authenticated" && session?.user && (
+        <div className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-gray-200 lg:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe">
+          <div className="flex items-center justify-around">
+            {privateNavigation.filter(item => item.name !== "Notifications").map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px]",
+                    isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-900"
+                  )}
+                >
+                  <Icon className={cn("h-6 w-6 mb-1", isActive && "fill-current")} />
+                  <span className="text-[10px] font-medium truncate w-full text-center">
+                    {item.name}
+                  </span>
+                </Link>
+              );
+            })}
+            {/* Profile Item in Bottom Nav */}
+            <div className="flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px]">
+              <UserProfileMenu />
+              <span className="text-[10px] font-medium truncate w-full text-center text-gray-500 mt-1">
+                Profile
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
 
     </>

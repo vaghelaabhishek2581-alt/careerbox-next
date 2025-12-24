@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/carousel';
 
 const educationStats = [
-  { value: '300+', label: 'Partner Institutes', description: 'Trust CareerBox' },
+  { value: '300+', label: 'Popular Institutes', description: 'Trust CareerBox' },
   { value: '50k+', label: 'Student Connections', description: 'Verified Leads' },
   { value: '95%', label: 'Placement Rate', description: 'For Partner Colleges' },
   { value: '2.5x', label: 'Faster Enrollment', description: 'Admissions Velocity' }
@@ -305,60 +305,100 @@ export default function InstitutesPageContent() {
         </section>
 
         {/* Success Stories Carousel */}
-        <section className="py-20 bg-gray-900 text-white overflow-hidden">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-6">Real Results from Partner Institutes</h2>
-                <p className="text-gray-400 text-lg mb-8">
-                  See how leading institutions are using CareerBox to improve their placement rates and streamline admissions.
+        <section className="py-16 md:py-24 bg-gray-900 text-white overflow-hidden relative">
+          {/* Background Pattern */}
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+              
+              {/* Left Side: Content & Stats */}
+              <div className="text-center lg:text-left">
+                <Badge className="mb-6 bg-blue-600/20 text-blue-300 border-blue-500/30 hover:bg-blue-600/30 px-4 py-1.5 text-sm rounded-full">
+                  Trusted by Top Institutes
+                </Badge>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                  Real Results from <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 block lg:inline">Partner Institutes</span>
+                </h2>
+                <p className="text-gray-400 text-lg md:text-xl mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                  See how leading institutions are using CareerBox to improve their placement rates, streamline admissions, and boost student satisfaction.
                 </p>
-                <div className="flex gap-4">
-                  <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl">
-                    <div className="text-3xl font-bold text-blue-400">95%</div>
-                    <div className="text-sm text-gray-400 mt-1">Placement Rate</div>
+                
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-colors duration-300 group">
+                    <div className="flex items-center justify-center lg:justify-start gap-3 mb-2">
+                      <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors">
+                        <TrendingUp className="h-6 w-6 text-green-400" />
+                      </div>
+                      <div className="text-4xl font-bold text-white">95%</div>
+                    </div>
+                    <div className="text-sm text-gray-400 font-medium">Average Placement Rate</div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl">
-                    <div className="text-3xl font-bold text-purple-400">30%</div>
-                    <div className="text-sm text-gray-400 mt-1">Enrollment Lift</div>
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-colors duration-300 group">
+                    <div className="flex items-center justify-center lg:justify-start gap-3 mb-2">
+                       <div className="p-2 bg-blue-500/20 rounded-lg group-hover:bg-blue-500/30 transition-colors">
+                        <Users className="h-6 w-6 text-blue-400" />
+                      </div>
+                      <div className="text-4xl font-bold text-white">30%</div>
+                    </div>
+                    <div className="text-sm text-gray-400 font-medium">Enrollment Lift (YoY)</div>
                   </div>
                 </div>
               </div>
 
-              <div className="relative">
-                <Carousel opts={{ align: 'start', loop: true }} className="w-full">
+              {/* Right Side: Carousel */}
+              <div className="relative w-full max-w-[calc(100vw-32px)] sm:max-w-xl mx-auto lg:max-w-none">
+                {/* Decorative elements behind card */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-[2.5rem] rotate-3 opacity-20 transform scale-95 blur-sm"></div>
+                
+                <Carousel opts={{ align: 'start', loop: true }} className="w-full relative z-10">
                   <CarouselContent>
                     {successStories.map((story, idx) => (
-                      <CarouselItem key={idx} className="md:basis-full">
-                        <div className="bg-white text-gray-900 p-8 rounded-3xl mx-2">
-                          <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                              <GraduationCap className="h-6 w-6 text-blue-600" />
+                      <CarouselItem key={idx} className="basis-full">
+                        <div className="bg-white text-gray-900 p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl mx-1 my-1 h-full flex flex-col justify-between border border-gray-100 min-h-[300px] sm:min-h-[360px]">
+                          <div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 sm:mb-8">
+                              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full flex items-center justify-center shadow-inner border border-blue-100 flex-shrink-0">
+                                <GraduationCap className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600" />
+                              </div>
+                              <div>
+                                <div className="font-bold text-lg sm:text-xl text-gray-900 leading-tight">{story.institution}</div>
+                                <div className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block mt-1">{story.type}</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-bold text-lg">{story.institution}</div>
-                              <div className="text-sm text-gray-500">{story.type}</div>
-                            </div>
+                            <blockquote className="text-lg sm:text-xl md:text-2xl font-medium leading-relaxed mb-6 sm:mb-8 text-gray-800">
+                              "{story.quote}"
+                            </blockquote>
                           </div>
-                          <blockquote className="text-xl font-medium leading-relaxed mb-6">
-                            "{story.quote}"
-                          </blockquote>
-                          <div className="flex justify-between items-end border-t border-gray-100 pt-6">
-                            <div>
-                              <div className="font-semibold">{story.dean}</div>
-                              <div className="text-sm text-gray-500">Dean</div>
+                          
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-gray-100 pt-6 mt-auto gap-4 sm:gap-0">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold flex-shrink-0">
+                                 {story.dean.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="font-bold text-gray-900 text-sm sm:text-base">{story.dean}</div>
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dean</div>
+                              </div>
                             </div>
-                            <div className="text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-lg text-sm">
-                              {story.result}
+                            <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center pl-2 sm:pl-0 w-full sm:w-auto">
+                               <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 sm:mb-1">Result</span>
+                               <span className="text-green-700 font-bold bg-green-50 px-3 py-1.5 rounded-lg text-sm border border-green-100 whitespace-nowrap">
+                                {story.result}
+                               </span>
                             </div>
                           </div>
                         </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <div className="flex gap-2 mt-4 justify-end">
-                    <CarouselPrevious className="static translate-y-0" />
-                    <CarouselNext className="static translate-y-0" />
+                  
+                  {/* Navigation Controls */}
+                  <div className="flex items-center justify-center lg:justify-end gap-4 mt-8">
+                    <CarouselPrevious className="static translate-y-0 h-12 w-12 rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white hover:border-white/40 transition-all" />
+                    <CarouselNext className="static translate-y-0 h-12 w-12 rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white hover:border-white/40 transition-all" />
                   </div>
                 </Carousel>
               </div>
