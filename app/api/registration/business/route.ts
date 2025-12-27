@@ -87,6 +87,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if uniquePageId is already taken
+    const existingUniqueId = await RegistrationIntent.findOne({
+      uniquePageId: data.uniquePageId
+    });
+
+    if (existingUniqueId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'This Unique Page ID is already taken. Please choose another one.'
+        },
+        { status: 400 }
+      );
+    }
+
     // Create new registration intent
     const registrationIntent = new RegistrationIntent({
       userId,
@@ -95,6 +110,9 @@ export async function POST(request: NextRequest) {
       
       // Basic Information
       organizationName: validatedData.organizationName,
+      uniquePageId: data.uniquePageId,
+      organizationType: data.organizationType,
+      tagline: data.tagline,
       email: validatedData.email || user?.email,
       contactName: validatedData.contactName,
       contactPhone: validatedData.contactPhone,

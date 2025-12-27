@@ -33,6 +33,7 @@ import UserProfileMenu from "./user-profile-menu";
 import Breadcrumb from "./breadcrumb";
 import SearchSuggestions from "./SearchSuggestions";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
+import { SidebarManager } from "@/components/institute/SidebarManager";
 
 const publicNavigation = [
   { name: "Get Free Counselling", href: "/career-counselling" }
@@ -264,13 +265,15 @@ export default function Header() {
 
             {/* Mobile User/Profile or Menu */}
             {status === "authenticated" && session?.user ? (
-              <>
+              <div className="flex items-center gap-2 lg:hidden">
                 {/* Mobile Notification Icon (Top Right) */}
-                <Link href="/notifications" className="lg:hidden p-2 text-gray-600 hover:text-blue-600 relative">
+                <Link href="/notifications" className="p-2 text-gray-600 hover:text-blue-600 relative">
                     <Bell className="h-6 w-6" />
                     {/* Optional: Add notification badge here */}
                 </Link>
-              </>
+                {/* User Profile Menu in Top Header for Mobile */}
+                <UserProfileMenu />
+              </div>
             ) : (
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
@@ -360,36 +363,97 @@ export default function Header() {
 
       {/* Mobile Bottom Navigation (Outside Header) */}
       {status === "authenticated" && session?.user && (
-        <div className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-gray-200 lg:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe">
-          <div className="flex items-center justify-around">
-            {privateNavigation.filter(item => item.name !== "Notifications").map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px]",
-                    isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-900"
-                  )}
-                >
-                  <Icon className={cn("h-6 w-6 mb-1", isActive && "fill-current")} />
-                  <span className="text-[10px] font-medium truncate w-full text-center">
-                    {item.name}
-                  </span>
-                </Link>
-              );
-            })}
-            {/* Profile Item in Bottom Nav */}
-            <div className="flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px]">
-              <UserProfileMenu />
-              <span className="text-[10px] font-medium truncate w-full text-center text-gray-500 mt-1">
-                Profile
-              </span>
+        <>
+          <div className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-gray-200 lg:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe">
+            <div className="flex items-center justify-around">
+              {privateNavigation.filter(item => item.name !== "Notifications").map((item) => {
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px]",
+                      isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-900"
+                    )}
+                  >
+                    <Icon className={cn("h-6 w-6 mb-1", isActive && "fill-current")} />
+                    <span className="text-[10px] font-medium truncate w-full text-center">
+                      {item.name}
+                    </span>
+                  </Link>
+                );
+              })}
+              {/* Menu Item (Hamburger) in Bottom Nav */}
+              <div 
+                className="flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px] cursor-pointer text-gray-500 hover:text-gray-900"
+                onClick={() => setIsMobileMenuOpen(true)}
+              >
+                <Menu className="h-6 w-6 mb-1" />
+                <span className="text-[10px] font-medium truncate w-full text-center mt-1">
+                  Menu
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* Authenticated Mobile Menu Sheet */}
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetContent side="left" className="w-full sm:w-[360px] bg-white p-0 h-full">
+              <VisuallyHidden>
+                <SheetTitle>Menu</SheetTitle>
+              </VisuallyHidden>
+              <div className="flex flex-col h-full">
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white z-10">
+                  <Logo showText={true} />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500">
+                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </Button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                  <div onClick={() => setIsMobileMenuOpen(false)}>
+                    {pathname?.startsWith('/institute') ? (
+                      <SidebarManager />
+                    ) : (
+                    /* Default Mobile Menu for non-institute pages */
+                    <nav className="space-y-1">
+                      {privateNavigation.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href;
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-lg transition-colors",
+                              isActive 
+                                ? "bg-blue-50 text-blue-600" 
+                                : "text-gray-700 hover:bg-gray-100"
+                            )}
+                          >
+                            <Icon className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-gray-500")} />
+                            {item.name}
+                          </Link>
+                        );
+                      })}
+                    </nav>
+                  )}
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </>
       )}
 
 
