@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     // Fetch user's registration intents
     const intents = await RegistrationIntent.find({ userId })
       .sort({ createdAt: -1 })
+      .limit(50) // Limit to 50 recent intents to prevent OOM
       .lean()
 
     // Transform data for frontend

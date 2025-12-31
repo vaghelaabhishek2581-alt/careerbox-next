@@ -35,41 +35,41 @@ export const store = configureStore({
     admin: adminReducer,
     registration: registrationReducer
   },
-  // middleware: (getDefaultMiddleware) =>
-  //   getDefaultMiddleware({
-  //     serializableCheck: {
-  //       ignoredActions: [
-  //         'user/switchRole/fulfilled',
-  //         'user/switchRole/pending',
-  //         'institute/setSelectedInstitute',
-  //         'institute/fetchUserInstitutes/fulfilled',
-  //         'registration/submitBusinessRegistration',
-  //         'registration/submitInstituteRegistration',
-  //         'institute/uploadInstituteImage',
-  //         'institute/uploadDocument',
-  //         'institute/createFaculty',
-  //         'institute/updateFaculty',
-  //         'institute/addFacility',
-  //         'institute/addLocation',
-  //         'institute/addRanking',
-  //         'institute/addAward',
-  //         'institute/addScholarship',
-  //         'institute/updateRegistrationDetails'
-  //       ],
-  //       ignoredActionPaths: ['meta.arg', 'payload.data', 'payload.file', 'payload.businessLogo', 'payload.coverImage'],
-  //       ignoredPaths: [
-  //         'institute.currentInstitute',
-  //         'institute.userInstitutes',
-  //         'institute.selectedInstitute',
-  //         'institute.institutes',
-  //         'jobs.jobs',
-  //         'jobs.currentJob',
-  //         'institute.registrationDetails.licenseExpiryDate',
-  //         'user.user',
-  //         'auth.user'
-  //       ],
-  //     },
-  //   }),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [
+          'user/switchRole/fulfilled',
+          'user/switchRole/pending',
+          'institute/setSelectedInstitute',
+          'institute/fetchUserInstitutes/fulfilled',
+          'registration/submitBusinessRegistration',
+          'registration/submitInstituteRegistration',
+          'institute/uploadInstituteImage',
+          'institute/uploadDocument',
+          'institute/createFaculty',
+          'institute/updateFaculty',
+          'institute/addFacility',
+          'institute/addLocation',
+          'institute/addRanking',
+          'institute/addAward',
+          'institute/addScholarship',
+          'institute/updateRegistrationDetails'
+        ],
+        ignoredActionPaths: ['meta.arg', 'payload.data', 'payload.file', 'payload.businessLogo', 'payload.coverImage'],
+        ignoredPaths: [
+          'institute.currentInstitute',
+          'institute.userInstitutes',
+          'institute.selectedInstitute',
+          'institute.institutes',
+          'jobs.jobs',
+          'jobs.currentJob',
+          'institute.registrationDetails.licenseExpiryDate',
+          'user.user',
+          'auth.user'
+        ],
+      },
+    }),
 })
 
 export type RootState = ReturnType<typeof store.getState>

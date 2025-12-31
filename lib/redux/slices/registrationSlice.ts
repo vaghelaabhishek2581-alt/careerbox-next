@@ -238,6 +238,27 @@ export const processRegistrationPayment = createAsyncThunk(
   }
 )
 
+// Delete Registration Intent
+export const deleteRegistrationIntent = createAsyncThunk(
+  'registration/deleteRegistrationIntent',
+  async (intentId: string, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/api/registration/intents/${intentId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        return rejectWithValue(error.message || 'Failed to delete registration intent')
+      }
+
+      return intentId
+    } catch (error) {
+      return rejectWithValue('Network error occurred')
+    }
+  }
+)
+
 // ============================================================================
 // SLICE
 // ============================================================================
@@ -359,6 +380,23 @@ const registrationSlice = createSlice({
         }
       })
       .addCase(processRegistrationPayment.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+
+      // Delete Registration Intent
+      .addCase(deleteRegistrationIntent.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(deleteRegistrationIntent.fulfilled, (state, action) => {
+        state.loading = false
+        state.intents = state.intents.filter(intent => intent.id !== action.payload)
+        if (state.currentIntent?.id === action.payload) {
+          state.currentIntent = null
+        }
+      })
+      .addCase(deleteRegistrationIntent.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload as string
       })

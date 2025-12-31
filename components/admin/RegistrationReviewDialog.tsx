@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Clock, CreditCard } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, CreditCard, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface RegistrationReviewDialogProps {
   intent: any; // Using any for now to match the slice type which might be complex to import
@@ -153,6 +154,17 @@ export function RegistrationReviewDialog({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Warning for status reversal */}
+            {intent.status === 'completed' && (reviewAction === 'reject' || reviewAction === 'pending') && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Warning: Deactivating Account</AlertTitle>
+                <AlertDescription>
+                  Changing status from <strong>Completed</strong> to <strong>{reviewAction === 'pending' ? 'Pending' : 'Rejected'}</strong> will immediately deactivate the user's dashboard access and set their institute status to {reviewAction === 'pending' ? 'Under Review' : 'Inactive'}.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {reviewAction === 'approve' && intent.status !== 'approved' && (
               <div className="animate-in fade-in slide-in-from-top-2">

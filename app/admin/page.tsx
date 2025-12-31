@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/redux/store';
 import { fetchAdminStats, fetchAllRegistrationIntents } from '@/lib/redux/slices/adminSlice';
+import { RegistrationReviewDialog } from '@/components/admin/RegistrationReviewDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,6 +32,8 @@ import {
 export default function AdminDashboard() {
   const dispatch = useDispatch<AppDispatch>();
   const { stats, registrationIntents, loading } = useSelector((state: RootState) => state.admin);
+  const [reviewDialog, setReviewDialog] = useState(false);
+  const [selectedIntent, setSelectedIntent] = useState<any>(null);
 
   useEffect(() => {
     dispatch(fetchAdminStats());
@@ -156,7 +159,15 @@ export default function AdminDashboard() {
                           <StatusIcon className="w-3 h-3 mr-1" />
                           {intent.status.replace('_', ' ')}
                         </Badge>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedIntent(intent);
+                            setReviewDialog(true);
+                          }}
+                          className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+                        >
                           Review
                         </Button>
                       </div>
@@ -172,6 +183,16 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <RegistrationReviewDialog 
+          open={reviewDialog}
+          onOpenChange={setReviewDialog}
+          intent={selectedIntent}
+          onSuccess={() => {
+            dispatch(fetchAdminStats());
+            dispatch(fetchAllRegistrationIntents({ page: 1 }));
+          }}
+        />
 
         <TabsContent value="system" className="space-y-6">
           <div className="grid lg:grid-cols-2 gap-6">
