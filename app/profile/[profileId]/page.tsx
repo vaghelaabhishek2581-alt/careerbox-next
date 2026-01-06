@@ -158,7 +158,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     }
 
     return (
-      <div className="bg-gray-50">
+      <div className="w-full max-w-7xl mx-auto">
         <Header />
         <div className="min-h-screen mt-28">
           <PublicProfileClient profile={profileData} />

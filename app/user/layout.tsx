@@ -28,8 +28,8 @@ export default function UserLayout({ children }: UserLayoutProps) {
         <div className="min-h-screen">
             <Header />
             {/* Add top padding to account for fixed header */}
-            <div className="pt-24">
-                <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="pt-16">
+                <div className="max-w-7xl mx-auto py-12">
                     {children}
                 </div>
             </div>

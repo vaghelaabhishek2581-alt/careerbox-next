@@ -1,198 +1,92 @@
-import React, { useRef, useState } from "react";
-import { Edit2, Plus, MapPin, Mail, Globe, Share2, MoreHorizontal, Camera, Verified, Upload, X, Loader2 } from "lucide-react";
+import React, { useState } from "react";
+import { Edit2, Plus, MapPin, Mail, Globe, Share2, MoreHorizontal, Camera, Verified, Upload, X, Loader2, Edit2Icon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { uploadProfileImage as uploadProfileImageAction } from "@/lib/redux/slices/profileSlice";
+import { uploadProfileImage as uploadProfileImageAction, updateLocalProfile } from "@/lib/redux/slices/profileSlice";
 import type { IProfile } from "@/lib/redux/slices/profileSlice";
+import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog";
+import { ImageViewerDialog } from "@/components/ui/ImageViewerDialog";
 
 interface ProfileHeaderProps {
   profile: IProfile;
   onEditPersonal: () => void;
+  readOnly?: boolean;
 }
 
 function getInitial(name?: string): string {
   return name ? name.charAt(0).toUpperCase() : '';
 }
 
-export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile, onEditPersonal }) => {
+export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile, onEditPersonal, readOnly }) => {
   const dispatch = useAppDispatch();
   const isUploading = useAppSelector((state) => state.profile.isUploadingImage, (prev, next) => prev === next);
-  const profileImageInputRef = useRef<HTMLInputElement>(null);
-  const coverImageInputRef = useRef<HTMLInputElement>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropType, setCropType] = useState<"profile" | "cover">("profile");
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerType, setViewerType] = useState<"profile" | "cover">("profile");
 
-  // Preview states
-  const [profilePreview, setProfilePreview] = useState<string | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [selectedProfileFile, setSelectedProfileFile] = useState<File | null>(null);
-  const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
+  async function handleCropped(file: File) {
+    await dispatch(uploadProfileImageAction({ type: cropType, file })).unwrap();
+  }
 
-  // Handle profile image selection with preview
-  const handleProfileImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
-        return;
+  async function handleDelete() {
+    try {
+      const res = await fetch(`/api/profile/upload-image?type=${cropType}`, { method: "DELETE" });
+      if (!res.ok) return;
+      if (cropType === "profile") {
+        dispatch(updateLocalProfile({ profileImage: undefined }));
+      } else {
+        dispatch(updateLocalProfile({ coverImage: undefined }));
       }
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
-        return;
-      }
-
-      setSelectedProfileFile(file);
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfilePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Handle cover image selection with preview
-  const handleCoverImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
-        return;
-      }
-
-      setSelectedCoverFile(file);
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setCoverPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Upload profile image
-  const handleUploadProfileImage = async () => {
-    if (selectedProfileFile) {
-      try {
-        await dispatch(uploadProfileImageAction({ type: 'profile', file: selectedProfileFile })).unwrap();
-        // Clear preview after successful upload
-        setProfilePreview(null);
-        setSelectedProfileFile(null);
-        if (profileImageInputRef.current) {
-          profileImageInputRef.current.value = '';
-        }
-      } catch (error) {
-        console.error('Upload failed:', error);
-      }
-    }
-  };
-
-  // Upload cover image
-  const handleUploadCoverImage = async () => {
-    if (selectedCoverFile) {
-      try {
-        await dispatch(uploadProfileImageAction({ type: 'cover', file: selectedCoverFile })).unwrap();
-        // Clear preview after successful upload
-        setCoverPreview(null);
-        setSelectedCoverFile(null);
-        if (coverImageInputRef.current) {
-          coverImageInputRef.current.value = '';
-        }
-      } catch (error) {
-        console.error('Upload failed:', error);
-      }
-    }
-  };
-
-  // Cancel profile preview
-  const cancelProfilePreview = () => {
-    setProfilePreview(null);
-    setSelectedProfileFile(null);
-    if (profileImageInputRef.current) {
-      profileImageInputRef.current.value = '';
-    }
-  };
-
-  // Cancel cover preview
-  const cancelCoverPreview = () => {
-    setCoverPreview(null);
-    setSelectedCoverFile(null);
-    if (coverImageInputRef.current) {
-      coverImageInputRef.current.value = '';
-    }
-  };
+      setCropOpen(false);
+      setViewerOpen(false);
+    } catch {}
+  }
 
   return (
-    <>
-      {/* Hidden file inputs */}
-      <input
-        type="file"
-        ref={profileImageInputRef}
-        onChange={handleProfileImageUpload}
-        accept="image/*"
-        className="hidden"
-      />
-      <input
-        type="file"
-        ref={coverImageInputRef}
-        onChange={handleCoverImageUpload}
-        accept="image/*"
-        className="hidden"
-      />
-
-      {/* Cover Image Section */}
-      <div className="relative w-full">
-        <div
-          className="h-48 sm:h-56 md:h-64 lg:h-72 w-full bg-gradient-to-r from-blue-500 to-purple-600 bg-cover bg-center relative"
-          style={{
-            backgroundImage: profile?.coverImage ? `url(${profile.coverImage})` : undefined,
-          }}
-        >
-          {/* Edit Cover Button */}
-          <Button
-            variant="secondary"
-            size="sm"
-            className="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-700"
-            onClick={() => coverImageInputRef.current?.click()}
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Edit cover
-          </Button>
-        </div>
-
-        {/* Profile Image */}
-        <div className="absolute -bottom-12 sm:-bottom-14 md:-bottom-16 left-4 sm:left-6 md:left-8">
+    <div className="w-full flex flex-col items-center justify-center border-1 border-gray-200">
+      <div className="w-full mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
           <div className="relative">
-            <Avatar className="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 border-2 sm:border-4 border-white">
-              <AvatarImage src={profile?.profileImage} alt="Profile" />
-              <AvatarFallback className="text-lg sm:text-xl md:text-2xl font-semibold bg-gray-200">
-                {getInitial(profile?.personalDetails?.firstName)}
-                {getInitial(profile?.personalDetails?.lastName)}
-              </AvatarFallback>
-            </Avatar>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 h-6 w-6 sm:h-8 sm:w-8 rounded-full p-0 bg-white shadow-md"
-              onClick={() => profileImageInputRef.current?.click()}
+            <div
+              className="h-32 sm:h-40 md:h-48 lg:h-56 w-full bg-gradient-to-r from-blue-500 to-purple-600 bg-cover bg-center cursor-pointer"
+              style={{ backgroundImage: profile?.coverImage ? `url(${profile.coverImage})` : undefined }}
+              onClick={() => { setViewerType("cover"); setViewerOpen(true); }}
             >
-              <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="absolute top-4 right-4 rounded-full bg-white/80 hover:bg-white text-gray-700"
+                onClick={(e) => { e.stopPropagation(); setCropType("cover"); setCropOpen(true); }}
+              >
+                <Edit2Icon className="h-4 w-4 mr-2" />
+                Edit Cover
+              </Button>
+            </div>
+            <div className="absolute -bottom-12 sm:-bottom-14 md:-bottom-16 left-2 sm:left-4 md:left-6">
+              <div className="relative">
+                <Avatar className="h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 border-2 sm:border-4 border-white cursor-pointer"
+                  onClick={() => { setViewerType("profile"); setViewerOpen(true); }}
+                >
+                  <AvatarImage src={profile?.profileImage} alt="Profile" />
+                  <AvatarFallback className="text-lg sm:text-xl md:text-2xl font-semibold bg-gray-200">
+                    {getInitial(profile?.personalDetails?.firstName)}
+                    {getInitial(profile?.personalDetails?.lastName)}
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 h-6 w-6 sm:h-8 sm:w-8 rounded-full p-0 bg-white shadow-md"
+                  onClick={(e) => { e.stopPropagation(); setCropType("profile"); setCropOpen(true); }}
+                >
+                  <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="w-full  mx-auto pt-16 sm:pt-18 md:pt-20 ">
-        {/* Main Profile Header Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
-          <div className="p-6 pb-4">
+          <div className="p-6 pt-16 sm:pt-18 md:pt-20">
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 lg:gap-8">
               <div className="flex-1 min-w-0">
                 {/* Name and Verification */}
@@ -284,7 +178,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
         {/* About Section - Separate Card */}
         {profile?.personalDetails?.aboutMe &&
           profile.personalDetails.aboutMe !== "Tell us a bit about yourself" && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
               <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
                 {profile.personalDetails.aboutMe}
@@ -335,109 +229,30 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
             </div>
           )}
 
-        {/* Profile Image Preview Modal */}
-        {profilePreview && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Preview Profile Image</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={cancelProfilePreview}
-                  disabled={isUploading}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Preview Image */}
-              <div className="flex justify-center mb-4">
-                <div
-                  className="h-32 w-32 rounded-full bg-cover bg-center border-4 border-gray-200"
-                  style={{ backgroundImage: `url(${profilePreview})` }}
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 justify-center">
-                <Button
-                  onClick={handleUploadProfileImage}
-                  disabled={isUploading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Upload className="h-4 w-4 mr-2" />
-                  )}
-                  Upload
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={cancelProfilePreview}
-                  disabled={isUploading}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Cover Image Preview Modal */}
-        {coverPreview && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Preview Cover Image</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={cancelCoverPreview}
-                  disabled={isUploading}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Preview Image */}
-              <div className="flex justify-center mb-4">
-                <div
-                  className="w-full h-48 bg-cover bg-center border-4 border-gray-200 rounded-lg"
-                  style={{ backgroundImage: `url(${coverPreview})` }}
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 justify-center">
-                <Button
-                  onClick={handleUploadCoverImage}
-                  disabled={isUploading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Upload className="h-4 w-4 mr-2" />
-                  )}
-                  Upload
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={cancelCoverPreview}
-                  disabled={isUploading}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ImageCropperDialog
+          key={cropType}
+          open={cropOpen}
+          onOpenChange={setCropOpen}
+          type={cropType}
+          targetWidth={cropType === "cover" ? 1600 : 512}
+          targetHeight={cropType === "cover" ? 400 : 512}
+          initialImageUrl={cropType === "cover" ? profile?.coverImage : profile?.profileImage}
+          onCropped={handleCropped}
+          onDelete={handleDelete}
+        />
+        <ImageViewerDialog
+          className="cb-image-viewer"
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          type={viewerType}
+          imageUrl={viewerType === "cover" ? profile?.coverImage : profile?.profileImage}
+          showActions={!readOnly}
+          onEdit={() => { setCropType(viewerType); setCropOpen(true); }}
+          onUpdatePhoto={() => { setCropType(viewerType); setCropOpen(true); }}
+          onDelete={() => { setCropType(viewerType); handleDelete(); }}
+        />
       </div>
-    </>
+    </div>
   );
 });
 

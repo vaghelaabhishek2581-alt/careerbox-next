@@ -96,7 +96,7 @@ export default function ModernProfileDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 ">
         {/* Two-Column Layout */}
         <div className="flex flex-col lg:flex-row gap-6 relative">
@@ -133,7 +133,7 @@ export default function ModernProfileDashboard() {
           </div>
 
           {/* Sidebar Section (Small) - About, Skills, Languages, Career Progress */}
-          <div className="lg:w-1/4 2xl:w-1/5 space-y-6 sticky top-6 self-start">
+          <div className="w-full lg:w-1/4 space-y-6 sticky top-6 self-start">
 
             <SkillsSection
               profile={profile}
