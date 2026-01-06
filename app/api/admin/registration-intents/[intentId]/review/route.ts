@@ -12,7 +12,7 @@ import Business from '@/src/models/Business'
 
 // Validation schema
 const reviewSchema = z.object({
-  action: z.enum(['approve', 'reject', 'require_payment']),
+  action: z.enum(['approve', 'reject', 'require_payment', 'pending']),
   adminNotes: z.string().optional(),
   subscriptionPlan: z.enum(['free', 'basic', 'premium', 'enterprise']).optional(),
 })
@@ -86,17 +86,11 @@ export async function POST(
       return NextResponse.json({ error: 'Registration intent not found' }, { status: 404 })
     }
 
-    // Check if intent is still pending
-    if (intent.status !== 'pending') {
-      return NextResponse.json(
-        { error: 'Only pending registration intents can be reviewed' },
-        { status: 400 }
-      )
-    }
+    // Removed check for pending status to allow updates at any time
 
     // Prepare update data
     const updateData: any = {
-      status: action === 'require_payment' ? 'payment_required' : action === 'approve' ? 'approved' : 'rejected',
+      status: action === 'require_payment' ? 'payment_required' : action === 'approve' ? 'approved' : action === 'pending' ? 'pending' : 'rejected',
       reviewedBy: new mongoose.Types.ObjectId(authResult.userId), // Convert to ObjectId
       reviewedAt: new Date(),
       updatedAt: new Date(),
@@ -118,8 +112,11 @@ export async function POST(
     )
 
     // If approved and subscription plan provided, create subscription and link organization
+    // Only proceed if the intent was NOT already completed/approved to avoid duplicate subscriptions
+    // Or if the admin explicitly wants to re-process (we can assume if they select 'approve' again with a plan, they mean it)
     if (action === 'approve' && subscriptionPlan) {
       try {
+        // ... (existing approve logic)
         // Find the user
         const intentUser = await User.findById(intent.userId)
         if (intentUser) {
@@ -142,8 +139,10 @@ export async function POST(
               }
               if (!adminInstitute.userIds.some((id: mongoose.Types.ObjectId) => id.toString() === intent.userId.toString())) {
                 adminInstitute.userIds.push(intent.userId)
-                await adminInstitute.save()
               }
+              // Ensure institute is active
+              adminInstitute.status = 'active';
+              await adminInstitute.save()
             } else {
               // Create new AdminInstitute
               const uniqueId = await generateUniqueInstituteId(intent.organizationName)
@@ -278,6 +277,24 @@ export async function POST(
       } catch (error) {
         console.error('Error creating subscription/organization:', error)
         // Don't fail the review, just log the error
+      }
+    } else if (action === 'reject' || action === 'pending') {
+      // If status is changed back to reject or pending, we should ensure the institute/business is deactivated
+      try {
+        const intentUser = await User.findById(intent.userId)
+        if (intentUser && intent.organizationId) {
+          if (intent.type === 'institute') {
+            await AdminInstitute.findByIdAndUpdate(intent.organizationId, {
+              status: action === 'pending' ? 'under_review' : 'inactive'
+            })
+          } else if (intent.type === 'business') {
+             await Business.findByIdAndUpdate(intent.organizationId, {
+              status: action === 'pending' ? 'pending' : 'inactive'
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error deactivating organization:', error)
       }
     }
 

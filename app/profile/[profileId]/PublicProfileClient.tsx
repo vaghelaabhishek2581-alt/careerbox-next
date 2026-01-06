@@ -36,6 +36,11 @@ export default function PublicProfileClient({ profile }: PublicProfileClientProp
                   .public-profile-readonly input[type="file"] {
                     display: none !important;
                   }
+                  /* Allow controls inside image viewer */
+                  .cb-image-viewer button {
+                    display: inline-flex !important;
+                    pointer-events: auto !important;
+                  }
                 `
             }} />
 
@@ -50,6 +55,7 @@ export default function PublicProfileClient({ profile }: PublicProfileClientProp
                             <ProfileHeader
                                 profile={profile}
                                 onEditPersonal={noOpHandler}
+                                readOnly
                             />
                         </div>
 
@@ -75,7 +81,7 @@ export default function PublicProfileClient({ profile }: PublicProfileClientProp
                     </div>
 
                     {/* Sidebar Section (Small) - Skills, Languages, Career Progress */}
-                    <div className="lg:w-1/4 2xl:w-1/5 space-y-6 sticky top-6 self-start">
+                    <div className="w-full lg:w-1/4 space-y-6 sticky top-6 self-start">
                         <SkillsSection
                             profile={profile}
                             onEdit={noOpHandler}

@@ -36,6 +36,27 @@ export interface Institute {
   updatedAt: Date
 }
 
+// RegistrationIntent is used for tracking application status before approval.
+// This interface matches the Redux state in registrationSlice.
+export interface RegistrationIntent {
+  id: string;
+  userId: string;
+  organizationName: string;
+  type: 'institute' | 'business';
+  email: string;
+  contactPhone: string;
+  status: 'pending' | 'approved' | 'rejected' | 'payment_required' | 'completed';
+  description?: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  zipCode: string;
+  adminNotes?: string;
+  createdAt: string;
+  reviewedAt?: string;
+}
+
 export interface InstituteProfile {
   institute: Institute
   courses: any[] // Course[]

@@ -34,7 +34,8 @@ import {
   MessageSquare,
   Moon,
   RefreshCw,
-  LayoutGrid
+  LayoutGrid,
+  Plus
 } from "lucide-react";
 import InstituteSelector from "@/components/institute-selector";
 import { handleUserSignOut } from "@/src/services/auth/auth.service";
@@ -151,6 +152,24 @@ export default function UserProfileMenu() {
   // Recent profiles for the main view (excluding the active one)
   const otherProfiles = allProfiles.filter(p => !p.isActive).slice(0, 2);
 
+  // Dashboard routes mapping
+  const dashboardRoutes: Record<string, string> = {
+    admin: '/admin',
+    institute: '/institute/dashboard',
+    business: '/business',
+    user: '/user',
+    student: '/user',
+    professional: '/user',
+  };
+
+  const handleActiveProfileClick = () => {
+    if (userRole === 'institute') {
+      router.push('/institute/dashboard');
+    } else {
+      router.push(dashboardRoutes[userRole] || '/user');
+    }
+  };
+
   const handleRoleSwitch = async (targetRole: string) => {
     if (targetRole === userRole) return;
     
@@ -162,15 +181,6 @@ export default function UserProfileMenu() {
       
       if (response.success) {
         await update({ ...session, user: { ...session.user, activeRole: targetRole } });
-        
-        const dashboardRoutes: Record<string, string> = {
-          admin: '/admin',
-          institute: '/institute/dashboard',
-          business: '/business',
-          user: '/user',
-          student: '/user',
-          professional: '/user',
-        };
         
         router.push(dashboardRoutes[targetRole] || '/user');
       } else {
@@ -209,16 +219,16 @@ export default function UserProfileMenu() {
     }
   };
 
-  const menuItems = [
-    { name: "Explore", href: "/recommendation-collections", icon: Home },
-    { name: "Profile", href: "/user", icon: Users },
+  const manageItems = [
     { name: "Applied Courses", href: "/user/applied-courses", icon: GraduationCap },
+    { name: "Preferences", href: "/settings/preferences", icon: Settings },
+    { name: "Create New Page", href: "/user/create-page", icon: Plus },
   ];
 
   const registrationItems = [
     { name: "Registration Status", href: "/user/registration-status", icon: FileText },
-    { name: "Register Institute", href: "/user/register-institute", icon: Building2 },
-    { name: "Register Business", href: "/user/register-business", icon: Briefcase },
+    // { name: "Register Institute", href: "/user/register-institute", icon: Building2 },
+    // { name: "Register Business", href: "/user/register-business", icon: Briefcase },
   ];
 
   const settingsItems = [
@@ -282,7 +292,7 @@ export default function UserProfileMenu() {
             {/* Profile Switching Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
               {/* Active Profile */}
-              <div className="p-3 mx-1 mt-1 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer group" onClick={() => router.push('/user')}>
+              <div className="p-3 mx-1 mt-1 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer group" onClick={handleActiveProfileClick}>
                 <div className="flex items-center gap-3">
                   <div className="rounded-full bg-gradient-to-br from-blue-600 to-purple-600 p-[2px]">
                     <div className="rounded-full bg-white p-[2px]">
@@ -320,7 +330,7 @@ export default function UserProfileMenu() {
                         className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all group"
                       >
                         <div className="relative">
-                          <div className={`w-10 h-10 rounded-full ${item.type === 'institute' ? 'bg-orange-50' : 'bg-gray-100'} flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-200`}>
+                          <div className={`w-12 h-12 rounded-full ${item.type === 'institute' ? 'bg-orange-50' : 'bg-gray-100'} flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-200`}>
                            <span className={`font-bold text-lg ${item.type === 'institute' ? 'text-orange-600' : 'text-blue-600'}`}>
                              {getInitials(item.name)}
                            </span>
@@ -342,10 +352,10 @@ export default function UserProfileMenu() {
               )}
 
               {/* See all profiles button */}
-              <div className="px-2 pb-2">
+              <div className="px-4 pb-2">
                 <Button 
                   variant="ghost" 
-                  className="w-full mt-1 bg-white hover:bg-gray-50 text-gray-600 font-medium h-9 rounded-lg text-sm transition-colors border-0 justify-start px-2"
+                  className="w-full mt-1 bg-white hover:bg-gray-50 text-gray-600 font-medium h-9 rounded-lg text-sm transition-colors border-0 justify-center px-2"
                   onClick={() => setView('profiles')}
                 >
                   <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
@@ -372,19 +382,22 @@ export default function UserProfileMenu() {
                 </div>
               )}
 
-              {/* User Navigation (Old items restored) */}
-              {menuItems.map((item) => (
-                <div
-                  key={item.name}
-                  onClick={() => router.push(item.href)}
-                  className="flex items-center p-2 rounded-lg hover:bg-gray-200/50 cursor-pointer transition-colors group"
-                >
-                  <div className="w-9 h-9 rounded-full bg-gray-200 group-hover:bg-gray-300 flex items-center justify-center mr-3 transition-colors">
-                    <item.icon className="h-5 w-5 text-gray-700" />
+              {/* Manage Section */}
+              <div className="pt-2 pb-1">
+                <p className="px-2 text-xs font-semibold text-gray-500 uppercase mb-1">Manage</p>
+                {manageItems.map((item) => (
+                  <div
+                    key={item.name}
+                    onClick={() => router.push(item.href)}
+                    className="flex items-center p-2 rounded-lg hover:bg-gray-200/50 cursor-pointer transition-colors group"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gray-200 group-hover:bg-gray-300 flex items-center justify-center mr-3 transition-colors">
+                      <item.icon className="h-5 w-5 text-gray-700" />
+                    </div>
+                    <span className="flex-1 font-medium text-[15px] text-gray-900">{item.name}</span>
                   </div>
-                  <span className="flex-1 font-medium text-[15px] text-gray-900">{item.name}</span>
-                </div>
-              ))}
+                ))}
+              </div>
 
               {/* Registration Items (User role only) */}
               {userRole === "user" && (
@@ -409,7 +422,7 @@ export default function UserProfileMenu() {
               <div className="my-2 h-px bg-gray-200/50 mx-2" />
 
               {/* Settings & Support */}
-              {/* {settingsItems.map((item) => (
+              {settingsItems.map((item) => (
                 <div
                   key={item.name}
                   onClick={() => router.push(item.href)}
@@ -421,7 +434,7 @@ export default function UserProfileMenu() {
                   <span className="flex-1 font-medium text-[15px] text-gray-900">{item.name}</span>
                   {item.hasSubmenu && <ChevronRight className="h-5 w-5 text-gray-400" />}
                 </div>
-              ))} */}
+              ))}
 
               {/* Log Out */}
               <div
@@ -524,14 +537,14 @@ export default function UserProfileMenu() {
               
               {/* Create Page Link */}
               <div
-                onClick={() => router.push('/user/register-institute')}
+                onClick={() => router.push('/user/create-page')}
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer transition-all group mt-2"
               >
                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
                   <div className="h-5 w-5 text-gray-600 font-light flex items-center justify-center text-xl">+</div>
                 </div>
                 <div className="flex-1 min-w-0">
-                   <p className="text-[15px] font-semibold text-gray-900">Create New Profile</p>
+                   <p className="text-[15px] font-semibold text-gray-900">Create New Page</p>
                 </div>
               </div>
             </div>

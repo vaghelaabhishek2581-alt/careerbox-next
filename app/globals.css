@@ -83,6 +83,16 @@
   }
 }
 
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 /* Custom animations */
 .fade-in-up {
   animation: fadeInUp 0.8s ease-out forwards;

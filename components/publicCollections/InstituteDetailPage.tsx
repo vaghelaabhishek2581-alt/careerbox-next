@@ -1610,6 +1610,96 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
             />
           )}
 
+          {/* Academics Overview */}
+          {institute.academics && (institute.academics.totalStudents || institute.academics.totalFaculty || institute.academics.studentFacultyRatio || institute.academics.internationalStudents || institute.academics.totalPrograms) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Academic Statistics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {institute.academics.totalStudents && (
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Users className="h-6 w-6 text-blue-600" />
+                        <div className="text-sm text-blue-600 font-medium">Total Students</div>
+                      </div>
+                      <div className="text-2xl font-bold text-blue-700">{institute.academics.totalStudents.toLocaleString()}</div>
+                    </div>
+                  )}
+                  {institute.academics.totalFaculty && (
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <BookOpen className="h-6 w-6 text-green-600" />
+                        <div className="text-sm text-green-600 font-medium">Total Faculty</div>
+                      </div>
+                      <div className="text-2xl font-bold text-green-700">{institute.academics.totalFaculty.toLocaleString()}</div>
+                    </div>
+                  )}
+                  {institute.academics.studentFacultyRatio && (
+                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border border-purple-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Award className="h-6 w-6 text-purple-600" />
+                        <div className="text-sm text-purple-600 font-medium">Student:Faculty Ratio</div>
+                      </div>
+                      <div className="text-2xl font-bold text-purple-700">{institute.academics.studentFacultyRatio}</div>
+                    </div>
+                  )}
+                  {institute.academics.internationalStudents && (
+                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border border-orange-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Globe className="h-6 w-6 text-orange-600" />
+                        <div className="text-sm text-orange-600 font-medium">International Students</div>
+                      </div>
+                      <div className="text-2xl font-bold text-orange-700">{institute.academics.internationalStudents.toLocaleString()}</div>
+                    </div>
+                  )}
+                  {institute.academics.totalPrograms && (
+                    <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-4 border border-pink-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <GraduationCap className="h-6 w-6 text-pink-600" />
+                        <div className="text-sm text-pink-600 font-medium">Total Programs</div>
+                      </div>
+                      <div className="text-2xl font-bold text-pink-700">{institute.academics.totalPrograms}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Schools */}
+                {(institute.academics as any).schools && (institute.academics as any).schools.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-blue-500" />
+                      Schools & Departments
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(institute.academics as any).schools?.map((school: any, index: number) => (
+                        <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="font-semibold text-gray-900 mb-1">{school.name}</div>
+                          {school.established && (
+                            <div className="text-sm text-gray-600 mb-2">Established: {school.established}</div>
+                          )}
+                          {school.programs && school.programs.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {school.programs.map((program: string, pIndex: number) => (
+                                <span key={pIndex} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                  {program}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {(institute as any).academics?.programOverviews && (institute as any).academics.programOverviews.length > 0 && (
             <KeyValueTable
               title="Program Statistics"
@@ -1682,12 +1772,26 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
             publisherRankings={(institute as any).rankings?.data}
           />
 
+          {/* NIRF Rankings */}
           {(institute as any).accreditation?.nirf && Object.keys((institute as any).accreditation.nirf).length > 0 && (
-            <KeyValueTable
-              title="NIRF Rankings"
-              data={(institute as any).accreditation.nirf}
-              icon={<Award className="w-5 h-5" />}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  NIRF Rankings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries((institute as any).accreditation.nirf).map(([category, rank]: [string, any]) => (
+                    <div key={category} className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 hover:shadow-md transition-shadow">
+                      <div className="text-sm text-gray-600 mb-2 font-medium">{category}</div>
+                      <div className="text-2xl font-bold text-orange-700">#{rank}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
 

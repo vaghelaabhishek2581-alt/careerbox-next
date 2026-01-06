@@ -18,7 +18,7 @@ export interface InstituteData {
   establishmentYear?: number
   establishedYear?: number // Alias for establishmentYear
   type?: 'Public/Government' | 'Private' | 'Deemed' | 'Autonomous' | 'Central University' | 'State University'
-  status: 'Active' | 'Inactive' | 'Suspended' | 'Under Review' | 'active' | 'inactive' | 'suspended' // Support both formats
+  status: 'Active' | 'Inactive' | 'Suspended' | 'Under Review' | 'under review' | 'under_review' | 'active' | 'inactive' | 'suspended' | 'Rejected' | 'rejected' | 'pending' // Support both formats
   logo?: string
   coverImage?: string
   website?: string

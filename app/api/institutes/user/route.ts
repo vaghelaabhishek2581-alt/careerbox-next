@@ -198,6 +198,8 @@ export async function GET(req: NextRequest) {
       userIds: institute.userIds.map(id => id.toString()),
       city: institute.location?.city,
       state: institute.location?.state,
+      // Add explicit verification status based on active status
+      isVerified: institute.status === 'active' || institute.status === 'Active',
     }));
 
     const response: ApiResponse<any[]> = {

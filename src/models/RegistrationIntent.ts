@@ -25,6 +25,9 @@ export interface IRegistrationIntent extends Document {
   // Business specific fields
   businessCategory?: string
   organizationSize?: string
+  uniquePageId?: string
+  organizationType?: string
+  tagline?: string
 
   // Address
   address: string
@@ -78,6 +81,9 @@ export type LeanRegistrationIntent = {
   establishmentYear?: number
   businessCategory?: string
   organizationSize?: string
+  uniquePageId?: string
+  organizationType?: string
+  tagline?: string
   address: string
   city: string
   state: string
@@ -167,6 +173,21 @@ const RegistrationIntentSchema = new Schema<IRegistrationIntent>({
     trim: true
   },
   organizationSize: {
+    type: String,
+    trim: true
+  },
+  uniquePageId: {
+    type: String,
+    trim: true,
+    index: true,
+    unique: true,
+    sparse: true
+  },
+  organizationType: {
+    type: String,
+    trim: true
+  },
+  tagline: {
     type: String,
     trim: true
   },

@@ -60,6 +60,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
+import { RegistrationReviewDialog } from '@/components/admin/RegistrationReviewDialog';
+
 export default function AdminRegistrationsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { registrationIntents, loading, error, filters, currentPage, totalPages, totalItems } = useSelector(
@@ -70,14 +72,13 @@ export default function AdminRegistrationsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [reviewDialog, setReviewDialog] = useState(false);
-  const [grantDialog, setGrantDialog] = useState(false);
+  // const [grantDialog, setGrantDialog] = useState(false);
   const [viewDialog, setViewDialog] = useState(false);
   const [selectedIntent, setSelectedIntentLocal] = useState<any>(null);
   const [viewingIntent, setViewingIntent] = useState<any>(null);
-  const [reviewAction, setReviewAction] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
-  const [subscriptionPlan, setSubscriptionPlan] = useState('');
-  const [grantReason, setGrantReason] = useState('');
+  // const [grantSuccess, setGrantSuccess] = useState(false);
+  // const [grantError, setGrantError] = useState('');
+  // const [grantLoading, setGrantLoading] = useState(false);
 
   useEffect(() => {
     dispatch(fetchAllRegistrationIntents({ page: 1 }));
@@ -91,53 +92,6 @@ export default function AdminRegistrationsPage() {
     
     dispatch(setFilters(newFilters));
     dispatch(fetchAllRegistrationIntents({ page: 1, filters: newFilters }));
-  };
-
-  const handleReview = async () => {
-    if (!selectedIntent || !reviewAction) return;
-
-    try {
-      await dispatch(reviewRegistrationIntent({
-        intentId: selectedIntent.id,
-        action: reviewAction as any,
-        adminNotes,
-        subscriptionPlan: subscriptionPlan || undefined,
-      })).unwrap();
-
-      setReviewDialog(false);
-      setReviewAction('');
-      setAdminNotes('');
-      setSubscriptionPlan('');
-      setSelectedIntentLocal(null);
-
-      // Refresh registrations list
-      dispatch(fetchAllRegistrationIntents({ page: currentPage, filters }));
-    } catch (error) {
-      console.error('Review failed:', error);
-    }
-  };
-
-  const handleGrantSubscription = async () => {
-    if (!selectedIntent || !subscriptionPlan || !grantReason) return;
-
-    try {
-      await dispatch(grantFreeSubscription({
-        userId: selectedIntent.userId,
-        organizationType: selectedIntent.type,
-        planType: subscriptionPlan as any,
-        reason: grantReason,
-      })).unwrap();
-
-      setGrantDialog(false);
-      setSubscriptionPlan('');
-      setGrantReason('');
-      setSelectedIntentLocal(null);
-
-      // Refresh registrations list
-      dispatch(fetchAllRegistrationIntents({ page: currentPage, filters }));
-    } catch (error) {
-      console.error('Grant subscription failed:', error);
-    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -553,156 +507,27 @@ export default function AdminRegistrationsPage() {
                             </DialogContent>
                           </Dialog>
 
-                          {intent.status === 'pending' && (
-                            <Dialog open={reviewDialog} onOpenChange={setReviewDialog}>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setSelectedIntentLocal(intent)}
-                                >
-                                  <FileText className="w-4 h-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Review Registration</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-6">
-                                  {/* Organization Details */}
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <Label className="text-sm font-medium">Organization Name</Label>
-                                      <p className="text-sm text-gray-600">{intent.organizationName}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">Type</Label>
-                                      <p className="text-sm text-gray-600 capitalize">{intent.type}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">Contact Person</Label>
-                                      <p className="text-sm text-gray-600">{intent.contactName}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">Phone</Label>
-                                      <p className="text-sm text-gray-600">{intent.contactPhone}</p>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <Label className="text-sm font-medium">Address</Label>
-                                    <p className="text-sm text-gray-600">
-                                      {intent.address}, {intent.city}, {intent.state}, {intent.country}
-                                    </p>
-                                  </div>
-
-                                  {intent.description && (
-                                    <div>
-                                      <Label className="text-sm font-medium">Description</Label>
-                                      <p className="text-sm text-gray-600">{intent.description}</p>
-                                    </div>
-                                  )}
-
-                                  {/* Review Action */}
-                                  <div>
-                                    <Label>Review Action *</Label>
-                                    <Select value={reviewAction} onValueChange={setReviewAction}>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select action" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="approve">Approve</SelectItem>
-                                        <SelectItem value="reject">Reject</SelectItem>
-                                        <SelectItem value="require_payment">Require Payment</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-
-                                  {reviewAction === 'approve' && (
-                                    <div>
-                                      <Label>Subscription Plan</Label>
-                                      <Select value={subscriptionPlan} onValueChange={setSubscriptionPlan}>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select plan to grant" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="free">Free</SelectItem>
-                                          <SelectItem value="paid">paid</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  )}
-
-                                  <div>
-                                    <Label>Admin Notes</Label>
-                                    <Textarea
-                                      placeholder="Add notes about your decision..."
-                                      value={adminNotes}
-                                      onChange={(e) => setAdminNotes(e.target.value)}
-                                    />
-                                  </div>
-
-                                  <div className="flex justify-end gap-2">
-                                    <Button variant="outline" onClick={() => setReviewDialog(false)}>
-                                      Cancel
-                                    </Button>
-                                    <Button onClick={handleReview} disabled={!reviewAction}>
-                                      Submit Review
-                                    </Button>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          )}
-
-                          {intent.status === 'approved' && (
-                            <Dialog open={grantDialog} onOpenChange={setGrantDialog}>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setSelectedIntentLocal(intent)}
-                                >
-                                  <CreditCard className="w-4 h-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Grant Free Subscription</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div>
-                                    <Label>Subscription Plan *</Label>
-                                    <Select value={subscriptionPlan} onValueChange={setSubscriptionPlan}>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select plan to grant" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="free">Free</SelectItem>
-                                        <SelectItem value="paid">Paid</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div>
-                                    <Label>Reason for Grant *</Label>
-                                    <Textarea
-                                      placeholder="Enter reason for granting free subscription..."
-                                      value={grantReason}
-                                      onChange={(e) => setGrantReason(e.target.value)}
-                                    />
-                                  </div>
-                                  <div className="flex justify-end gap-2">
-                                    <Button variant="outline" onClick={() => setGrantDialog(false)}>
-                                      Cancel
-                                    </Button>
-                                    <Button onClick={handleGrantSubscription} disabled={!subscriptionPlan || !grantReason}>
-                                      Grant Subscription
-                                    </Button>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                            onClick={() => {
+                              setSelectedIntentLocal(intent);
+                              setReviewDialog(true);
+                            }}
+                          >
+                            <FileText className="w-4 h-4" />
+                          </Button>
+                          
+                          <RegistrationReviewDialog 
+                            open={reviewDialog && selectedIntent?.id === intent.id}
+                            onOpenChange={(open) => {
+                              setReviewDialog(open);
+                              if (!open) setSelectedIntentLocal(null);
+                            }}
+                            intent={intent}
+                            onSuccess={() => dispatch(fetchAllRegistrationIntents({ page: currentPage, filters }))}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
