@@ -1669,14 +1669,14 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                 </div>
 
                 {/* Schools */}
-                {institute.academics.schools && institute.academics.schools.length > 0 && (
+                {(institute.academics as any).schools && (institute.academics as any).schools.length > 0 && (
                   <div className="mt-6">
                     <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <Building2 className="h-5 w-5 text-blue-500" />
                       Schools & Departments
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {institute.academics.schools.map((school: any, index: number) => (
+                      {(institute.academics as any).schools?.map((school: any, index: number) => (
                         <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                           <div className="font-semibold text-gray-900 mb-1">{school.name}</div>
                           {school.established && (

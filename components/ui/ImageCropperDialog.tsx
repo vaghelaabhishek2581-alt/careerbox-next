@@ -493,11 +493,11 @@ export function ImageCropperDialog({
               )}
               <div className="pt-2 mt-2 border-t flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {typeof onDelete === "function" && imageSrc && (
+                  {/* {typeof onDelete === "function" && imageSrc && (
                     <Button variant="outline" size="sm" onClick={onDelete}>
                       <Trash2 className="h-4 w-4 mr-2" /> Delete photo
                     </Button>
-                  )}
+                  )} */}
                 </div>
                 <div className="flex items-center gap-2 sticky bottom-0 lg:static bg-white"
                   style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
