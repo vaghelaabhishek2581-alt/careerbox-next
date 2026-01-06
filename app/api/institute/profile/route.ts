@@ -181,6 +181,7 @@ interface UpdateInstituteProfileData {
   rankings?: any;
   researchAndInnovation?: any;
   alumniNetwork?: any;
+  academics?: any;
   faculty_student_ratio?: any;
 }
 
@@ -235,7 +236,7 @@ export async function PATCH(req: NextRequest) {
       name, shortName, slug, establishedYear, type, status,
       logo, coverImage, website, description, awards,
       contact, location, accreditation, overview, campusDetails,
-      admissions, placements, mediaGallery, rankings,
+      academics, admissions, placements, mediaGallery, rankings,
       researchAndInnovation, alumniNetwork, faculty_student_ratio
     } = updateData;
 
@@ -257,6 +258,7 @@ export async function PATCH(req: NextRequest) {
     if (accreditation) addToUpdates('accreditation', accreditation);
     if (overview) addToUpdates('overview', overview);
     if (campusDetails) addToUpdates('campusDetails', campusDetails);
+    if (academics) addToUpdates('academics', academics);
     if (admissions) addToUpdates('admissions', admissions);
     if (placements) addToUpdates('placements', placements);
     if (mediaGallery) addToUpdates('mediaGallery', mediaGallery);
