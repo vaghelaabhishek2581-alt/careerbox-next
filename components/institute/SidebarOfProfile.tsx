@@ -3,18 +3,18 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { 
-  Building2, 
-  Sparkles, 
-  FileText, 
-  FileCheck, 
-  MapPin, 
-  Wifi, 
-  Trophy, 
-  Award, 
-  Users, 
-  GraduationCap, 
-  Briefcase, 
+import {
+  Building2,
+  Sparkles,
+  FileText,
+  FileCheck,
+  MapPin,
+  Wifi,
+  Trophy,
+  Award,
+  Users,
+  GraduationCap,
+  Briefcase,
   UserCheck,
   ChevronLeft
 } from 'lucide-react';
@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 
 export function ProfileSidebar() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const searchParams: any = useSearchParams();
   const currentTab = searchParams.get('tab') || 'core';
 
   const menuItems = [
@@ -44,10 +44,10 @@ export function ProfileSidebar() {
     <div className="space-y-4">
       <div className="mb-4">
         <Link href="/institute/dashboard">
-            <Button variant="ghost" className="pl-0 hover:bg-transparent hover:text-blue-600 transition-colors">
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-            </Button>
+          <Button variant="ghost" className="pl-0 hover:bg-transparent hover:text-blue-600 transition-colors">
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
         </Link>
       </div>
 
@@ -57,11 +57,10 @@ export function ProfileSidebar() {
             const isActive = currentTab === item.id && pathname === '/institute/profile';
             return (
               <Link key={index} href={`/institute/profile?tab=${item.id}`}>
-                <div className={`flex items-center px-6 py-3.5 text-sm font-medium transition-colors ${
-                  isActive 
-                    ? "bg-blue-50 text-gray-900 border-l-4 border-blue-600" 
+                <div className={`flex items-center px-6 py-3.5 text-sm font-medium transition-colors ${isActive
+                    ? "bg-blue-50 text-gray-900 border-l-4 border-blue-600"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent"
-                }`}>
+                  }`}>
                   <item.icon className={`h-5 w-5 mr-3 ${isActive ? "text-gray-900" : "text-gray-400"}`} />
                   {item.label}
                 </div>
