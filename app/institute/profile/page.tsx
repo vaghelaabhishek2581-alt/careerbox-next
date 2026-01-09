@@ -76,7 +76,7 @@ function StringList({
 
 export default function InstituteProfilePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams: any = useSearchParams();
   const activeTab = searchParams.get("tab") || "core";
   const { data: session, status } = useSession();
   const { toast } = useToast();
