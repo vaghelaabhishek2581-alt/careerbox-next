@@ -285,8 +285,51 @@ export default function AppliedCoursesPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      {/* Stats - Mobile horizontal scroll */}
+      <div className="md:hidden">
+        <div className="overflow-x-auto pb-2 -mx-1 px-1">
+          <div className="flex gap-4 snap-x snap-mandatory">
+            <Card className="min-w-[140px] snap-center">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-600">Total Applications</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {statsLoading ? (
+                    <div className="h-8 w-12 bg-gray-200 animate-pulse rounded"></div>
+                  ) : (
+                    stats.total
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            {statusOptions.map((status) => (
+              <Card key={status.value} className={`min-w-[140px] snap-center ${statusFilter === status.value ? "ring-2 ring-blue-500" : ""}`}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">{status.label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {statsLoading ? (
+                      <div className="h-8 w-8 bg-gray-200 animate-pulse rounded"></div>
+                    ) : (
+                      <button
+                        onClick={() => setStatusFilter(status.value)}
+                        className="hover:text-blue-600 transition-colors cursor-pointer"
+                      >
+                        {stats[status.value as keyof ApplicationStats]}
+                      </button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats - Desktop grid */}
+      <div className="hidden md:grid md:grid-cols-6 gap-4 md:gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Total Applications</CardTitle>
@@ -301,9 +344,8 @@ export default function AppliedCoursesPage() {
             </div>
           </CardContent>
         </Card>
-        
         {statusOptions.map((status) => (
-          <Card key={status.value} className={statusFilter === status.value ? "ring-2 ring-blue-500" : ""}>
+          <Card key={status.value} className={`${statusFilter === status.value ? "ring-2 ring-blue-500" : ""}`}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">{status.label}</CardTitle>
             </CardHeader>
@@ -325,49 +367,51 @@ export default function AppliedCoursesPage() {
         ))}
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search by course, institute, or status..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+      {/* Sticky Filters */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 py-2 shadow-sm">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search by course, institute, or status..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  {statusOptions.map(status => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value))}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 per page</SelectItem>
+                  <SelectItem value="10">10 per page</SelectItem>
+                  <SelectItem value="25">25 per page</SelectItem>
+                  <SelectItem value="50">50 per page</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                {statusOptions.map(status => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value))}>
-              <SelectTrigger className="w-full sm:w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 per page</SelectItem>
-                <SelectItem value="10">10 per page</SelectItem>
-                <SelectItem value="25">25 per page</SelectItem>
-                <SelectItem value="50">50 per page</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Table */}
+      {/* Listing: Responsive table on md+, cards on mobile */}
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -375,109 +419,167 @@ export default function AppliedCoursesPage() {
               <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('courseName')}
-                      className="h-auto p-0 font-semibold"
-                    >
-                      Course Details
-                      {getSortIcon('courseName')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>Institute</TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('status')}
-                      className="h-auto p-0 font-semibold"
-                    >
-                      Status
-                      {getSortIcon('status')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('createdAt')}
-                      className="h-auto p-0 font-semibold"
-                    >
-                      Applied Date
-                      {getSortIcon('createdAt')}
-                    </Button>
-                  </TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop/Tablet Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleSort('courseName')}
+                          className="h-auto p-0 font-semibold"
+                        >
+                          Course Details
+                          {getSortIcon('courseName')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>Institute</TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleSort('status')}
+                          className="h-auto p-0 font-semibold"
+                        >
+                          Status
+                          {getSortIcon('status')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleSort('createdAt')}
+                          className="h-auto p-0 font-semibold"
+                        >
+                          Applied Date
+                          {getSortIcon('createdAt')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {applications.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8">
+                          <div className="flex flex-col items-center gap-4">
+                            <GraduationCap className="h-16 w-16 text-gray-300" />
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Applications Yet</h3>
+                              <p className="text-gray-600 mb-4">
+                                You haven't applied to any courses yet. Start exploring institutes and courses.
+                              </p>
+                              <Button onClick={() => window.location.href = '/search'}>
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Browse Courses
+                              </Button>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      applications.map((application: AppliedCourse) => (
+                        <TableRow key={application._id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium flex items-center gap-2">
+                                <GraduationCap className="h-4 w-4 text-blue-600" />
+                                {application.courseName}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {application.email}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4 text-gray-400" />
+                              <span className="font-medium">
+                                {application.instituteName || application.instituteSlug || 'Institute'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={statusColors[application.status as keyof typeof statusColors]}>
+                              {statusOptions.find(s => s.value === application.status)?.label || application.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">{formatDate(application.createdAt)}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedApplication(application)
+                                setIsModalOpen(true)
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card List */}
+              <div className="md:hidden">
                 {applications.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
-                      <div className="flex flex-col items-center gap-4">
-                        <GraduationCap className="h-16 w-16 text-gray-300" />
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Applications Yet</h3>
-                          <p className="text-gray-600 mb-4">
-                            You haven't applied to any courses yet. Start exploring institutes and courses.
-                          </p>
-                          <Button onClick={() => window.location.href = '/search'}>
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Browse Courses
+                  <div className="text-center py-10">
+                    <GraduationCap className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Applications Yet</h3>
+                    <p className="text-gray-600 mb-4">
+                      You haven't applied to any courses yet. Start exploring institutes and courses.
+                    </p>
+                    <Button onClick={() => window.location.href = '/search'}>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Browse Courses
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 p-3">
+                    {applications.map((app: AppliedCourse) => (
+                      <div key={app._id} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 flex items-center gap-2">
+                              <GraduationCap className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                              <span className="truncate">{app.courseName}</span>
+                            </div>
+                            <div className="mt-1 text-xs text-gray-600 flex items-center gap-2">
+                              <Building2 className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                              <span className="truncate">{app.instituteName || app.instituteSlug || 'Institute'}</span>
+                            </div>
+                          </div>
+                          <Badge className={`${statusColors[app.status as keyof typeof statusColors]} flex-shrink-0`}>
+                            {statusOptions.find(s => s.value === app.status)?.label || app.status}
+                          </Badge>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="text-xs text-gray-500 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Applied {formatDate(app.createdAt)}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setSelectedApplication(app); setIsModalOpen(true); }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
                           </Button>
                         </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  applications.map((application: AppliedCourse) => (
-                    <TableRow key={application._id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium flex items-center gap-2">
-                            <GraduationCap className="h-4 w-4 text-blue-600" />
-                            {application.courseName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {application.email}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium">
-                            {application.instituteName || application.instituteSlug || 'Institute'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[application.status as keyof typeof statusColors]}>
-                          {statusOptions.find(s => s.value === application.status)?.label || application.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{formatDate(application.createdAt)}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedApplication(application)
-                            setIsModalOpen(true)
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                    ))}
+                  </div>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -552,7 +654,7 @@ export default function AppliedCoursesPage() {
 
       {/* Application Details Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="z-[1000] max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
