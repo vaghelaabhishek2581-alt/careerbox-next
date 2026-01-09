@@ -3,22 +3,22 @@ import Logo from "./logo";
 
 const navigation = {
   platform: [
-    { name: "For Professionals", href: "/services" },
-    { name: "For Businesses", href: "/business-service" },
+    // { name: "For Professionals", href: "/services" },
+    // { name: "For Businesses", href: "/business-service" },
     { name: "For Institutes", href: "/institutes-service" },
-    { name: "About Us", href: "/about" },
+    // { name: "About Us", href: "/about" },
   ],
-  resources: [
-    { name: "Blog", href: "/blog" },
-    { name: "Case Studies", href: "/case-studies" },
-    { name: "Help Center", href: "/help" },
-    { name: "API Documentation", href: "/api/doc" },
-  ],
+  // resources: [
+  //   { name: "Blog", href: "/blog" },
+  //   { name: "Case Studies", href: "/case-studies" },
+  //   { name: "Help Center", href: "/help" },
+  //   { name: "API Documentation", href: "/api/doc" },
+  // ],
   company: [
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
     { name: "Careers", href: "/careers" },
-    { name: "Press", href: "/press" },
+    // { name: "Press", href: "/press" },
   ],
   legal: [
     { name: "Privacy Policy", href: "/privacy" },
@@ -29,20 +29,20 @@ const navigation = {
 };
 
 const socialLinks = [
-  { name: "Twitter", href: "https://twitter.com/careerbox", icon: "twitter" },
+  { name: "X", href: "https://x.com/Careerbox146776", icon: "X" },
   {
     name: "LinkedIn",
-    href: "https://linkedin.com/company/careerbox",
+    href: "https://www.linkedin.com/showcase/careerbox-in",
     icon: "linkedin",
   },
   {
     name: "Facebook",
-    href: "https://facebook.com/careerbox",
+    href: "https://www.facebook.com/careerbox.in",
     icon: "facebook",
   },
   {
     name: "Instagram",
-    href: "https://instagram.com/careerbox",
+    href: "https://www.instagram.com/careerbox.in",
     icon: "instagram",
   },
 ];
@@ -50,7 +50,7 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white">
-      <div className="container mx-auto px-6 py-16">
+      <div className="container mx-auto px-8 py-16">
         <div className="grid lg:grid-cols-6 gap-8 mb-8">
           {/* Brand section */}
           <div className="lg:col-span-2">
@@ -83,7 +83,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
+          {/* <div>
             <h4 className="text-lg font-semibold mb-6">Resources</h4>
             <ul className="space-y-3">
               {navigation.resources.map((item) => (
@@ -97,7 +97,7 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
           <div>
             <h4 className="text-lg font-semibold mb-6">Company</h4>
