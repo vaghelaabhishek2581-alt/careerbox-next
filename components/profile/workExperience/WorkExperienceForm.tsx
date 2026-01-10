@@ -326,7 +326,7 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
   };
 
   const content = (
-    <div className="flex h-full min-h-[90vh]">
+    <div className="flex h-full min-h-[90vh] pb-24">
       {/* Left side - Form */}
       <div className="flex-1 lg:w-1/2 p-6 overflow-y-auto border-r border-gray-200">
 
@@ -769,7 +769,7 @@ export const WorkExperienceForm: React.FC<WorkExperienceFormProps> = ({
         >
           <header className="flex items-center justify-between px-6 py-4 border-b bg-blue-100">
             <h1 className="text-lg font-semibold">
-              📝 HEADER TEST 📝 {isEditing ? (isEditingSpecificPosition ? 'Edit Position' : 'Edit Work Experience') : 'Add Work Experience'}
+              {isEditing ? (isEditingSpecificPosition ? 'Edit Position' : 'Edit Work Experience') : 'Add Work Experience'}
             </h1>
             <div className="flex items-center gap-2">
               <Button

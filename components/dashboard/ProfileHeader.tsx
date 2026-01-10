@@ -167,9 +167,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
                   <span className="hidden sm:inline">Share</span>
                   <span className="sm:hidden">Share</span>
                 </Button>
-                <Button variant="outline" size="icon" className="flex-shrink-0">
+                {/* <Button variant="outline" size="icon" className="flex-shrink-0">
                   <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
-                </Button>
+                </Button> */}
               </div>
             </div>
           </div>
@@ -178,7 +178,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
         {/* About Section - Separate Card */}
         {profile?.personalDetails?.aboutMe &&
           profile.personalDetails.aboutMe !== "Tell us a bit about yourself" && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
               <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
                 {profile.personalDetails.aboutMe}
@@ -189,7 +189,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
         {/* Professional Badges & Interests - Separate Card */}
         {((profile?.personalDetails?.professionalBadges && profile.personalDetails.professionalBadges.length > 0) ||
           (profile?.personalDetails?.interests && profile.personalDetails.interests.length > 0)) && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               {/* Professional Badges */}
               {profile?.personalDetails?.professionalBadges && profile.personalDetails.professionalBadges.length > 0 && (
                 <div className="mb-4">

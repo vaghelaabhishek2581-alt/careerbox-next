@@ -241,7 +241,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
 
 
   const content = (
-    <div className="flex h-full min-h-[90vh]">
+    <div className="flex h-full min-h-[90vh] pb-44">
       {/* Left side - Form */}
       <div className="flex-1 lg:w-1/2 p-6 overflow-y-auto border-r border-gray-200">
         <Form {...form}>
@@ -669,7 +669,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
             </div>
 
             {/* Form Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t mt-6">
+            {/* <div className="flex justify-end gap-2 pt-4 border-t mt-6">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
@@ -686,19 +686,9 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
                   "Save Changes"
                 )}
               </Button>
-            </div>
+            </div> */}
 
-            {/* Skills Form Dialog */}
-            <SkillsForm
-              isEditing={skillsDialogOpen}
-              onClose={() => setSkillsDialogOpen(false)}
-            />
-
-            {/* Languages Form Dialog */}
-            <LanguagesForm
-              isEditing={languagesDialogOpen}
-              onClose={() => setLanguagesDialogOpen(false)}
-            />
+            {/* Dialog components moved outside the main form to avoid nested forms */}
 
 
             {/* Form actions - only show in modal mode */}
@@ -724,6 +714,17 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
             )}
           </form>
         </Form>
+        {/* Skills Form Dialog (outside main form to prevent nested forms) */}
+        <SkillsForm
+          isEditing={skillsDialogOpen}
+          onClose={() => setSkillsDialogOpen(false)}
+        />
+
+        {/* Languages Form Dialog (outside main form to prevent nested forms) */}
+        <LanguagesForm
+          isEditing={languagesDialogOpen}
+          onClose={() => setLanguagesDialogOpen(false)}
+        />
       </div>
 
       {/* Right side - Preview (hidden on smaller screens) */}

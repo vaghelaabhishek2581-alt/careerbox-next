@@ -95,8 +95,9 @@ export async function GET(req: NextRequest) {
     if (!isPaidPlan) {
       leads = leads.map((lead: any) => ({
         ...lead,
-        email: lead.email ? lead.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : '',
-        phone: lead.phone ? lead.phone.replace(/(\d{2})\d+(\d{2})/, '$1******$2') : '',
+        fullName: lead.fullName ? lead.fullName.replace(/(.{1})(.*)( .*)/, '$1*****$3'): 'Student',
+        email: lead.email ? lead.email.replace(/(.{1})(.*)(@.*)/, '$1***$3') : '',
+        phone: lead.phone ? lead.phone.replace(/(\d{1})\d+(\d{1})/, '$1******$2') : '',
         phoneNumber: lead.phoneNumber ? lead.phoneNumber.replace(/(\d{2})\d+(\d{2})/, '$1******$2') : ''
       }));
     }

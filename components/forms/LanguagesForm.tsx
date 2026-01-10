@@ -67,6 +67,17 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
     }
   }, [isEditing, form, profile, dispatch]);
 
+  React.useEffect(() => {
+    if (isEditing) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isEditing]);
+
   const onSubmit = async (data: LanguageFormData) => {
     try {
       setIsSubmitting(true);
@@ -153,8 +164,8 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
   if (!isEditing) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[2000] bg-black/80 flex items-start justify-center p-4 pt-24">
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[calc(100vh-120px)] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Edit Languages</h2>
@@ -330,7 +341,7 @@ export const LanguagesForm: React.FC<LanguagesFormProps> = ({
           </Card>
 
           {/* Form Actions */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className="sticky bottom-0 bg-white px-6 py-4 border-t flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
