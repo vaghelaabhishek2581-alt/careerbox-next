@@ -25,12 +25,15 @@ export async function GET(request: NextRequest) {
       .limit(50) // Limit to 50 recent intents to prevent OOM
       .lean()
 
-    // Transform data for frontend
-    const transformedIntents = intents.map((intent: any) => ({
+    // Transform data for frontend with normalized status
+    const transformedIntents = intents.map((intent: any) => {
+      const originalStatus = intent.status || 'pending'
+      const normalizedStatus = originalStatus === 'completed' ? 'approved' : originalStatus
+      return {
       id: intent._id?.toString() || '',
       userId: intent.userId?.toString() || '',
       type: intent.type || '',
-      status: intent.status || 'pending',
+      status: normalizedStatus,
 
       // Basic Information
       organizationName: intent.organizationName || '',
@@ -77,7 +80,7 @@ export async function GET(request: NextRequest) {
       // Metadata
       createdAt: intent.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: intent.updatedAt?.toISOString() || new Date().toISOString(),
-    }))
+    }})
 
     return NextResponse.json({
       success: true,

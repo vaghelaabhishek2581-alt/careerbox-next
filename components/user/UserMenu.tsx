@@ -21,16 +21,16 @@ export function UserMenu() {
   const menuItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/user/dashboard" },
     { label: "Applied Courses", icon: GraduationCap, href: "/user/applied-courses" },
-    { label: "Notifications", icon: Bell, href: "/notifications" },
+    // { label: "Notifications", icon: Bell, href: "/notifications" },
     { label: "Registration Status", icon: FileText, href: "/user/registration-status" },
-    { label: "Payments", icon: CreditCard, href: "/user/payment" },
-    { label: "Discover", icon: Compass, href: "/recommendation-collections" },
-    { label: "Activity", icon: Activity, href: "/user/activity" },
+    // { label: "Payments", icon: CreditCard, href: "/user/payment" },
+    // { label: "Discover", icon: Compass, href: "/recommendation-collections" },
+    // { label: "Activity", icon: Activity, href: "/user/activity" },
   ];
 
   const bottomMenuItems = [
     { label: "Settings", icon: Settings, href: "/settings" },
-    { label: "Upgrade to Premium", icon: CreditCard, href: "/premium" },
+    // { label: "Upgrade to Premium", icon: CreditCard, href: "/premium" },
   ];
 
   return (

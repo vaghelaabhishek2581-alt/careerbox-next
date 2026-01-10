@@ -27,21 +27,21 @@ export function InstituteMenu() {
   const menuItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/institute/dashboard" },
     { label: "Leads", icon: Users, href: "/institute/leads" },
-    { label: "Courses", icon: BookOpen, href: "/institute/courses" },
-    { label: "Faculty", icon: GraduationCap, href: "/institute/faculty" },
-    { label: "Announcements", icon: Plus, href: "/institute/add-faculty" },
-    { label: "User Roles", icon: UserCog, href: "/institute/roles" },
-    { label: "Events", icon: Calendar, href: "/institute/events" },
+    // { label: "Courses", icon: BookOpen, href: "/institute/courses" },
+    // { label: "Faculty", icon: GraduationCap, href: "/institute/faculty" },
+    // { label: "Announcements", icon: Plus, href: "/institute/add-faculty" },
+    // { label: "User Roles", icon: UserCog, href: "/institute/roles" },
+    // { label: "Events", icon: Calendar, href: "/institute/events" },
     // { label: "Products & Services", icon: Package, href: "/institute/products" },
-    { label: "Analytics", icon: BarChart2, href: "/institute/analytics" },
-    { label: "Billing & Payments", icon: Wallet, href: "/institute/billing" },
-    { label: "Activity", icon: Activity, href: "/institute/activity" },
+    // { label: "Analytics", icon: BarChart2, href: "/institute/analytics" },
+    // { label: "Billing & Payments", icon: Wallet, href: "/institute/billing" },
+    // { label: "Activity", icon: Activity, href: "/institute/activity" },
     { label: "Edit Page", icon: Edit, href: "/institute/profile" },
   ];
 
   const bottomMenuItems = [
-    { label: "Upgrade to Premium", icon: CreditCard, href: "/institute/premium" },
-    { label: "Be Sponsored", icon: Megaphone, href: "/institute/sponsored" },
+    // { label: "Upgrade to Premium", icon: CreditCard, href: "/institute/premium" },
+    // { label: "Be Sponsored", icon: Megaphone, href: "/institute/sponsored" },
     { label: "Settings", icon: Settings, href: "/institute/settings" },
   ];
 

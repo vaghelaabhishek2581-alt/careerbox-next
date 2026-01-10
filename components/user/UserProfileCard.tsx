@@ -2,8 +2,9 @@
 
 import { useAppSelector } from "@/lib/redux/hooks";
 import { Card } from "@/components/ui/card";
-import { MapPin, ShieldCheck, Building } from "lucide-react";
+import { MapPin, ShieldCheck, Building, Edit2 } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export function UserProfileCard() {
   const profile = useAppSelector((state) => state.profile.profile);
@@ -40,17 +41,24 @@ export function UserProfileCard() {
         )}
       </Link>
       <div className="px-6 pb-6 relative">
-        <Link href="/user" className="inline-block -mt-16">
-          <div className="h-24 w-24 rounded-full bg-white border-2 border-white shadow-lg overflow-hidden">
-            {profileImage ? (
-              <img src={profileImage} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-500 text-xl font-semibold">
-                {userName?.[0] || "U"}
-              </div>
-            )}
-          </div>
-        </Link>
+        <div className="flex items-end justify-between -mt-12">
+          <Link href="/user" className="inline-block">
+            <div className="h-24 w-24 rounded-full bg-white border-2 border-white shadow-lg overflow-hidden">
+              {profileImage ? (
+                <img src={profileImage} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-500 text-xl font-semibold">
+                  {userName?.[0] || "U"}
+                </div>
+              )}
+            </div>
+          </Link>
+          <Link href="/user">
+            <Button variant="outline" className="rounded-full h-8 px-2 border-blue-200 text-blue-700 hover:bg-blue-50">
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
         <Link href="/user" className="block mt-3">
           <div className="flex items-center gap-1">
             <h2 className="text-2xl font-bold text-gray-900">{userName}</h2>

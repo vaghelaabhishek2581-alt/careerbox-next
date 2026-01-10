@@ -46,33 +46,33 @@ const getPrivateNavigation = (role: string) => {
     return [
       { name: "Home", href: "/institute/dashboard", icon: Home },
       { name: "Courses", href: "/institute/courses", icon: BookOpen },
-      { name: "Students", href: "/institute/students", icon: Users },
-      { name: "Messages", href: "/messages", icon: MessageCircle },
-      { name: "Notifications", href: "/notifications", icon: Bell },
+      // { name: "Students", href: "/institute/students", icon: Users },
+      // { name: "Messages", href: "/messages", icon: MessageCircle },
+      // { name: "Notifications", href: "/notifications", icon: Bell },
     ];
   }
   if (role === "business") {
     return [
       { name: "Home", href: "/business", icon: Home },
       { name: "Jobs", href: "/jobs", icon: Briefcase },
-      { name: "Messages", href: "/messages", icon: MessageCircle },
-      { name: "Notifications", href: "/notifications", icon: Bell },
+      // { name: "Messages", href: "/messages", icon: MessageCircle },
+      // { name: "Notifications", href: "/notifications", icon: Bell },
     ];
   }
   if (role === "admin") {
     return [
       { name: "Home", href: "/admin", icon: Home },
       { name: "Discover", href: "/recommendation-collections", icon: Compass },
-      { name: "Messages", href: "/messages", icon: MessageCircle },
-      { name: "Notifications", href: "/notifications", icon: Bell },
+      // { name: "Messages", href: "/messages", icon: MessageCircle },
+      // { name: "Notifications", href: "/notifications", icon: Bell },
     ];
   }
   return [
     { name: "Home", href: "/user/dashboard", icon: Home },
     { name: "Discover", href: "/explore", icon: Compass },
-    { name: "Jobs", href: "/jobs", icon: Briefcase },
-    { name: "Messages", href: "/messages", icon: MessageCircle },
-    { name: "Notifications", href: "/notifications", icon: Bell },
+    // { name: "Jobs", href: "/jobs", icon: Briefcase },
+    // { name: "Messages", href: "/messages", icon: MessageCircle },
+    // { name: "Notifications", href: "/notifications", icon: Bell },
   ];
 };
 
@@ -294,10 +294,9 @@ export default function Header() {
             {status === "authenticated" && session?.user ? (
               <div className="flex items-center gap-2 lg:hidden">
                 {/* Mobile Notification Icon (Top Right) */}
-                <Link href="/notifications" className="p-2 text-gray-600 hover:text-blue-600 relative">
+                {/* <Link href="/notifications" className="p-2 text-gray-600 hover:text-blue-600 relative">
                     <Bell className="h-6 w-6" />
-                    {/* Optional: Add notification badge here */}
-                </Link>
+                </Link> */}
                 {/* User Profile Menu in Top Header for Mobile */}
                 <UserProfileMenu />
               </div>
