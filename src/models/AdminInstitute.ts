@@ -1,4 +1,3 @@
-
 import mongoose, { Schema, Document, models, model } from 'mongoose'
 
 // ===============================
@@ -55,7 +54,12 @@ export interface IAdminInstitute extends Document {
     courseLevel?: string
     affiliatedUniversity?: string
     recognition?: string[]
-    placements?: { averagePackage?: number; highestPackage?: number; placementRate?: number; topRecruiters?: string[] }
+    placements?: {
+      averagePackage?: number
+      highestPackage?: number
+      placementRate?: number
+      topRecruiters?: string[]
+    }
   }>
 
   // New structure: Programmes with nested courses
@@ -86,7 +90,12 @@ export interface IAdminInstitute extends Document {
       courseLevel?: string
       affiliatedUniversity?: string
       recognition?: string[]
-      placements?: { averagePackage?: number; highestPackage?: number; placementRate?: number; topRecruiters?: string[] }
+      placements?: {
+        averagePackage?: number
+        highestPackage?: number
+        placementRate?: number
+        topRecruiters?: string[]
+      }
     }>
   }>
 
@@ -99,8 +108,11 @@ export interface IAdminInstitute extends Document {
 // ===============================
 const CourseSchema = new Schema(
   {
-    _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
-    name: { type: String, required: true },
+    _id: {
+      type: Schema.Types.ObjectId,
+      default: () => new mongoose.Types.ObjectId()
+    },
+    name: { type: String, required: false },
     degree: String,
     school: String,
     duration: String,
@@ -112,17 +124,17 @@ const CourseSchema = new Schema(
     fees: {
       tuitionFee: Number,
       totalFee: Number,
-      currency: String,
+      currency: String
     },
     brochure: {
       url: String,
-      year: Number,
+      year: Number
     },
     seoUrl: String,
     location: {
       state: String,
       city: String,
-      locality: String,
+      locality: String
     },
     educationType: String,
     deliveryMethod: String,
@@ -133,9 +145,9 @@ const CourseSchema = new Schema(
       averagePackage: Number,
       highestPackage: Number,
       placementRate: Number,
-      topRecruiters: [String],
+      topRecruiters: [String]
     },
-    eligibilityExams: [String],
+    eligibilityExams: [String]
   },
   { _id: true }
 )
@@ -145,12 +157,15 @@ const CourseSchema = new Schema(
 // ===============================
 const ProgrammeSchema = new Schema(
   {
-    _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
-    name: { type: String, required: true },
+    _id: {
+      type: Schema.Types.ObjectId,
+      default: () => new mongoose.Types.ObjectId()
+    },
+    name: { type: String, required: false },
     courseCount: Number,
     placementRating: Number,
     eligibilityExams: [String],
-    course: [CourseSchema],
+    course: [CourseSchema]
   },
   { _id: true }
 )
@@ -160,10 +175,10 @@ const ProgrammeSchema = new Schema(
 // ===============================
 const AdminInstituteSchema = new Schema<IAdminInstitute>(
   {
-    id: { type: String, required: true, index: true },
-    name: { type: String, required: true },
+    id: { type: String, required: false, index: true },
+    name: { type: String, required: false },
     shortName: String,
-    slug: { type: String, required: true, lowercase: true, trim: true },
+    slug: { type: String, required: false, lowercase: true, trim: true },
     establishedYear: Number,
     type: String,
     status: String,
@@ -177,12 +192,12 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
         category: String,
         cgpa: Number,
         validUntil: String,
-        cycleNumber: Number,
+        cycleNumber: Number
       },
       nirf: Schema.Types.Mixed, // Dynamic keys like Pharmacy, Innovation, University, etc.
       ugc: {
-        recognition: String,
-      },
+        recognition: String
+      }
     },
 
     location: {
@@ -193,26 +208,26 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
       country: String,
       coordinates: {
         latitude: Number,
-        longitude: Number,
+        longitude: Number
       },
-      nearbyLandmarks: [String],
+      nearbyLandmarks: [String]
     },
 
     contact: {
       phone: [String],
       email: String,
       website: String,
-      admissionsEmail: String,
+      admissionsEmail: String
     },
 
     overview: [
       new Schema(
         {
-          key: { type: String, required: true },
-          value: { type: String, required: true },
+          key: { type: String, required: false },
+          value: { type: String, required: false }
         },
         { _id: false }
-      ),
+      )
     ],
 
     campusDetails: {
@@ -221,13 +236,13 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
       facilities: [
         new Schema(
           {
-            key: { type: String, required: true },
-            value: String,
+            key: { type: String, required: false },
+            value: String
           },
           { _id: false }
-        ),
+        )
       ],
-      facilities_arr: [String],
+      facilities_arr: [String]
     },
 
     academics: {
@@ -239,29 +254,29 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
       schools: [
         new Schema(
           {
-            name: { type: String, required: true },
+            name: { type: String, required: false },
             established: Number,
-            programs: [String],
+            programs: [String]
           },
           { _id: false }
-        ),
+        )
       ],
       programOverviews: [
         new Schema(
           {
-            key: { type: String, required: true },
-            value: String,
+            key: { type: String, required: false },
+            value: String
           },
           { _id: false }
-        ),
-      ],
+        )
+      ]
     },
 
     admissions: {
       courseWiseAdmissions: [
         new Schema(
           {
-            name: { type: String, required: true },
+            name: { type: String, required: false },
             duration: String,
             courseRating: Number,
             ratingCount: Number,
@@ -272,21 +287,23 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
               type: Schema.Types.Mixed,
               default: {}
             },
-            userIds: [{
-              type: Schema.Types.ObjectId,
-              ref: 'User',
-              default: []
-            }],
+            userIds: [
+              {
+                type: Schema.Types.ObjectId,
+                ref: 'User',
+                default: []
+              }
+            ],
             eligibility: { type: Schema.Types.Mixed },
             courseLevel: String,
-            url: String,
+            url: String
           },
           { _id: false }
-        ),
+        )
       ],
       admissionProcess: [String],
       reservationPolicy: { type: Schema.Types.Mixed },
-      applicationFee: { type: Schema.Types.Mixed },
+      applicationFee: { type: Schema.Types.Mixed }
     },
 
     placements: {
@@ -298,24 +315,24 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
             highestSalary: Number,
             medianSalary: Number,
             companiesVisited: Number,
-            totalOffers: Number,
+            totalOffers: Number
           },
           topRecruiters: [String],
-          sectors: [String],
+          sectors: [String]
         },
         { _id: false, strict: false }
-      ),
+      )
     },
 
     faculty_student_ratio: {
       faculties: [
         new Schema(
           {
-            key: { type: String, required: true },
-            value: String,
+            key: { type: String, required: false },
+            value: String
           },
           { _id: false }
-        ),
+        )
       ],
       students: [
         new Schema(
@@ -324,18 +341,18 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
             data: [
               new Schema(
                 {
-                  key: { type: String, required: true },
-                  value: String,
+                  key: { type: String, required: false },
+                  value: String
                 },
                 { _id: false }
-              ),
+              )
             ],
             key: String,
-            value: String,
+            value: String
           },
           { _id: false }
-        ),
-      ],
+        )
+      ]
     },
 
     rankings: {
@@ -343,14 +360,14 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
         national: [
           new Schema(
             {
-              agency: { type: String, required: true },
-              category: { type: String, required: true },
-              rank: { type: Schema.Types.Mixed, required: true },
-              year: { type: Number, required: true },
+              agency: { type: String, required: false },
+              category: { type: String, required: false },
+              rank: { type: Schema.Types.Mixed, required: false },
+              year: { type: Number, required: false }
             },
             { _id: false }
-          ),
-        ],
+          )
+        ]
       },
       rankingsDescription: String,
       title: String,
@@ -358,22 +375,22 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
       data: [
         new Schema(
           {
-            publisherName: { type: String, required: true },
+            publisherName: { type: String, required: false },
             publisherLogo: String,
             entityName: String,
             rankData: [
               new Schema(
                 {
-                  year: { type: Number, required: true },
-                  rank: String,
+                  year: { type: Number, required: false },
+                  rank: String
                 },
                 { _id: false }
-              ),
-            ],
+              )
+            ]
           },
           { _id: false }
-        ),
-      ],
+        )
+      ]
     },
 
     researchAndInnovation: {
@@ -385,16 +402,16 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
       incubationCenter: {
         name: String,
         startupsFunded: Number,
-        totalFunding: String,
+        totalFunding: String
       },
-      collaborations: [String],
+      collaborations: [String]
     },
 
     alumniNetwork: {
       totalAlumni: Number,
       notableAlumni: [String],
       alumniInFortune500: Number,
-      entrepreneursCreated: Number,
+      entrepreneursCreated: Number
     },
 
     awards: [String],
@@ -404,29 +421,29 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
       videos: [
         new Schema(
           {
-            url: { type: String, required: true },
+            url: { type: String, required: false },
             title: String,
-            thumbnail: String,
+            thumbnail: String
           },
           { _id: false }
-        ),
-      ],
+        )
+      ]
     },
 
     userIds: [
       {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        default: [],
-      },
+        default: []
+      }
     ],
 
-    programmes: [ProgrammeSchema],
+    programmes: [ProgrammeSchema]
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    toObject: { virtuals: true }
   }
 )
 
@@ -449,13 +466,26 @@ AdminInstituteSchema.index({ 'accreditation.naac.grade': 1 })
 
 // Text search index with optimized weights
 AdminInstituteSchema.index(
-  { name: 'text', 'overview.description': 'text', 'programmes.name': 'text', 'programmes.course.name': 'text' },
-  { weights: { name: 10, 'programmes.name': 5, 'programmes.course.name': 3, 'overview.description': 1 } }
+  {
+    name: 'text',
+    'overview.description': 'text',
+    'programmes.name': 'text',
+    'programmes.course.name': 'text'
+  },
+  {
+    weights: {
+      name: 10,
+      'programmes.name': 5,
+      'programmes.course.name': 3,
+      'overview.description': 1
+    }
+  }
 )
 
 // ===============================
 // Export Model
 // ===============================
 const AdminInstitute =
-  models.AdminInstitute || model<IAdminInstitute>('AdminInstitute', AdminInstituteSchema)
+  models.AdminInstitute ||
+  model<IAdminInstitute>('AdminInstitute', AdminInstituteSchema)
 export default AdminInstitute

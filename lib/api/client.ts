@@ -1,4 +1,9 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosError
+} from 'axios'
 import axiosRetry from 'axios-retry'
 import { getSession } from 'next-auth/react'
 
@@ -38,36 +43,39 @@ class ApiClient {
   private instance: AxiosInstance
   private baseURL: string
 
-  constructor() {
+  constructor () {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || ''
-    
+
     this.instance = axios.create({
       baseURL: this.baseURL,
       timeout: 30000, // 30 seconds
       headers: {
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     })
 
     this.setupInterceptors()
     this.setupRetry()
   }
 
-  private setupRetry() {
+  private setupRetry () {
     axiosRetry(this.instance, {
       retries: RETRY_CONFIG.retries,
       retryDelay: RETRY_CONFIG.retryDelay,
       retryCondition: RETRY_CONFIG.retryCondition,
       onRetry: (retryCount, error, requestConfig) => {
-        console.log(`Retry attempt ${retryCount} for ${requestConfig.url}:`, error.message)
+        console.log(
+          `Retry attempt ${retryCount} for ${requestConfig.url}:`,
+          error.message
+        )
       }
     })
   }
 
-  private setupInterceptors() {
+  private setupInterceptors () {
     // Request interceptor to add auth headers
     this.instance.interceptors.request.use(
-      async (config) => {
+      async config => {
         try {
           // Get session for web app
           const session = await getSession()
@@ -78,7 +86,9 @@ class ApiClient {
           }
 
           // Add CSRF token if available
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+          const csrfToken = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content')
           if (csrfToken) {
             config.headers['X-CSRF-Token'] = csrfToken
           }
@@ -92,7 +102,7 @@ class ApiClient {
           return config
         }
       },
-      (error) => {
+      error => {
         return Promise.reject(error)
       }
     )
@@ -103,16 +113,18 @@ class ApiClient {
         return response
       },
       async (error: AxiosError) => {
-        const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
+        const originalRequest = error.config as AxiosRequestConfig & {
+          _retry?: boolean
+        }
 
         // Handle 401 Unauthorized
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true
-            
+
           try {
             // Try to refresh session or redirect to login
             if (typeof window !== 'undefined') {
-              window.location.href = '/auth/signup'
+              window.location.href = '/auth/signup?mode=signin'
             }
           } catch (refreshError) {
             console.error('Session refresh failed:', refreshError)
@@ -133,12 +145,15 @@ class ApiClient {
     )
   }
 
-  private formatError(error: AxiosError): ApiError {
+  private formatError (error: AxiosError): ApiError {
     if (error.response) {
       // Server responded with error status
       const responseData = error.response.data as any
       return {
-        message: responseData?.message || responseData?.error || 'Server error occurred',
+        message:
+          responseData?.message ||
+          responseData?.error ||
+          'Server error occurred',
         code: responseData?.code || `HTTP_${error.response.status}`,
         status: error.response.status,
         details: responseData?.details || responseData
@@ -160,7 +175,7 @@ class ApiClient {
     }
   }
 
-  private async makeRequest<T>(
+  private async makeRequest<T> (
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     url: string,
     data?: any,
@@ -193,35 +208,53 @@ class ApiClient {
   }
 
   // HTTP Methods
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async get<T> (
+    url: string,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     return this.makeRequest<T>('GET', url, undefined, config)
   }
 
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async post<T> (
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     return this.makeRequest<T>('POST', url, data, config)
   }
 
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async put<T> (
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     return this.makeRequest<T>('PUT', url, data, config)
   }
 
-  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async patch<T> (
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     return this.makeRequest<T>('PATCH', url, data, config)
   }
 
-  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async delete<T> (
+    url: string,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     return this.makeRequest<T>('DELETE', url, undefined, config)
   }
 
   // File upload method
-  async uploadFile<T>(
-    url: string, 
-    file: File, 
+  async uploadFile<T> (
+    url: string,
+    file: File,
     additionalData?: Record<string, any>
   ): Promise<ApiResponse<T>> {
     const formData = new FormData()
     formData.append('file', file)
-    
+
     if (additionalData) {
       Object.entries(additionalData).forEach(([key, value]) => {
         formData.append(key, value)
@@ -230,16 +263,16 @@ class ApiClient {
 
     return this.makeRequest<T>('POST', url, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+        'Content-Type': 'multipart/form-data'
+      }
     })
   }
 
   // Download file method
-  async downloadFile(url: string, filename?: string): Promise<void> {
+  async downloadFile (url: string, filename?: string): Promise<void> {
     try {
       const response = await this.instance.get(url, {
-        responseType: 'blob',
+        responseType: 'blob'
       })
 
       const blob = new Blob([response.data])
@@ -258,7 +291,7 @@ class ApiClient {
   }
 
   // Health check method
-  async healthCheck(): Promise<boolean> {
+  async healthCheck (): Promise<boolean> {
     try {
       const response = await this.get('/api/health')
       return response.success
@@ -268,12 +301,12 @@ class ApiClient {
   }
 
   // Get base URL
-  getBaseURL(): string {
+  getBaseURL (): string {
     return this.baseURL
   }
 
   // Update base URL
-  setBaseURL(url: string): void {
+  setBaseURL (url: string): void {
     this.baseURL = url
     this.instance.defaults.baseURL = url
   }

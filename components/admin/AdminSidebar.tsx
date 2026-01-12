@@ -18,6 +18,7 @@ import {
   Bell,
   Activity,
   Compass,
+  MessageSquare,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -91,6 +92,11 @@ const navigationSections = [
     title: "Communication",
     items: [
       {
+        title: "Contact Messages",
+        href: "/admin/contact-messages",
+        icon: MessageSquare,
+      },
+      {
         title: "Email Templates",
         href: "/admin/email-templates",
         icon: Mail,
@@ -104,7 +110,11 @@ const navigationSections = [
   },
 ];
 
-export default function AdminSidebar({ className, isCollapsed = false, onToggle }: SidebarProps) {
+export default function AdminSidebar({
+  className,
+  isCollapsed = false,
+  onToggle,
+}: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -139,10 +149,16 @@ export default function AdminSidebar({ className, isCollapsed = false, onToggle 
                 onClick={() => router.push(item.href)}
                 className={cn(
                   "w-full justify-start gap-3 h-9 px-3 text-sm",
-                  active && "bg-red-50 text-red-700 font-medium border-r-2 border-red-600"
+                  active &&
+                    "bg-red-50 text-red-700 font-medium border-r-2 border-red-600"
                 )}
               >
-                <Icon className={cn("h-4 w-4 flex-shrink-0", active && "text-red-600")} />
+                <Icon
+                  className={cn(
+                    "h-4 w-4 flex-shrink-0",
+                    active && "text-red-600"
+                  )}
+                />
                 <span className="flex-1 text-left">{item.title}</span>
               </Button>
             );
@@ -181,16 +197,18 @@ export default function AdminSidebar({ className, isCollapsed = false, onToggle 
             onClick={onToggle}
             className="h-8 w-8 p-0"
           >
-            {isCollapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
+            {isCollapsed ? (
+              <Menu className="h-4 w-4" />
+            ) : (
+              <X className="h-4 w-4" />
+            )}
           </Button>
         )}
       </div>
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
-        <nav>
-          {navigationSections.map((section) => renderSection(section))}
-        </nav>
+        <nav>{navigationSections.map((section) => renderSection(section))}</nav>
       </ScrollArea>
 
       {/* Footer */}
@@ -199,7 +217,9 @@ export default function AdminSidebar({ className, isCollapsed = false, onToggle 
           <div className="bg-gradient-to-r from-red-50 to-orange-50 p-3 rounded-lg border border-red-200">
             <div className="flex items-center gap-2 mb-2">
               <Shield className="h-4 w-4 text-red-600" />
-              <span className="text-sm font-medium text-red-900">Admin Access</span>
+              <span className="text-sm font-medium text-red-900">
+                Admin Access
+              </span>
             </div>
             <p className="text-xs text-red-700 mb-2">
               Full system administration privileges

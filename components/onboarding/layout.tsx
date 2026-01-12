@@ -26,7 +26,7 @@ export default function OnboardingLayout({
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signup");
+      router.push("/auth/signup?mode=signin");
     }
   }, [status, router]);
 

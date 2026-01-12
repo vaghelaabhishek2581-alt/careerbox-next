@@ -12,28 +12,28 @@ export interface EmailVerificationToken {
 /**
  * Generate a secure verification token
  */
-export function generateVerificationToken(): string {
+export function generateVerificationToken (): string {
   return crypto.randomBytes(32).toString('hex')
 }
 
 /**
  * Create email verification record
  */
-export async function createEmailVerification(email: string): Promise<{
+export async function createEmailVerification (email: string): Promise<{
   success: boolean
   token?: string
   error?: string
 }> {
   try {
     await connectToDatabase()
-    
+
     // Generate token
     const token = generateVerificationToken()
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-    
+
     // Remove any existing verification tokens for this email
     await EmailVerification.deleteMany({ email })
-    
+
     // Create new verification record
     const verification = new EmailVerification({
       token,
@@ -41,9 +41,9 @@ export async function createEmailVerification(email: string): Promise<{
       expiresAt,
       verified: false
     })
-    
+
     await verification.save()
-    
+
     return {
       success: true,
       token
@@ -57,49 +57,148 @@ export async function createEmailVerification(email: string): Promise<{
   }
 }
 
+// Helper function for logging
+function logTokenVerification (step: string, data: Record<string, any>) {
+  const timestamp = new Date().toISOString()
+  console.log(`\n---------- [TOKEN-VERIFY] ${timestamp} ----------`)
+  console.log(`[STEP]: ${step}`)
+  Object.entries(data).forEach(([key, value]) => {
+    if (key === 'token') {
+      console.log(
+        `[${key.toUpperCase()}]:`,
+        value
+          ? `${String(value).substring(0, 10)}...${String(value).substring(
+              String(value).length - 10
+            )}`
+          : 'null'
+      )
+    } else {
+      console.log(`[${key.toUpperCase()}]:`, value)
+    }
+  })
+  console.log(`-------------------------------------------------\n`)
+}
+
 /**
  * Verify email token
  */
-export async function verifyEmailToken(token: string): Promise<{
+export async function verifyEmailToken (token: string): Promise<{
   success: boolean
   email?: string
   error?: string
 }> {
   try {
-    await connectToDatabase()
-    
-    // Find verification record
-    const verification = await EmailVerification.findOne({
+    logTokenVerification('Starting verification', {
       token,
-      verified: false,
-      expiresAt: { $gt: new Date() }
+      tokenLength: token?.length
     })
-    
-    if (!verification) {
+
+    await connectToDatabase()
+    logTokenVerification('Database connected', {})
+
+    // First, let's check if the token exists at all (without conditions)
+    const tokenExists = await EmailVerification.findOne({ token })
+    logTokenVerification('Token existence check', {
+      tokenFound: !!tokenExists,
+      recordDetails: tokenExists
+        ? {
+            id: tokenExists._id?.toString(),
+            email: tokenExists.email,
+            verified: tokenExists.verified,
+            expiresAt: tokenExists.expiresAt?.toISOString(),
+            createdAt: tokenExists.createdAt?.toISOString(),
+            isExpired: tokenExists.expiresAt
+              ? new Date() > tokenExists.expiresAt
+              : 'unknown'
+          }
+        : 'No record found'
+    })
+
+    // If token doesn't exist at all
+    if (!tokenExists) {
+      // Let's also check how many verification records exist
+      const totalRecords = await EmailVerification.countDocuments()
+      const recentRecords = await EmailVerification.find({})
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean()
+
+      logTokenVerification('Token not found - diagnostics', {
+        totalVerificationRecords: totalRecords,
+        recentTokens: recentRecords.map(r => ({
+          tokenPreview: r.token ? `${r.token.substring(0, 10)}...` : 'null',
+          email: r.email,
+          verified: r.verified,
+          expiresAt: r.expiresAt
+        }))
+      })
+
       return {
         success: false,
         error: 'Invalid or expired verification token'
       }
     }
-    
+
+    // Check if already verified
+    if (tokenExists.verified) {
+      logTokenVerification('Token already used', {
+        verifiedAt: tokenExists.verifiedAt?.toISOString()
+      })
+      return {
+        success: false,
+        error: 'This verification link has already been used'
+      }
+    }
+
+    // Check if expired
+    if (tokenExists.expiresAt && new Date() > tokenExists.expiresAt) {
+      logTokenVerification('Token expired', {
+        expiresAt: tokenExists.expiresAt.toISOString(),
+        currentTime: new Date().toISOString()
+      })
+      return {
+        success: false,
+        error: 'This verification link has expired. Please request a new one.'
+      }
+    }
+
     // Mark as verified
-    await EmailVerification.findByIdAndUpdate(
-      verification._id,
-      { $set: { verified: true, verifiedAt: new Date() } }
-    )
-    
+    logTokenVerification('Marking token as verified', {
+      id: tokenExists._id?.toString()
+    })
+    await EmailVerification.findByIdAndUpdate(tokenExists._id, {
+      $set: { verified: true, verifiedAt: new Date() }
+    })
+
     // Update user email verification status
-    await User.findOneAndUpdate(
-      { email: verification.email },
-      { $set: { emailVerified: true, updatedAt: new Date() } }
+    logTokenVerification('Updating user emailVerified status', {
+      email: tokenExists.email
+    })
+    const userUpdateResult = await User.findOneAndUpdate(
+      { email: tokenExists.email },
+      { $set: { emailVerified: true, updatedAt: new Date() } },
+      { new: true }
     )
-    
+
+    logTokenVerification('User update result', {
+      userFound: !!userUpdateResult,
+      userId: userUpdateResult?._id?.toString(),
+      emailVerified: userUpdateResult?.emailVerified
+    })
+
+    logTokenVerification('Verification complete - SUCCESS', {
+      email: tokenExists.email
+    })
+
     return {
       success: true,
-      email: verification.email
+      email: tokenExists.email
     }
   } catch (error) {
-    console.error('Error verifying email token:', error)
+    logTokenVerification('ERROR in verifyEmailToken', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'N/A'
+    })
     return {
       success: false,
       error: 'Failed to verify email'
@@ -110,15 +209,21 @@ export async function verifyEmailToken(token: string): Promise<{
 /**
  * Send verification email
  */
-export async function sendVerificationEmail(email: string, name: string, token: string): Promise<{
+export async function sendVerificationEmail (
+  email: string,
+  name: string,
+  token: string
+): Promise<{
   success: boolean
   error?: string
 }> {
   try {
     const nodemailer = require('nodemailer')
-    
-    const verificationUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/verify-email?token=${token}`
-    
+
+    const verificationUrl = `${
+      process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    }/auth/verify-email?token=${token}`
+
     // Create transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -129,7 +234,6 @@ export async function sendVerificationEmail(email: string, name: string, token: 
         pass: process.env.SMTP_PASS
       }
     })
-    
 
     // Send email
     const mailOptions = {
@@ -140,7 +244,7 @@ export async function sendVerificationEmail(email: string, name: string, token: 
     }
 
     await transporter.sendMail(mailOptions)
-    
+
     console.log(`Verification email sent to ${email}`)
     return { success: true }
   } catch (error) {
@@ -155,7 +259,10 @@ export async function sendVerificationEmail(email: string, name: string, token: 
 /**
  * Generate verification email HTML template
  */
-export function generateVerificationEmailHTML(name: string, verificationUrl: string): string {
+export function generateVerificationEmailHTML (
+  name: string,
+  verificationUrl: string
+): string {
   return `
     <!DOCTYPE html>
     <html>

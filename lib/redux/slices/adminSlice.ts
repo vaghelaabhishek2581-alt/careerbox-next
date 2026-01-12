@@ -111,22 +111,22 @@ interface AdminState {
   // Users Management
   users: AdminUser[]
   selectedUser: AdminUser | null
-  
+
   // Registration Intents Management
   registrationIntents: AdminRegistrationIntent[]
   selectedIntent: AdminRegistrationIntent | null
-  
+
   // Subscriptions Management
   subscriptions: AdminSubscription[]
   selectedSubscription: AdminSubscription | null
-  
+
   // Payments Management
   payments: AdminPayment[]
   selectedPayment: AdminPayment | null
-  
+
   // Statistics
   stats: AdminStats | null
-  
+
   // UI State
   loading: boolean
   error: string | null
@@ -148,8 +148,8 @@ export const fetchAdminStats = createAsyncThunk(
       const response = await fetch('/api/admin/stats', {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       if (!response.ok) {
@@ -167,16 +167,24 @@ export const fetchAdminStats = createAsyncThunk(
 // Fetch All Users
 export const fetchAllUsers = createAsyncThunk(
   'admin/fetchAllUsers',
-  async ({ page = 1, filters }: { page?: number; filters?: AdminFilters }, { rejectWithValue }) => {
+  async (
+    { page = 1, filters }: { page?: number; filters?: AdminFilters },
+    { rejectWithValue }
+  ) => {
     try {
       const queryParams = new URLSearchParams()
       queryParams.set('page', page.toString())
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value && typeof value === 'string') {
             queryParams.set(key, value)
-          } else if (value && typeof value === 'object' && 'start' in value && 'end' in value) {
+          } else if (
+            value &&
+            typeof value === 'object' &&
+            'start' in value &&
+            'end' in value
+          ) {
             queryParams.set(`${key}Start`, value.start)
             queryParams.set(`${key}End`, value.end)
           }
@@ -186,8 +194,8 @@ export const fetchAllUsers = createAsyncThunk(
       const response = await fetch(`/api/admin/users?${queryParams}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       if (!response.ok) {
@@ -205,32 +213,45 @@ export const fetchAllUsers = createAsyncThunk(
 // Fetch All Registration Intents
 export const fetchAllRegistrationIntents = createAsyncThunk(
   'admin/fetchAllRegistrationIntents',
-  async ({ page = 1, filters }: { page?: number; filters?: AdminFilters }, { rejectWithValue }) => {
+  async (
+    { page = 1, filters }: { page?: number; filters?: AdminFilters },
+    { rejectWithValue }
+  ) => {
     try {
       const queryParams = new URLSearchParams()
       queryParams.set('page', page.toString())
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value && typeof value === 'string') {
             queryParams.set(key, value)
-          } else if (value && typeof value === 'object' && 'start' in value && 'end' in value) {
+          } else if (
+            value &&
+            typeof value === 'object' &&
+            'start' in value &&
+            'end' in value
+          ) {
             queryParams.set(`${key}Start`, value.start)
             queryParams.set(`${key}End`, value.end)
           }
         })
       }
 
-      const response = await fetch(`/api/admin/registration-intents?${queryParams}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await fetch(
+        `/api/admin/registration-intents?${queryParams}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )
 
       if (!response.ok) {
         const error = await response.json()
-        return rejectWithValue(error.message || 'Failed to fetch registration intents')
+        return rejectWithValue(
+          error.message || 'Failed to fetch registration intents'
+        )
       }
 
       return await response.json()
@@ -243,33 +264,41 @@ export const fetchAllRegistrationIntents = createAsyncThunk(
 // Review Registration Intent
 export const reviewRegistrationIntent = createAsyncThunk(
   'admin/reviewRegistrationIntent',
-  async ({ 
-    intentId, 
-    action, 
-    adminNotes, 
-    subscriptionPlan 
-  }: { 
-    intentId: string
-    action: 'approve' | 'reject' | 'require_payment'
-    adminNotes?: string
-    subscriptionPlan?: string
-  }, { rejectWithValue }) => {
+  async (
+    {
+      intentId,
+      action,
+      adminNotes,
+      subscriptionPlan
+    }: {
+      intentId: string
+      action: 'approve' | 'reject' | 'require_payment' | 'pending'
+      adminNotes?: string
+      subscriptionPlan?: string
+    },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await fetch(`/api/admin/registration-intents/${intentId}/review`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action,
-          adminNotes,
-          subscriptionPlan,
-        }),
-      })
+      const response = await fetch(
+        `/api/admin/registration-intents/${intentId}/review`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action,
+            adminNotes,
+            subscriptionPlan
+          })
+        }
+      )
 
       if (!response.ok) {
         const error = await response.json()
-        return rejectWithValue(error.error || error.message || 'Failed to review registration intent')
+        return rejectWithValue(
+          error.error || error.message || 'Failed to review registration intent'
+        )
       }
 
       return await response.json()
@@ -282,29 +311,32 @@ export const reviewRegistrationIntent = createAsyncThunk(
 // Grant Free Subscription
 export const grantFreeSubscription = createAsyncThunk(
   'admin/grantFreeSubscription',
-  async ({ 
-    userId, 
-    organizationType, 
-    planType, 
-    reason 
-  }: { 
-    userId: string
-    organizationType: 'institute' | 'business'
-    planType: 'free' | 'basic' | 'premium' | 'enterprise'
-    reason: string
-  }, { rejectWithValue }) => {
+  async (
+    {
+      userId,
+      organizationType,
+      planType,
+      reason
+    }: {
+      userId: string
+      organizationType: 'institute' | 'business'
+      planType: 'free' | 'basic' | 'premium' | 'enterprise'
+      reason: string
+    },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await fetch('/api/admin/subscriptions/grant', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           userId,
           organizationType,
           planType,
-          reason,
-        }),
+          reason
+        })
       })
 
       if (!response.ok) {
@@ -322,16 +354,24 @@ export const grantFreeSubscription = createAsyncThunk(
 // Fetch All Subscriptions
 export const fetchAllSubscriptions = createAsyncThunk(
   'admin/fetchAllSubscriptions',
-  async ({ page = 1, filters }: { page?: number; filters?: AdminFilters }, { rejectWithValue }) => {
+  async (
+    { page = 1, filters }: { page?: number; filters?: AdminFilters },
+    { rejectWithValue }
+  ) => {
     try {
       const queryParams = new URLSearchParams()
       queryParams.set('page', page.toString())
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value && typeof value === 'string') {
             queryParams.set(key, value)
-          } else if (value && typeof value === 'object' && 'start' in value && 'end' in value) {
+          } else if (
+            value &&
+            typeof value === 'object' &&
+            'start' in value &&
+            'end' in value
+          ) {
             queryParams.set(`${key}Start`, value.start)
             queryParams.set(`${key}End`, value.end)
           }
@@ -341,8 +381,8 @@ export const fetchAllSubscriptions = createAsyncThunk(
       const response = await fetch(`/api/admin/subscriptions?${queryParams}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       if (!response.ok) {
@@ -360,25 +400,28 @@ export const fetchAllSubscriptions = createAsyncThunk(
 // Update User Role
 export const updateUserRole = createAsyncThunk(
   'admin/updateUserRole',
-  async ({ 
-    userId, 
-    roles, 
-    activeRole 
-  }: { 
-    userId: string
-    roles: string[]
-    activeRole: string
-  }, { rejectWithValue }) => {
+  async (
+    {
+      userId,
+      roles,
+      activeRole
+    }: {
+      userId: string
+      roles: string[]
+      activeRole: string
+    },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await fetch(`/api/admin/users/${userId}/role`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           roles,
-          activeRole,
-        }),
+          activeRole
+        })
       })
 
       if (!response.ok) {
@@ -396,30 +439,38 @@ export const updateUserRole = createAsyncThunk(
 // Suspend/Activate Subscription
 export const updateSubscriptionStatus = createAsyncThunk(
   'admin/updateSubscriptionStatus',
-  async ({ 
-    subscriptionId, 
-    status, 
-    reason 
-  }: { 
-    subscriptionId: string
-    status: 'active' | 'suspended' | 'cancelled'
-    reason?: string
-  }, { rejectWithValue }) => {
+  async (
+    {
+      subscriptionId,
+      status,
+      reason
+    }: {
+      subscriptionId: string
+      status: 'active' | 'suspended' | 'cancelled'
+      reason?: string
+    },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await fetch(`/api/admin/subscriptions/${subscriptionId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status,
-          reason,
-        }),
-      })
+      const response = await fetch(
+        `/api/admin/subscriptions/${subscriptionId}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            status,
+            reason
+          })
+        }
+      )
 
       if (!response.ok) {
         const error = await response.json()
-        return rejectWithValue(error.message || 'Failed to update subscription status')
+        return rejectWithValue(
+          error.message || 'Failed to update subscription status'
+        )
       }
 
       return await response.json()
@@ -432,16 +483,24 @@ export const updateSubscriptionStatus = createAsyncThunk(
 // Fetch All Payments
 export const fetchAllPayments = createAsyncThunk(
   'admin/fetchAllPayments',
-  async ({ page = 1, filters }: { page?: number; filters?: AdminFilters }, { rejectWithValue }) => {
+  async (
+    { page = 1, filters }: { page?: number; filters?: AdminFilters },
+    { rejectWithValue }
+  ) => {
     try {
       const queryParams = new URLSearchParams()
       queryParams.set('page', page.toString())
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value && typeof value === 'string') {
             queryParams.set(key, value)
-          } else if (value && typeof value === 'object' && 'start' in value && 'end' in value) {
+          } else if (
+            value &&
+            typeof value === 'object' &&
+            'start' in value &&
+            'end' in value
+          ) {
             queryParams.set(`${key}Start`, value.start)
             queryParams.set(`${key}End`, value.end)
           }
@@ -451,8 +510,8 @@ export const fetchAllPayments = createAsyncThunk(
       const response = await fetch(`/api/admin/payments?${queryParams}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       if (!response.ok) {
@@ -470,25 +529,28 @@ export const fetchAllPayments = createAsyncThunk(
 // Process Refund
 export const processRefund = createAsyncThunk(
   'admin/processRefund',
-  async ({ 
-    paymentId, 
-    amount, 
-    reason 
-  }: { 
-    paymentId: string
-    amount?: number
-    reason: string
-  }, { rejectWithValue }) => {
+  async (
+    {
+      paymentId,
+      amount,
+      reason
+    }: {
+      paymentId: string
+      amount?: number
+      reason: string
+    },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await fetch(`/api/admin/payments/${paymentId}/refund`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           amount,
-          reason,
-        }),
+          reason
+        })
       })
 
       if (!response.ok) {
@@ -506,30 +568,35 @@ export const processRefund = createAsyncThunk(
 // Update Payment Status
 export const updatePaymentStatus = createAsyncThunk(
   'admin/updatePaymentStatus',
-  async ({ 
-    paymentId, 
-    status, 
-    notes 
-  }: { 
-    paymentId: string
-    status: 'paid' | 'failed' | 'cancelled'
-    notes?: string
-  }, { rejectWithValue }) => {
+  async (
+    {
+      paymentId,
+      status,
+      notes
+    }: {
+      paymentId: string
+      status: 'paid' | 'failed' | 'cancelled'
+      notes?: string
+    },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await fetch(`/api/admin/payments/${paymentId}/status`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           status,
-          notes,
-        }),
+          notes
+        })
       })
 
       if (!response.ok) {
         const error = await response.json()
-        return rejectWithValue(error.message || 'Failed to update payment status')
+        return rejectWithValue(
+          error.message || 'Failed to update payment status'
+        )
       }
 
       return await response.json()
@@ -558,23 +625,29 @@ const initialState: AdminState = {
   filters: {},
   currentPage: 1,
   totalPages: 1,
-  totalItems: 0,
+  totalItems: 0
 }
 
 const adminSlice = createSlice({
   name: 'admin',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null
     },
     setSelectedUser: (state, action: PayloadAction<AdminUser | null>) => {
       state.selectedUser = action.payload
     },
-    setSelectedIntent: (state, action: PayloadAction<AdminRegistrationIntent | null>) => {
+    setSelectedIntent: (
+      state,
+      action: PayloadAction<AdminRegistrationIntent | null>
+    ) => {
       state.selectedIntent = action.payload
     },
-    setSelectedSubscription: (state, action: PayloadAction<AdminSubscription | null>) => {
+    setSelectedSubscription: (
+      state,
+      action: PayloadAction<AdminSubscription | null>
+    ) => {
       state.selectedSubscription = action.payload
     },
     setSelectedPayment: (state, action: PayloadAction<AdminPayment | null>) => {
@@ -587,8 +660,13 @@ const adminSlice = createSlice({
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload
     },
-    updateIntentInList: (state, action: PayloadAction<AdminRegistrationIntent>) => {
-      const index = state.registrationIntents.findIndex(intent => intent.id === action.payload.id)
+    updateIntentInList: (
+      state,
+      action: PayloadAction<AdminRegistrationIntent>
+    ) => {
+      const index = state.registrationIntents.findIndex(
+        intent => intent.id === action.payload.id
+      )
       if (index !== -1) {
         state.registrationIntents[index] = action.payload
       }
@@ -599,23 +677,30 @@ const adminSlice = createSlice({
         state.users[index] = action.payload
       }
     },
-    updateSubscriptionInList: (state, action: PayloadAction<AdminSubscription>) => {
-      const index = state.subscriptions.findIndex(sub => sub.id === action.payload.id)
+    updateSubscriptionInList: (
+      state,
+      action: PayloadAction<AdminSubscription>
+    ) => {
+      const index = state.subscriptions.findIndex(
+        sub => sub.id === action.payload.id
+      )
       if (index !== -1) {
         state.subscriptions[index] = action.payload
       }
     },
     updatePaymentInList: (state, action: PayloadAction<AdminPayment>) => {
-      const index = state.payments.findIndex(payment => payment.id === action.payload.id)
+      const index = state.payments.findIndex(
+        payment => payment.id === action.payload.id
+      )
       if (index !== -1) {
         state.payments[index] = action.payload
       }
-    },
+    }
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
       // Fetch Admin Stats
-      .addCase(fetchAdminStats.pending, (state) => {
+      .addCase(fetchAdminStats.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -627,9 +712,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Fetch All Users
-      .addCase(fetchAllUsers.pending, (state) => {
+      .addCase(fetchAllUsers.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -644,9 +729,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Fetch All Registration Intents
-      .addCase(fetchAllRegistrationIntents.pending, (state) => {
+      .addCase(fetchAllRegistrationIntents.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -661,9 +746,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Review Registration Intent
-      .addCase(reviewRegistrationIntent.pending, (state) => {
+      .addCase(reviewRegistrationIntent.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -671,7 +756,9 @@ const adminSlice = createSlice({
         state.loading = false
         if (action.payload.data) {
           const updatedIntent = action.payload.data
-          const index = state.registrationIntents.findIndex(intent => intent.id === updatedIntent.id)
+          const index = state.registrationIntents.findIndex(
+            intent => intent.id === updatedIntent.id
+          )
           if (index !== -1) {
             state.registrationIntents[index] = updatedIntent
           }
@@ -684,9 +771,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Grant Free Subscription
-      .addCase(grantFreeSubscription.pending, (state) => {
+      .addCase(grantFreeSubscription.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -700,9 +787,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Fetch All Subscriptions
-      .addCase(fetchAllSubscriptions.pending, (state) => {
+      .addCase(fetchAllSubscriptions.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -717,9 +804,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Update User Role
-      .addCase(updateUserRole.pending, (state) => {
+      .addCase(updateUserRole.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -727,7 +814,9 @@ const adminSlice = createSlice({
         state.loading = false
         if (action.payload.data) {
           const updatedUser = action.payload.data
-          const index = state.users.findIndex(user => user.id === updatedUser.id)
+          const index = state.users.findIndex(
+            user => user.id === updatedUser.id
+          )
           if (index !== -1) {
             state.users[index] = updatedUser
           }
@@ -740,9 +829,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Update Subscription Status
-      .addCase(updateSubscriptionStatus.pending, (state) => {
+      .addCase(updateSubscriptionStatus.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -750,7 +839,9 @@ const adminSlice = createSlice({
         state.loading = false
         if (action.payload.data) {
           const updatedSubscription = action.payload.data
-          const index = state.subscriptions.findIndex(sub => sub.id === updatedSubscription.id)
+          const index = state.subscriptions.findIndex(
+            sub => sub.id === updatedSubscription.id
+          )
           if (index !== -1) {
             state.subscriptions[index] = updatedSubscription
           }
@@ -763,9 +854,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Fetch All Payments
-      .addCase(fetchAllPayments.pending, (state) => {
+      .addCase(fetchAllPayments.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -780,9 +871,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Process Refund
-      .addCase(processRefund.pending, (state) => {
+      .addCase(processRefund.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -790,7 +881,9 @@ const adminSlice = createSlice({
         state.loading = false
         if (action.payload.data) {
           const updatedPayment = action.payload.data
-          const index = state.payments.findIndex(payment => payment.id === updatedPayment.id)
+          const index = state.payments.findIndex(
+            payment => payment.id === updatedPayment.id
+          )
           if (index !== -1) {
             state.payments[index] = updatedPayment
           }
@@ -803,9 +896,9 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-      
+
       // Update Payment Status
-      .addCase(updatePaymentStatus.pending, (state) => {
+      .addCase(updatePaymentStatus.pending, state => {
         state.loading = true
         state.error = null
       })
@@ -813,7 +906,9 @@ const adminSlice = createSlice({
         state.loading = false
         if (action.payload.data) {
           const updatedPayment = action.payload.data
-          const index = state.payments.findIndex(payment => payment.id === updatedPayment.id)
+          const index = state.payments.findIndex(
+            payment => payment.id === updatedPayment.id
+          )
           if (index !== -1) {
             state.payments[index] = updatedPayment
           }
@@ -826,7 +921,7 @@ const adminSlice = createSlice({
         state.loading = false
         state.error = action.payload as string
       })
-  },
+  }
 })
 
 export const {
@@ -840,7 +935,7 @@ export const {
   updateIntentInList,
   updateUserInList,
   updateSubscriptionInList,
-  updatePaymentInList,
+  updatePaymentInList
 } = adminSlice.actions
 
 export default adminSlice.reducer

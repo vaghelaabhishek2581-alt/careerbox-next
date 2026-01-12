@@ -1,12 +1,17 @@
-"use server"
+'use server'
 
 import { connectToDatabase } from '@/lib/db/mongoose'
 import StudentLead, { IStudentLead } from '@/src/models/StudentLead'
 import Profile from '@/src/models/Profile'
 import User from '@/src/models/User'
 import AdminInstitute from '@/src/models/AdminInstitute'
+import Subscription from '@/src/models/Subscription'
 import { Types } from 'mongoose'
-import { sendCourseApplicationConfirmation, sendCourseApplicationAdminNotification } from '@/lib/services/email-service'
+import {
+  sendCourseApplicationConfirmation,
+  sendCourseApplicationAdminNotification,
+  sendNewLeadNotificationToInstitute
+} from '@/lib/services/email-service'
 
 export type CreateStudentLeadInput = {
   // Authenticated user id if available
@@ -76,13 +81,15 @@ export type GetLeadStatsResult = {
 }
 
 // Creates a Student lead from the course Apply flow
-export async function createStudentLead(input: CreateStudentLeadInput): Promise<CreateStudentLeadResult> {
+export async function createStudentLead (
+  input: CreateStudentLeadInput
+): Promise<CreateStudentLeadResult> {
   try {
     await connectToDatabase()
 
     // Basic validation
     const isAuthed = Boolean(input.userId)
-    
+
     let fullName = input.fullName
     let email = input.email
     let phone = input.phone
@@ -92,7 +99,9 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
     // If user is authenticated, fetch their details from Profile
     if (isAuthed && input.userId) {
       try {
-        const profile = await Profile.findOne({ userId: new Types.ObjectId(input.userId) })
+        const profile = await Profile.findOne({
+          userId: new Types.ObjectId(input.userId)
+        })
         const user = await User.findById(new Types.ObjectId(input.userId))
 
         if (profile && user) {
@@ -101,29 +110,44 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
           email = user.email
           phone = profile.personalDetails.phone || phone
           city = profile.personalDetails.city || city
-          eligibilityExams = profile.personalDetails.eligibilityExams || eligibilityExams
+          eligibilityExams =
+            profile.personalDetails.eligibilityExams || eligibilityExams
         } else {
           // Profile not found, require manual data
           if (!input.fullName || !input.email) {
-            return { ok: false, error: 'User profile not found. Please provide fullName and email.' }
+            return {
+              ok: false,
+              error:
+                'User profile not found. Please provide fullName and email.'
+            }
           }
         }
       } catch (profileErr) {
         console.error('Error fetching user profile:', profileErr)
         // Fall back to provided data
         if (!input.fullName || !input.email) {
-          return { ok: false, error: 'Failed to fetch user profile. Please provide fullName and email.' }
+          return {
+            ok: false,
+            error:
+              'Failed to fetch user profile. Please provide fullName and email.'
+          }
         }
       }
     } else {
       // Guest user - validate required fields
       if (!fullName || !email) {
-        return { ok: false, error: 'fullName and email are required for guest lead' }
+        return {
+          ok: false,
+          error: 'fullName and email are required for guest lead'
+        }
       }
     }
 
     if (!input.instituteSlug && !input.publicProfileId && !input.instituteId) {
-      return { ok: false, error: 'Provide instituteSlug or publicProfileId or instituteId' }
+      return {
+        ok: false,
+        error: 'Provide instituteSlug or publicProfileId or instituteId'
+      }
     }
 
     // Build document
@@ -143,28 +167,53 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
       source: input.source || 'institute_detail_page',
       utm: input.utm,
       status: 'new',
-      eligibilityExams: eligibilityExams,
+      eligibilityExams: eligibilityExams
     }
 
     // Persist
     const created = await StudentLead.create(doc)
-    
+
     // Send email notifications asynchronously
     const applicationId = created._id.toString()
-    
-    // Fetch institute name for better email content
+
+    // Fetch institute name and owner info for notifications
     let instituteName = input.instituteSlug || 'Institute'
+    let instituteOwnerEmail: string | null = null
+    let instituteOwnerName: string = 'Institute Admin'
+    let instituteOwnerPlan: string = 'free'
+
     if (input.instituteId) {
       try {
         const institute = await AdminInstitute.findById(input.instituteId)
         if (institute) {
           instituteName = institute.name
+
+          // Get institute owner details
+          if (institute.userIds && institute.userIds.length > 0) {
+            const ownerUserId = institute.userIds[0]
+            const ownerUser = await User.findById(ownerUserId)
+            if (ownerUser) {
+              instituteOwnerEmail = ownerUser.email
+              instituteOwnerName = ownerUser.name || 'Institute Admin'
+
+              // Check subscription status
+              const subscription = await Subscription.findOne({
+                userId: ownerUserId,
+                status: 'active',
+                endDate: { $gt: new Date() }
+              }).sort({ createdAt: -1 })
+
+              if (subscription) {
+                instituteOwnerPlan = subscription.planType
+              }
+            }
+          }
         }
       } catch (err) {
-        console.error('Failed to fetch institute name:', err)
+        console.error('Failed to fetch institute info:', err)
       }
     }
-    
+
     // Send confirmation email to user
     if (email && fullName) {
       try {
@@ -181,9 +230,12 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
         // Don't fail the entire operation if email fails
       }
     }
-    
+
     // Send notification email to admin
     const adminEmail = process.env.ADMIN_EMAIL
+    const isPaidPlan =
+      instituteOwnerPlan === 'premium' || instituteOwnerPlan === 'enterprise'
+
     if (adminEmail && email && fullName) {
       try {
         await sendCourseApplicationAdminNotification(
@@ -203,7 +255,36 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
         // Don't fail the entire operation if email fails
       }
     }
-    
+
+    // Send notification email to institute owner
+    if (instituteOwnerEmail && email && fullName) {
+      try {
+        await sendNewLeadNotificationToInstitute(
+          instituteOwnerEmail,
+          instituteOwnerName,
+          instituteName,
+          {
+            fullName: fullName,
+            email: email,
+            phone: phone || '',
+            city: city,
+            courseName: input.courseName,
+            applicationId
+          },
+          isPaidPlan
+        )
+        console.log(
+          `Institute owner notification email sent to: ${instituteOwnerEmail} (isPaidPlan: ${isPaidPlan})`
+        )
+      } catch (emailError) {
+        console.error(
+          'Failed to send institute owner notification email:',
+          emailError
+        )
+        // Don't fail the entire operation if email fails
+      }
+    }
+
     return { ok: true, id: applicationId }
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Failed to create lead' }
@@ -211,14 +292,12 @@ export async function createStudentLead(input: CreateStudentLeadInput): Promise<
 }
 
 // Get all student leads for admin (legacy - no pagination)
-export async function getAllStudentLeads(): Promise<GetAllStudentLeadsResult> {
+export async function getAllStudentLeads (): Promise<GetAllStudentLeadsResult> {
   try {
     await connectToDatabase()
-    
-    const leads = await StudentLead.find({})
-      .sort({ createdAt: -1 })
-      .lean()
-    
+
+    const leads = await StudentLead.find({}).sort({ createdAt: -1 }).lean()
+
     return { ok: true, leads: leads as IStudentLead[] }
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Failed to fetch leads' }
@@ -226,10 +305,12 @@ export async function getAllStudentLeads(): Promise<GetAllStudentLeadsResult> {
 }
 
 // Get student leads with pagination and filtering
-export async function getStudentLeads(params: GetStudentLeadsParams = {}): Promise<GetAllStudentLeadsResult> {
+export async function getStudentLeads (
+  params: GetStudentLeadsParams = {}
+): Promise<GetAllStudentLeadsResult> {
   try {
     await connectToDatabase()
-    
+
     const {
       page = 1,
       limit = 10,
@@ -241,11 +322,11 @@ export async function getStudentLeads(params: GetStudentLeadsParams = {}): Promi
 
     // Build filter query
     const filter: any = {}
-    
+
     if (status && status !== 'all') {
       filter.status = status
     }
-    
+
     if (search) {
       filter.$or = [
         { fullName: { $regex: search, $options: 'i' } },
@@ -263,20 +344,20 @@ export async function getStudentLeads(params: GetStudentLeadsParams = {}): Promi
 
     // Calculate pagination
     const skip = (page - 1) * limit
-    
+
     // Get total count for pagination
     const totalCount = await StudentLead.countDocuments(filter)
     const totalPages = Math.ceil(totalCount / limit)
-    
+
     // Get paginated results
     const leads = await StudentLead.find(filter)
       .sort(sortQuery)
       .skip(skip)
       .limit(limit)
       .lean()
-    
-    return { 
-      ok: true, 
+
+    return {
+      ok: true,
       leads: leads as IStudentLead[],
       totalCount,
       totalPages,
@@ -288,25 +369,34 @@ export async function getStudentLeads(params: GetStudentLeadsParams = {}): Promi
 }
 
 // Update lead status
-export async function updateLeadStatus(leadId: string, status: 'new' | 'contacted' | 'qualified' | 'enrolled' | 'rejected'): Promise<UpdateLeadStatusResult> {
+export async function updateLeadStatus (
+  leadId: string,
+  status: 'new' | 'contacted' | 'qualified' | 'enrolled' | 'rejected'
+): Promise<UpdateLeadStatusResult> {
   try {
     await connectToDatabase()
-    
-    const validStatuses = ['new', 'contacted', 'qualified', 'enrolled', 'rejected']
+
+    const validStatuses = [
+      'new',
+      'contacted',
+      'qualified',
+      'enrolled',
+      'rejected'
+    ]
     if (!validStatuses.includes(status)) {
       return { ok: false, error: 'Invalid status' }
     }
-    
+
     const updated = await StudentLead.findByIdAndUpdate(
       leadId,
       { status },
       { new: true }
     )
-    
+
     if (!updated) {
       return { ok: false, error: 'Lead not found' }
     }
-    
+
     return { ok: true }
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Failed to update lead status' }
@@ -314,10 +404,10 @@ export async function updateLeadStatus(leadId: string, status: 'new' | 'contacte
 }
 
 // Get lead statistics by status
-export async function getLeadStats(): Promise<GetLeadStatsResult> {
+export async function getLeadStats (): Promise<GetLeadStatsResult> {
   try {
     await connectToDatabase()
-    
+
     const pipeline = [
       {
         $group: {
@@ -326,10 +416,10 @@ export async function getLeadStats(): Promise<GetLeadStatsResult> {
         }
       }
     ]
-    
+
     const results = await StudentLead.aggregate(pipeline)
     const totalCount = await StudentLead.countDocuments({})
-    
+
     const stats = {
       total: totalCount,
       new: 0,
@@ -338,15 +428,18 @@ export async function getLeadStats(): Promise<GetLeadStatsResult> {
       enrolled: 0,
       rejected: 0
     }
-    
+
     results.forEach((result: any) => {
       if (result._id && stats.hasOwnProperty(result._id)) {
-        (stats as any)[result._id] = result.count
+        ;(stats as any)[result._id] = result.count
       }
     })
-    
+
     return { ok: true, stats }
   } catch (err: any) {
-    return { ok: false, error: err?.message || 'Failed to fetch lead statistics' }
+    return {
+      ok: false,
+      error: err?.message || 'Failed to fetch lead statistics'
+    }
   }
 }

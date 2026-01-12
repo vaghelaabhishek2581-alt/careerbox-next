@@ -12,6 +12,7 @@ export { default as Exam } from './Exam'
 export { default as EmailVerification } from './EmailVerification'
 export { default as BlacklistedToken } from './BlacklistedToken'
 export { default as PasswordReset } from './PasswordReset'
+export { default as ContactMessage } from './ContactMessage'
 
 // Re-export types for convenience
 export type { IUser } from './User'
@@ -27,3 +28,4 @@ export type { IPayment } from './Payment'
 export type { IBlacklistedToken } from './BlacklistedToken'
 export type { IEmailVerification } from './EmailVerification'
 export type { IPasswordReset } from './PasswordReset'
+export type { IContactMessage } from './ContactMessage'

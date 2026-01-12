@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
-import { generateOTP } from '@/lib/utils';
+import nodemailer from 'nodemailer'
+import { generateOTP } from '@/lib/utils'
 
 // Create a transporter using SMTP
 const transporter = nodemailer.createTransport({
@@ -8,36 +8,36 @@ const transporter = nodemailer.createTransport({
   secure: process.env.SMTP_SECURE === 'true',
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+    pass: process.env.SMTP_PASS
+  }
+})
 
 interface EmailOptions {
-  to: string;
-  subject: string;
-  text?: string;
-  html?: string;
+  to: string
+  subject: string
+  text?: string
+  html?: string
 }
 
-export async function sendEmail({ to, subject, text, html }: EmailOptions) {
+export async function sendEmail ({ to, subject, text, html }: EmailOptions) {
   try {
     const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || '"CareerBox" <noreply@careerbox.in>',
       to,
       subject,
       text,
-      html,
-    });
-    return { success: true, messageId: info.messageId };
+      html
+    })
+    return { success: true, messageId: info.messageId }
   } catch (error) {
-    console.error('Failed to send email:', error);
-    return { success: false, error };
+    console.error('Failed to send email:', error)
+    return { success: false, error }
   }
 }
 
-export async function sendVerificationEmail(email: string, token: string) {
-  const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
-  
+export async function sendVerificationEmail (email: string, token: string) {
+  const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`
+
   return sendEmail({
     to: email,
     subject: 'Verify your email address',
@@ -57,11 +57,11 @@ export async function sendVerificationEmail(email: string, token: string) {
         <p>This link will expire in 24 hours.</p>
         <p>If you didn't create an account with CareerBox, please ignore this email.</p>
       </div>
-    `,
-  });
+    `
+  })
 }
 
-export async function sendOTPEmail(email: string, otp: string) {
+export async function sendOTPEmail (email: string, otp: string) {
   return sendEmail({
     to: email,
     subject: 'Your verification code',
@@ -77,11 +77,14 @@ export async function sendOTPEmail(email: string, otp: string) {
         <p>This code will expire in 10 minutes.</p>
         <p>If you didn't request this code, please ignore this email.</p>
       </div>
-    `,
-  });
+    `
+  })
 }
 
-export async function sendEmailChangeNotification(email: string, newEmail: string) {
+export async function sendEmailChangeNotification (
+  email: string,
+  newEmail: string
+) {
   return sendEmail({
     to: email,
     subject: 'Email address change notification',
@@ -91,13 +94,13 @@ export async function sendEmailChangeNotification(email: string, newEmail: strin
         <p>Your email address has been changed to: ${newEmail}</p>
         <p>If you didn't make this change, please contact support immediately.</p>
       </div>
-    `,
-  });
+    `
+  })
 }
 
-export async function sendPasswordResetEmail(email: string, token: string) {
-  const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
-  
+export async function sendPasswordResetEmail (email: string, token: string) {
+  const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`
+
   return sendEmail({
     to: email,
     subject: 'Reset your password',
@@ -117,18 +120,18 @@ export async function sendPasswordResetEmail(email: string, token: string) {
         <p>This link will expire in 1 hour.</p>
         <p>If you didn't request a password reset, please ignore this email.</p>
       </div>
-    `,
-  });
+    `
+  })
 }
 
-export async function sendInstituteRegistrationConfirmation(
-  email: string, 
-  organizationName: string, 
+export async function sendInstituteRegistrationConfirmation (
+  email: string,
+  organizationName: string,
   contactName: string,
   registrationId: string
 ) {
-  const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
-  
+  const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
+
   return sendEmail({
     to: email,
     subject: 'Institute Registration Request Received - CareerBox',
@@ -158,7 +161,9 @@ export async function sendInstituteRegistrationConfirmation(
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Registration ID:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${registrationId.slice(-8).toUpperCase()}</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${registrationId
+                  .slice(-8)
+                  .toUpperCase()}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Institute Name:</td>
@@ -229,12 +234,12 @@ export async function sendInstituteRegistrationConfirmation(
           </div>
         </div>
       </div>
-    `,
-  });
+    `
+  })
 }
 
 // Course Application Email Templates
-export async function sendCourseApplicationConfirmation(
+export async function sendCourseApplicationConfirmation (
   email: string,
   userName: string,
   instituteName: string,
@@ -267,7 +272,9 @@ export async function sendCourseApplicationConfirmation(
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Application ID:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${applicationId.slice(-8).toUpperCase()}</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${applicationId
+                  .slice(-8)
+                  .toUpperCase()}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Institute:</td>
@@ -326,11 +333,11 @@ export async function sendCourseApplicationConfirmation(
           </div>
         </div>
       </div>
-    `,
-  });
+    `
+  })
 }
 
-export async function sendCourseApplicationAdminNotification(
+export async function sendCourseApplicationAdminNotification (
   adminEmail: string,
   userName: string,
   userEmail: string,
@@ -341,9 +348,12 @@ export async function sendCourseApplicationAdminNotification(
   applicationId: string,
   eligibilityExams?: Array<{ exam: string; score: string }>
 ) {
-  const examsHtml = eligibilityExams && eligibilityExams.length > 0 
-    ? eligibilityExams.map(exam => `<li>${exam.exam}: ${exam.score}</li>`).join('')
-    : '<li>No exams provided</li>';
+  const examsHtml =
+    eligibilityExams && eligibilityExams.length > 0
+      ? eligibilityExams
+          .map(exam => `<li>${exam.exam}: ${exam.score}</li>`)
+          .join('')
+      : '<li>No exams provided</li>'
 
   return sendEmail({
     to: adminEmail,
@@ -371,11 +381,15 @@ export async function sendCourseApplicationAdminNotification(
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Phone:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${userPhone || 'Not provided'}</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${
+                  userPhone || 'Not provided'
+                }</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">City:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${userCity || 'Not provided'}</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${
+                  userCity || 'Not provided'
+                }</td>
               </tr>
             </table>
           </div>
@@ -385,7 +399,9 @@ export async function sendCourseApplicationAdminNotification(
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Application ID:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${applicationId.slice(-8).toUpperCase()}</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${applicationId
+                  .slice(-8)
+                  .toUpperCase()}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Institute:</td>
@@ -406,7 +422,9 @@ export async function sendCourseApplicationAdminNotification(
           </div>
 
           <div style="text-align: center; margin-bottom: 30px;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/admin/student-leads" 
+            <a href="${
+              process.env.NEXT_PUBLIC_APP_URL
+            }/dashboard/admin/student-leads" 
                style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 14px 28px; 
                       text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
               View Application
@@ -423,18 +441,18 @@ export async function sendCourseApplicationAdminNotification(
           </div>
         </div>
       </div>
-    `,
-  });
+    `
+  })
 }
 
-export async function sendBusinessRegistrationConfirmation(
-  email: string, 
-  organizationName: string, 
+export async function sendBusinessRegistrationConfirmation (
+  email: string,
+  organizationName: string,
   contactName: string,
   registrationId: string
 ) {
-  const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
-  
+  const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
+
   return sendEmail({
     to: email,
     subject: 'Business Registration Request Received - CareerBox',
@@ -464,7 +482,9 @@ export async function sendBusinessRegistrationConfirmation(
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Registration ID:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${registrationId.slice(-8).toUpperCase()}</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${registrationId
+                  .slice(-8)
+                  .toUpperCase()}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Business Name:</td>
@@ -535,6 +555,153 @@ export async function sendBusinessRegistrationConfirmation(
           </div>
         </div>
       </div>
-    `,
-  });
+    `
+  })
+}
+
+// Helper function to mask contact details for free plan users
+export function maskContactDetails (
+  fullName: string,
+  email: string,
+  phone: string
+) {
+  return {
+    fullName: fullName
+      ? fullName.replace(/(.{1})(.*)( .*)/, '$1*****$3')
+      : 'Student',
+    email: email ? email.replace(/(.{1})(.*)(@.*)/, '$1***$3') : '',
+    phone: phone ? phone.replace(/(\d{2})\d+(\d{2})/, '$1******$2') : ''
+  }
+}
+
+// Send notification to institute owner about new lead
+export async function sendNewLeadNotificationToInstitute (
+  ownerEmail: string,
+  ownerName: string,
+  instituteName: string,
+  leadDetails: {
+    fullName: string
+    email: string
+    phone: string
+    city?: string
+    courseName?: string
+    applicationId: string
+  },
+  isPaidPlan: boolean
+) {
+  // Mask contact details if free plan
+  const displayDetails = isPaidPlan
+    ? leadDetails
+    : {
+        ...leadDetails,
+        ...maskContactDetails(
+          leadDetails.fullName,
+          leadDetails.email,
+          leadDetails.phone
+        )
+      }
+
+  const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/institute/leads`
+  const upgradeNote = !isPaidPlan
+    ? `
+    <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+      <p style="color: #92400e; margin: 0; font-size: 14px;">
+        <strong>🔒 Contact details are masked.</strong> Upgrade to a Premium plan to view full contact information and connect with students directly.
+      </p>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/institute/subscription" 
+         style="color: #92400e; text-decoration: underline; font-weight: 600;">Upgrade Now</a>
+    </div>
+  `
+    : ''
+
+  return sendEmail({
+    to: ownerEmail,
+    subject: `🎉 New Student Lead for ${instituteName}!`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+              <span style="color: white; font-size: 24px; font-weight: bold;">🎓</span>
+            </div>
+            <h1 style="color: #1f2937; margin: 0; font-size: 24px;">New Student Lead!</h1>
+          </div>
+
+          <p style="color: #4b5563; font-size: 16px; margin-bottom: 20px;">Dear ${ownerName},</p>
+          <p style="color: #4b5563; font-size: 16px; margin-bottom: 20px;">
+            Great news! A student has shown interest in <strong>${instituteName}</strong>.
+          </p>
+
+          ${upgradeNote}
+
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Lead Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Application ID:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${leadDetails.applicationId
+                  .slice(-8)
+                  .toUpperCase()}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Student Name:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${
+                  displayDetails.fullName
+                }</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Email:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${
+                  displayDetails.email || 'Not provided'
+                }</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Phone:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${
+                  displayDetails.phone || 'Not provided'
+                }</td>
+              </tr>
+              ${
+                displayDetails.city
+                  ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">City:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${displayDetails.city}</td>
+              </tr>
+              `
+                  : ''
+              }
+              ${
+                displayDetails.courseName
+                  ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Course Interest:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${displayDetails.courseName}</td>
+              </tr>
+              `
+                  : ''
+              }
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 30px;">
+            <a href="${dashboardLink}" 
+               style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 28px; 
+                      text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
+              View All Leads
+            </a>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              This notification was sent for ${instituteName} on CareerBox.
+            </p>
+            <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
+              © 2024 CareerBox. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </div>
+    `
+  })
 }

@@ -14,10 +14,12 @@ import Business from '@/src/models/Business'
 const reviewSchema = z.object({
   action: z.enum(['approve', 'reject', 'require_payment', 'pending']),
   adminNotes: z.string().optional(),
-  subscriptionPlan: z.enum(['free', 'basic', 'premium', 'enterprise']).optional(),
+  subscriptionPlan: z
+    .enum(['free', 'basic', 'premium', 'enterprise'])
+    .optional()
 })
 
-async function generateUniqueInstituteId(baseName: string): Promise<string> {
+async function generateUniqueInstituteId (baseName: string): Promise<string> {
   const cleanBase = baseName
     .toLowerCase()
     .trim()
@@ -38,69 +40,108 @@ async function generateUniqueInstituteId(baseName: string): Promise<string> {
   }
 }
 
-export async function POST(
+export async function POST (
   request: NextRequest,
   { params }: { params: Promise<{ intentId: string }> }
 ) {
   try {
     // Authentication check with admin role requirement
+    console.log('[Review] Authenticating admin user')
     const authResult = await getAuthenticatedUser(request)
     if (!authResult) {
+      console.log('[Review] Authentication failed - Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { user } = authResult
+    console.log(
+      `[Review] Admin authenticated: ${user.email}, roles: ${JSON.stringify(
+        user.roles
+      )}`
+    )
     if (!user?.roles?.includes('admin')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+      console.log('[Review] Admin role required - Access denied')
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      )
     }
 
     // Parse and validate request body
+    console.log('[Review] Parsing and validating request body')
     const body = await request.json()
 
     // Handle mapping rules:
     // 1. 'paid' maps to 'premium'
     // 2. 'require_payment' action implies 'premium' plan if not specified (or if 'paid' was passed)
+    console.log(
+      `[Review] Original body: action=${body.action}, subscriptionPlan=${body.subscriptionPlan}`
+    )
     if (body.subscriptionPlan === 'paid') {
       body.subscriptionPlan = 'premium'
+      console.log('[Review] Mapping paid -> premium')
     }
 
-    if (body.action === 'require_payment' && (!body.subscriptionPlan || body.subscriptionPlan === 'paid')) {
+    if (
+      body.action === 'require_payment' &&
+      (!body.subscriptionPlan || body.subscriptionPlan === 'paid')
+    ) {
       body.subscriptionPlan = body.subscriptionPlan || 'premium'
+      console.log('[Review] Setting premium plan for require_payment action')
     }
 
     if (body.action === 'approve' && !body.subscriptionPlan) {
       body.subscriptionPlan = 'free'
+      console.log(
+        '[Review] Setting free plan for approve action with no plan specified'
+      )
     }
 
     const validatedData = reviewSchema.parse(body)
     const { action, adminNotes, subscriptionPlan } = validatedData
+    console.log(
+      `[Review] Validated data: action=${action}, subscriptionPlan=${subscriptionPlan}`
+    )
 
     await connectToDatabase()
 
     // Await params before using
     const { intentId } = await params
+    console.log(
+      `[Review] Starting review process for intent ID: ${intentId}, action: ${action}`
+    )
 
     // Find the registration intent
     const intent = await RegistrationIntent.findById(intentId)
     if (!intent) {
-      return NextResponse.json({ error: 'Registration intent not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Registration intent not found' },
+        { status: 404 }
+      )
     }
 
     // Removed check for pending status to allow updates at any time
 
     // Prepare update data
     const updateData: any = {
-      status: action === 'require_payment' ? 'payment_required' : action === 'approve' ? 'approved' : action === 'pending' ? 'pending' : 'rejected',
+      status:
+        action === 'require_payment'
+          ? 'payment_required'
+          : action === 'approve'
+          ? 'approved'
+          : action === 'pending'
+          ? 'pending'
+          : 'rejected',
       reviewedBy: new mongoose.Types.ObjectId(authResult.userId), // Convert to ObjectId
       reviewedAt: new Date(),
-      updatedAt: new Date(),
+      updatedAt: new Date()
     }
 
     if (adminNotes) {
       updateData.adminNotes = adminNotes
     }
 
-    if (action === 'require_payment' && subscriptionPlan) {
+    if (subscriptionPlan) {
       updateData.subscriptionPlan = subscriptionPlan
     }
 
@@ -110,195 +151,254 @@ export async function POST(
       { $set: updateData },
       { new: true }
     )
+    console.log(
+      `[Review] Registration intent ${intentId} updated with status: ${updateData.status}`
+    )
 
     // If approved and subscription plan provided, create subscription and link organization
-    // Only proceed if the intent was NOT already completed/approved to avoid duplicate subscriptions
-    // Or if the admin explicitly wants to re-process (we can assume if they select 'approve' again with a plan, they mean it)
     if (action === 'approve' && subscriptionPlan) {
-      try {
-        // ... (existing approve logic)
-        // Find the user
-        const intentUser = await User.findById(intent.userId)
-        if (intentUser) {
-          let organizationId = intent._id // Default fallback
-
-          // Handle Institute Linking/Creation
-          if (intent.type === 'institute') {
-            let adminInstitute
-
-            // Check if intent links to existing AdminInstitute
-            if (intent.instituteId) {
-              adminInstitute = await AdminInstitute.findById(intent.instituteId)
-            }
-
-            if (adminInstitute) {
-              // Update existing institute: Add user to userIds if not present
-              // Initialize userIds if it doesn't exist (for old documents)
-              if (!adminInstitute.userIds) {
-                adminInstitute.userIds = []
-              }
-              if (!adminInstitute.userIds.some((id: mongoose.Types.ObjectId) => id.toString() === intent.userId.toString())) {
-                adminInstitute.userIds.push(intent.userId)
-              }
-              // Ensure institute is active
-              adminInstitute.status = 'active';
-              await adminInstitute.save()
-            } else {
-              // Create new AdminInstitute
-              const uniqueId = await generateUniqueInstituteId(intent.organizationName)
-              adminInstitute = new AdminInstitute({
-                id: uniqueId,
-                slug: uniqueId,
-                name: intent.organizationName,
-                type: intent.instituteType || 'University',
-                status: 'active',
-                userIds: [intent.userId],
-                contact: {
-                  email: intent.email,
-                  phone: [intent.contactPhone],
-                  website: intent.website
-                },
-                location: {
-                  address: intent.address,
-                  city: intent.city,
-                  state: intent.state,
-                  pincode: intent.zipCode,
-                  country: intent.country
-                },
-                overview: [{ key: 'Description', value: intent.description || 'No description provided' }],
-                createdAt: new Date(),
-                updatedAt: new Date()
-              })
-              await adminInstitute.save()
-            }
-
-            organizationId = adminInstitute._id
-          } else if (intent.type === 'business') {
-            // Handle Business Linking/Creation
-            // Assuming Business model works similarly or we use existing logic
-            // For now, we'll create a Business entity if it doesn't exist (similar to payment logic)
-            // But to respect the prompt "update in adminInstitute", I'll focus on institute.
-            // I'll leave Business as is for now or reuse existing logic if any.
-            // The prompt specifically asked to remove InstituteModal and use AdminInstitute.
-
-            // For Business, we might still need to create a Business entity.
-            // I'll implement basic Business creation here to be safe.
-            const businessSlug = await generateUniqueInstituteId(intent.organizationName) // Reuse helper
-            const business = new Business({
-              name: intent.organizationName,
-              publicProfileId: businessSlug,
-              email: intent.email,
-              contactPerson: intent.contactName,
-              phone: intent.contactPhone,
-              address: {
-                street: intent.address,
-                city: intent.city,
-                state: intent.state,
-                country: intent.country,
-                zipCode: intent.zipCode
-              },
-              status: 'active',
-              userId: intent.userId, // Business model uses userId (singular) usually
-              registrationIntentId: intent._id
-            })
-            await business.save()
-            organizationId = business._id
-          }
-
-          // Create subscription
-          const subscription = new Subscription({
-            userId: intent.userId,
-            organizationId: organizationId, // Use the REAL organization ID (AdminInstitute or Business)
-            organizationType: intent.type,
-            planName: `${subscriptionPlan.charAt(0).toUpperCase() + subscriptionPlan.slice(1)} Plan`,
-            planType: subscriptionPlan,
-            billingCycle: 'yearly', // Admin-granted subscriptions are lifetime
-            status: 'active',
-            amount: 0, // Free subscription granted by admin
-            currency: 'INR',
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
-            grantedBy: new mongoose.Types.ObjectId(authResult.userId), // Admin who approved
-            grantReason: `Approved registration with ${subscriptionPlan} plan`,
-            createdAt: new Date(),
-          })
-
-          await subscription.save()
-
-          // Update user subscription status and roles
-          const roleToAdd = intent.type === 'institute' ? 'institute' : 'business'
-          console.log(`[Review] Updating user roles for userId: ${intent.userId}, roleToAdd: ${roleToAdd}`)
-
-          const userUpdateResult = await User.findByIdAndUpdate(
-            intent.userId,
-            {
-              $set: {
-                subscriptionActive: true,
-                activeRole: roleToAdd,
-                role: roleToAdd,
-                isOrganizationOwner: true,
-                updatedAt: new Date(),
-              },
-              $addToSet: {
-                roles: roleToAdd,
-                ownedOrganizations: organizationId,
-              },
-            },
-            { new: true }
-          )
-
-          if (!userUpdateResult) {
-            console.error(`[Review] Failed to update user - User not found for userId: ${intent.userId}`)
-            throw new Error(`User update failed: User with ID ${intent.userId} not found`)
-          }
-
-          console.log(`[Review] Successfully updated user roles:`, {
-            userId: userUpdateResult._id.toString(),
-            roles: userUpdateResult.roles,
-            activeRole: userUpdateResult.activeRole,
-            role: userUpdateResult.role,
-            isOrganizationOwner: userUpdateResult.isOrganizationOwner
-          })
-
-          // Mark registration intent as completed
-          await RegistrationIntent.findByIdAndUpdate(
-            intentId,
-            {
-              $set: {
-                status: 'completed',
-                updatedAt: new Date(),
-                organizationId: organizationId
-              }
-            }
-          )
-
-          updateData.status = 'completed'
-        }
-      } catch (error) {
-        console.error('Error creating subscription/organization:', error)
-        // Don't fail the review, just log the error
+      // Find the user
+      const intentUser = await User.findById(intent.userId)
+      if (!intentUser) {
+        return NextResponse.json(
+          { error: 'User not found for this registration intent' },
+          { status: 404 }
+        )
       }
-    } else if (action === 'reject' || action === 'pending') {
-      // If status is changed back to reject or pending, we should ensure the institute/business is deactivated
-      try {
-        const intentUser = await User.findById(intent.userId)
-        if (intentUser && intent.organizationId) {
-          if (intent.type === 'institute') {
-            await AdminInstitute.findByIdAndUpdate(intent.organizationId, {
-              status: action === 'pending' ? 'under_review' : 'inactive'
-            })
-          } else if (intent.type === 'business') {
-             await Business.findByIdAndUpdate(intent.organizationId, {
-              status: action === 'pending' ? 'pending' : 'inactive'
-            })
-          }
+
+      let organizationId: mongoose.Types.ObjectId | null = null
+
+      // Handle Institute Linking/Creation
+      if (intent.type === 'institute') {
+        let adminInstitute
+
+        // Check if intent links to existing AdminInstitute
+        if (intent.instituteId) {
+          adminInstitute = await AdminInstitute.findById(intent.instituteId)
         }
-      } catch (error) {
-        console.error('Error deactivating organization:', error)
+
+        if (adminInstitute) {
+          // Update existing institute: Add user to userIds if not present
+          console.log(
+            `[Review] Found existing institute: ${adminInstitute._id}, adding user ${intent.userId} to userIds`
+          )
+
+          // Use findByIdAndUpdate to avoid validation issues with existing documents
+          await AdminInstitute.findByIdAndUpdate(
+            adminInstitute._id,
+            {
+              $addToSet: {
+                userIds: new mongoose.Types.ObjectId(intent.userId)
+              },
+              $set: { status: 'active' }
+            },
+            { runValidators: false } // Skip validation for existing documents
+          )
+
+          console.log(`[Review] Updated institute with user ${intent.userId}`)
+        } else {
+          // Create new AdminInstitute
+          console.log(
+            `[Review] Creating new AdminInstitute for: ${intent.organizationName}`
+          )
+          const uniqueId = await generateUniqueInstituteId(
+            intent.organizationName
+          )
+          adminInstitute = new AdminInstitute({
+            id: uniqueId,
+            slug: uniqueId,
+            name: intent.organizationName,
+            type: intent.instituteType || 'University',
+            status: 'active',
+            userIds: [new mongoose.Types.ObjectId(intent.userId)],
+            contact: {
+              email: intent.email,
+              phone: [intent.contactPhone],
+              website: intent.website
+            },
+            location: {
+              address: intent.address,
+              city: intent.city,
+              state: intent.state,
+              pincode: intent.zipCode,
+              country: intent.country
+            },
+            overview: [
+              {
+                key: 'Description',
+                value: intent.description || 'No description provided'
+              }
+            ],
+            createdAt: new Date(),
+            updatedAt: new Date()
+          })
+          await adminInstitute.save()
+          console.log(
+            `[Review] Created new institute with ID: ${adminInstitute._id}`
+          )
+        }
+
+        organizationId = adminInstitute._id
+      } else if (intent.type === 'business') {
+        // Handle Business Linking/Creation
+        console.log(
+          `[Review] Creating new Business for: ${intent.organizationName}`
+        )
+        const businessSlug = await generateUniqueInstituteId(
+          intent.organizationName
+        )
+        const business = new Business({
+          name: intent.organizationName,
+          publicProfileId: businessSlug,
+          email: intent.email,
+          contactPerson: intent.contactName,
+          phone: intent.contactPhone,
+          address: {
+            street: intent.address,
+            city: intent.city,
+            state: intent.state,
+            country: intent.country,
+            zipCode: intent.zipCode
+          },
+          status: 'active',
+          userId: new mongoose.Types.ObjectId(intent.userId),
+          registrationIntentId: intent._id
+        })
+        await business.save()
+        organizationId = business._id
+        console.log(`[Review] Created new business with ID: ${business._id}`)
+      }
+
+      if (!organizationId) {
+        return NextResponse.json(
+          { error: 'Failed to create organization' },
+          { status: 500 }
+        )
+      }
+
+      // Check for existing active subscription to avoid duplicates
+      const existingSubscription = await Subscription.findOne({
+        userId: new mongoose.Types.ObjectId(intent.userId),
+        organizationId: organizationId,
+        status: 'active'
+      })
+
+      if (!existingSubscription) {
+        // Create subscription
+        console.log(
+          `[Review] Creating subscription for user ${intent.userId} with plan: ${subscriptionPlan}`
+        )
+        const subscription = new Subscription({
+          userId: new mongoose.Types.ObjectId(intent.userId),
+          organizationId: organizationId,
+          organizationType: intent.type,
+          planName: `${
+            subscriptionPlan.charAt(0).toUpperCase() + subscriptionPlan.slice(1)
+          } Plan`,
+          planType: subscriptionPlan,
+          billingCycle: 'yearly',
+          status: 'active',
+          amount: 0,
+          currency: 'INR',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+          grantedBy: new mongoose.Types.ObjectId(authResult.userId),
+          grantReason: `Approved registration with ${subscriptionPlan} plan`,
+          createdAt: new Date()
+        })
+        await subscription.save()
+        console.log(
+          `[Review] Subscription created with ID: ${subscription._id}`
+        )
+      } else {
+        console.log(
+          `[Review] Subscription already exists for user ${intent.userId}, skipping creation`
+        )
+      }
+
+      // Update user: add role, ownedOrganizations, and subscription status
+      const roleToAdd = intent.type === 'institute' ? 'institute' : 'business'
+      console.log(
+        `[Review] Updating user ${intent.userId} with role: ${roleToAdd}, organizationId: ${organizationId}`
+      )
+
+      const userUpdateResult = await User.findByIdAndUpdate(
+        new mongoose.Types.ObjectId(intent.userId),
+        {
+          $set: {
+            subscriptionActive: true,
+            activeRole: roleToAdd,
+            role: roleToAdd,
+            isOrganizationOwner: true,
+            updatedAt: new Date()
+          },
+          $addToSet: {
+            roles: roleToAdd,
+            ownedOrganizations: organizationId
+          }
+        },
+        { new: true }
+      )
+
+      if (!userUpdateResult) {
+        console.error(
+          `[Review] Failed to update user - User not found for userId: ${intent.userId}`
+        )
+        return NextResponse.json(
+          { error: 'Failed to update user' },
+          { status: 500 }
+        )
+      }
+
+      console.log(`[Review] User updated successfully:`, {
+        userId: userUpdateResult._id.toString(),
+        roles: userUpdateResult.roles,
+        activeRole: userUpdateResult.activeRole,
+        ownedOrganizations: userUpdateResult.ownedOrganizations?.map(
+          (id: any) => id.toString()
+        ),
+        isOrganizationOwner: userUpdateResult.isOrganizationOwner,
+        subscriptionActive: userUpdateResult.subscriptionActive
+      })
+
+      // Mark registration intent as completed with organizationId
+      await RegistrationIntent.findByIdAndUpdate(intentId, {
+        $set: {
+          status: 'completed',
+          subscriptionPlan: subscriptionPlan,
+          organizationId: organizationId,
+          updatedAt: new Date()
+        }
+      })
+      console.log(`[Review] Registration intent marked as completed`)
+
+      updateData.status = 'completed'
+    } else if (action === 'reject' || action === 'pending') {
+      // If status is changed back to reject or pending, deactivate the institute/business
+      console.log(`[Review] Processing ${action} action for intent ${intentId}`)
+      if (intent.organizationId) {
+        if (intent.type === 'institute') {
+          await AdminInstitute.findByIdAndUpdate(intent.organizationId, {
+            status: action === 'pending' ? 'under_review' : 'inactive'
+          })
+          console.log(
+            `[Review] Institute ${intent.organizationId} status updated to ${
+              action === 'pending' ? 'under_review' : 'inactive'
+            }`
+          )
+        } else if (intent.type === 'business') {
+          await Business.findByIdAndUpdate(intent.organizationId, {
+            status: action === 'pending' ? 'pending' : 'inactive'
+          })
+          console.log(
+            `[Review] Business ${intent.organizationId} status updated`
+          )
+        }
       }
     }
 
     // Send notifications based on action
+    console.log(`[Review] Preparing notifications for action: ${action}`)
     try {
       let notificationData: any = {
         userId: intent.userId,
@@ -317,6 +417,9 @@ export async function POST(
 
       switch (action) {
         case 'approve':
+          console.log(
+            `[Review] Sending approval notification for ${intent.organizationName}`
+          )
           notificationData = {
             ...notificationData,
             type: 'registration_approved',
@@ -325,7 +428,8 @@ export async function POST(
             emailTemplate: 'registration_approved',
             data: {
               ...notificationData.data,
-              actionUrl: intent.type === 'institute' ? '/institute' : '/business',
+              actionUrl:
+                intent.type === 'institute' ? '/institute' : '/business',
               subscriptionPlan: subscriptionPlan || 'free',
               shouldRefetchSession: true
             }
@@ -333,6 +437,9 @@ export async function POST(
           break
 
         case 'reject':
+          console.log(
+            `[Review] Sending rejection notification for ${intent.organizationName}`
+          )
           notificationData = {
             ...notificationData,
             type: 'registration_rejected',
@@ -341,12 +448,18 @@ export async function POST(
             emailTemplate: 'registration_rejected',
             data: {
               ...notificationData.data,
-              actionUrl: intent.type === 'institute' ? '/register/institute' : '/register/business'
+              actionUrl:
+                intent.type === 'institute'
+                  ? '/register/institute'
+                  : '/register/business'
             }
           }
           break
 
         case 'require_payment':
+          console.log(
+            `[Review] Sending payment required notification for ${intent.organizationName}`
+          )
           notificationData = {
             ...notificationData,
             type: 'payment_required',
@@ -373,10 +486,15 @@ export async function POST(
         planType: subscriptionPlan
       }
 
-      await NotificationService.createNotification(notificationData);
-      console.log(`Notification sent for registration review: ${intent._id} - ${action}`);
+      await NotificationService.createNotification(notificationData)
+      console.log(
+        `Notification sent for registration review: ${intent._id} - ${action}`
+      )
     } catch (notificationError) {
-      console.error('Failed to send notification for registration review:', notificationError);
+      console.error(
+        'Failed to send notification for registration review:',
+        notificationError
+      )
       // Don't fail the review if notification fails
     }
 
@@ -402,7 +520,7 @@ export async function POST(
       reviewedBy: updatedIntent.reviewedBy,
       reviewedAt: updatedIntent.reviewedAt,
       createdAt: updatedIntent.createdAt,
-      updatedAt: new Date(),
+      updatedAt: new Date()
     }
 
     return NextResponse.json({
@@ -411,9 +529,8 @@ export async function POST(
       data: {
         ...responseIntent,
         shouldRefetchSession: true
-      },
+      }
     })
-
   } catch (error) {
     console.error('Error reviewing registration intent:', error)
 
@@ -426,14 +543,16 @@ export async function POST(
     }
 
     // Provide more specific error message
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred'
     console.log('Review API error message:', errorMessage)
 
     return NextResponse.json(
       {
         error: 'Failed to review registration intent',
         message: errorMessage,
-        details: error instanceof Error ? error.stack : 'No stack trace available'
+        details:
+          error instanceof Error ? error.stack : 'No stack trace available'
       },
       { status: 500 }
     )
