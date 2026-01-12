@@ -101,22 +101,25 @@ export const teamMembers: TeamMember[] = [
   {
     id: '1',
     name: 'Mahesh Patel',
-    role: 'CEO & Founder',
-    bio: 'A visionary technology and business leader specializing in solution architecture, and leads the vision of CareerBox to bridge the gap between education and employment.',
-    linkedin: 'https://www.linkedin.com/in/maheshpatel3112/'
+    role: 'Managing Director',
+    bio: 'A strategic leader with deep expertise in operational excellence and global education markets, driving the company\'s mission to transform career development.',
+    avatar: '/counsellor1.png',
+    linkedin: 'https://www.linkedin.com/in/mahesh-patel-290621247/' 
   },
   {
     id: '2',
     name: 'Mahesh Patel',
-    role: 'Managing Director',
-    bio: 'A strategic leader with deep expertise in operational excellence and global education markets, driving the company\'s mission to transform career development.',
-    linkedin: 'https://www.linkedin.com/in/mahesh-patel-290621247/'
+    role: 'CEO & Founder',
+    bio: 'A visionary technology and business leader specializing in solution architecture, and leads the vision of CareerBox to bridge the gap between education and employment.',
+    avatar: '/counsellor2.png',
+    linkedin: 'https://www.linkedin.com/in/maheshpatel3112/'
   },
   {
     id: '3',
     name: 'Abhishek Vaghela',
     role: 'Tech. Project Head',
     bio: 'An innovative technology leader overseeing the architectural vision and delivery of CareerBox, ensuring scalable and robust solutions for our global user base.',
+    avatar: '/counsellor3.png',
     linkedin: 'https://www.linkedin.com/in/abhishek-vaghela-0b996b239/'
   },
   {
@@ -124,6 +127,7 @@ export const teamMembers: TeamMember[] = [
     name: 'Vatsal Zinzuvadiya',
     role: 'Sr. Developer',
     bio: 'A highly skilled senior developer responsible for crafting the core functionalities of the platform, with a focus on performance, security, and user experience.',
+    avatar: '/counsellor4.png',
     linkedin: 'https://www.linkedin.com/in/vatsal-zinzuwadiya-2a88a11b7/'
   }
 ];

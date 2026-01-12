@@ -42,20 +42,26 @@ export async function sendVerificationEmail (email: string, token: string) {
     to: email,
     subject: 'Verify your email address',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to CareerBox!</h2>
-        <p>Please verify your email address by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${verificationLink}" 
-             style="background-color: #6366f1; color: white; padding: 12px 24px; 
-                    text-decoration: none; border-radius: 6px; display: inline-block;">
-            Verify Email
-          </a>
+      <div style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+          <div style="text-align: center; padding: 28px 24px 0;">
+            <img src="${process.env.NEXT_PUBLIC_APP_URL}/Logo.svg" alt="CareerBox Logo" width="32" height="32" style="display:inline-block; object-fit: contain;" />
+            <h1 style="margin: 12px 0 0; font-size: 22px; color: #111827;">CareerBox</h1>
+          </div>
+          <div style="padding: 24px;">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #111827;">Verify your email</h2>
+            <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px;">Please confirm your email address to finish setting up your account.</p>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${verificationLink}" style="background: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">Verify Email</a>
+            </div>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 12px;">If the button doesn’t work, copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #2563eb; font-size: 12px;">${verificationLink}</p>
+            <p style="margin: 16px 0 0; color: #6b7280; font-size: 12px;">This link expires in 24 hours. If you didn’t create an account, you can safely ignore this email.</p>
+          </div>
+          <div style="text-align: center; padding: 16px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CareerBox. All rights reserved.</p>
+          </div>
         </div>
-        <p>Or copy and paste this link in your browser:</p>
-        <p style="word-break: break-all; color: #4f46e5;">${verificationLink}</p>
-        <p>This link will expire in 24 hours.</p>
-        <p>If you didn't create an account with CareerBox, please ignore this email.</p>
       </div>
     `
   })
@@ -66,16 +72,24 @@ export async function sendOTPEmail (email: string, otp: string) {
     to: email,
     subject: 'Your verification code',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Verify your email address</h2>
-        <p>Your verification code is:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <div style="font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #4f46e5;">
-            ${otp}
+      <div style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+          <div style="text-align: center; padding: 28px 24px 0;">
+            <img src="${process.env.NEXT_PUBLIC_APP_URL}/Logo.svg" alt="CareerBox Logo" width="32" height="32" style="display:inline-block; object-fit: contain;" />
+            <h1 style="margin: 12px 0 0; font-size: 22px; color: #111827;">CareerBox</h1>
+          </div>
+          <div style="padding: 24px;">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #111827;">Verification code</h2>
+            <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px;">Use the code below to verify your email address.</p>
+            <div style="text-align: center; margin: 24px 0;">
+              <div style="font-size: 30px; letter-spacing: 10px; font-weight: 700; color: #4f46e5;">${otp}</div>
+            </div>
+            <p style="margin: 0; color: #6b7280; font-size: 12px;">This code expires in 10 minutes. If you didn’t request it, you can ignore this email.</p>
+          </div>
+          <div style="text-align: center; padding: 16px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CareerBox. All rights reserved.</p>
           </div>
         </div>
-        <p>This code will expire in 10 minutes.</p>
-        <p>If you didn't request this code, please ignore this email.</p>
       </div>
     `
   })
@@ -89,10 +103,21 @@ export async function sendEmailChangeNotification (
     to: email,
     subject: 'Email address change notification',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Email Address Change</h2>
-        <p>Your email address has been changed to: ${newEmail}</p>
-        <p>If you didn't make this change, please contact support immediately.</p>
+      <div style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+          <div style="text-align: center; padding: 28px 24px 0;">
+            <img src="${process.env.NEXT_PUBLIC_APP_URL}/Logo.svg" alt="CareerBox Logo" width="32" height="32" style="display:inline-block; object-fit: contain;" />
+            <h1 style="margin: 12px 0 0; font-size: 22px; color: #111827;">CareerBox</h1>
+          </div>
+          <div style="padding: 24px;">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #111827;">Email address updated</h2>
+            <p style="margin: 0 0 8px; color: #4b5563; font-size: 14px;">Your account email has been changed to <span style="font-weight:600; color:#111827">${newEmail}</span>.</p>
+            <p style="margin: 0; color: #6b7280; font-size: 12px;">If you didn’t perform this change, contact support immediately at <a href="mailto:support@careerbox.in" style="color:#2563eb; text-decoration:underline">support@careerbox.in</a>.</p>
+          </div>
+          <div style="text-align: center; padding: 16px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CareerBox. All rights reserved.</p>
+          </div>
+        </div>
       </div>
     `
   })
@@ -105,20 +130,26 @@ export async function sendPasswordResetEmail (email: string, token: string) {
     to: email,
     subject: 'Reset your password',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Reset Your Password</h2>
-        <p>Click the button below to reset your password:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetLink}" 
-             style="background-color: #6366f1; color: white; padding: 12px 24px; 
-                    text-decoration: none; border-radius: 6px; display: inline-block;">
-            Reset Password
-          </a>
+      <div style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+          <div style="text-align: center; padding: 28px 24px 0;">
+            <img src="${process.env.NEXT_PUBLIC_APP_URL}/Logo.svg" alt="CareerBox Logo" width="32" height="32" style="display:inline-block; object-fit: contain;" />
+            <h1 style="margin: 12px 0 0; font-size: 22px; color: #111827;">CareerBox</h1>
+          </div>
+          <div style="padding: 24px;">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #111827;">Reset your password</h2>
+            <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px;">Click the button below to create a new password for your account.</p>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${resetLink}" style="background: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">Reset Password</a>
+            </div>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 12px;">If the button doesn’t work, copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #2563eb; font-size: 12px;">${resetLink}</p>
+            <p style="margin: 16px 0 0; color: #6b7280; font-size: 12px;">This link expires in 1 hour. If you didn’t request a reset, you can ignore this email.</p>
+          </div>
+          <div style="text-align: center; padding: 16px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CareerBox. All rights reserved.</p>
+          </div>
         </div>
-        <p>Or copy and paste this link in your browser:</p>
-        <p style="word-break: break-all; color: #4f46e5;">${resetLink}</p>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you didn't request a password reset, please ignore this email.</p>
       </div>
     `
   })
@@ -136,101 +167,32 @@ export async function sendInstituteRegistrationConfirmation (
     to: email,
     subject: 'Institute Registration Request Received - CareerBox',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
-        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <!-- Header -->
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 24px; font-weight: bold;">CB</span>
+      <div style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+          <div style="text-align: center; padding: 28px 24px 0;">
+            <img src="${process.env.NEXT_PUBLIC_APP_URL}/Logo.svg" alt="CareerBox Logo" width="32" height="32" style="display:inline-block; object-fit: contain;" />
+            <h1 style="margin: 12px 0 0; font-size: 22px; color: #111827;">CareerBox</h1>
+          </div>
+          <div style="padding: 24px;">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #111827;">Registration received</h2>
+            <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px;">Your institute registration was submitted successfully. We’ll review the details shortly.</p>
+            <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #374151;">
+                <tr><td style="padding:8px 0; color:#6b7280;">Registration ID</td><td style="padding:8px 0; font-weight:600;">#${registrationId.slice(-8).toUpperCase()}</td></tr>
+                <tr><td style="padding:8px 0; color:#6b7280;">Institute Name</td><td style="padding:8px 0; font-weight:600;">${organizationName}</td></tr>
+                <tr><td style="padding:8px 0; color:#6b7280;">Contact Person</td><td style="padding:8px 0; font-weight:600;">${contactName}</td></tr>
+                <tr><td style="padding:8px 0; color:#6b7280;">Status</td><td style="padding:8px 0;"><span style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:16px; font-size:12px; font-weight:600;">Under Review</span></td></tr>
+              </table>
             </div>
-            <h1 style="color: #1f2937; margin: 0; font-size: 24px;">CareerBox</h1>
-          </div>
-
-          <!-- Main Content -->
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="width: 80px; height: 80px; background-color: #10b981; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 36px;">✓</span>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${dashboardLink}" style="background: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">Go to Dashboard</a>
             </div>
-            <h2 style="color: #1f2937; margin: 0 0 10px 0; font-size: 28px;">Registration Request Received!</h2>
-            <p style="color: #6b7280; font-size: 16px; margin: 0;">Your institute registration has been successfully submitted.</p>
-          </div>
-
-          <!-- Registration Details -->
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Registration Details</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Registration ID:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${registrationId
-                  .slice(-8)
-                  .toUpperCase()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Institute Name:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${organizationName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Contact Person:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${contactName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Status:</td>
-                <td style="padding: 8px 0;">
-                  <span style="background-color: #fbbf24; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">UNDER REVIEW</span>
-                </td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- What's Next -->
-          <div style="margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">What happens next?</h3>
-            <div style="text-align: left;">
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #6366f1; font-weight: bold; margin-right: 10px; margin-top: 2px;">1.</span>
-                <span style="color: #4b5563;">Our team will review your registration details within 2-3 business days</span>
-              </div>
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #6366f1; font-weight: bold; margin-right: 10px; margin-top: 2px;">2.</span>
-                <span style="color: #4b5563;">We may contact you for additional information or verification</span>
-              </div>
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #6366f1; font-weight: bold; margin-right: 10px; margin-top: 2px;">3.</span>
-                <span style="color: #4b5563;">Once approved, you'll receive access to your institute dashboard</span>
-              </div>
-              <div style="display: flex; align-items: flex-start;">
-                <span style="color: #6366f1; font-weight: bold; margin-right: 10px; margin-top: 2px;">4.</span>
-                <span style="color: #4b5563;">You can then start managing courses, students, and more!</span>
-              </div>
+            <div style="background-color: #eff6ff; padding: 16px; border-radius: 8px; border-left: 4px solid #3b82f6; font-size: 13px; color:#1e40af;">
+              If you have questions, contact <a href="mailto:support@careerbox.in" style="color:#1e40af; text-decoration:underline;">support@careerbox.in</a>.
             </div>
           </div>
-
-          <!-- Action Button -->
-          <div style="text-align: center; margin-bottom: 30px;">
-            <a href="${dashboardLink}" 
-               style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 14px 28px; 
-                      text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
-              Go to Dashboard
-            </a>
-          </div>
-
-          <!-- Support -->
-          <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <h4 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">Need Help?</h4>
-            <p style="color: #1e40af; margin: 0; font-size: 14px;">
-              If you have any questions about your registration, please contact our support team at 
-              <a href="mailto:support@careerbox.in" style="color: #1e40af; text-decoration: underline;">support@careerbox.in</a>
-            </p>
-          </div>
-
-          <!-- Footer -->
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-              This email was sent to ${email}. If you didn't register for CareerBox, please ignore this email.
-            </p>
-            <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
-              © 2024 CareerBox. All rights reserved.
-            </p>
+          <div style="text-align: center; padding: 16px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CareerBox. All rights reserved.</p>
           </div>
         </div>
       </div>
@@ -250,86 +212,32 @@ export async function sendCourseApplicationConfirmation (
     to: email,
     subject: `Application Submitted Successfully - ${instituteName}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
-        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 24px; font-weight: bold;">CB</span>
+      <div style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+          <div style="text-align: center; padding: 28px 24px 0;">
+            <img src="${process.env.NEXT_PUBLIC_APP_URL}/Logo.svg" alt="CareerBox Logo" width="32" height="32" style="display:inline-block; object-fit: contain;" />
+            <h1 style="margin: 12px 0 0; font-size: 22px; color: #111827;">CareerBox</h1>
+          </div>
+          <div style="padding: 24px;">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #111827;">Application submitted</h2>
+            <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px;">Dear ${userName}, your course application has been submitted successfully.</p>
+            <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #374151;">
+                <tr><td style="padding:8px 0; color:#6b7280;">Application ID</td><td style="padding:8px 0; font-weight:600;">#${applicationId.slice(-8).toUpperCase()}</td></tr>
+                <tr><td style="padding:8px 0; color:#6b7280;">Institute</td><td style="padding:8px 0; font-weight:600;">${instituteName}</td></tr>
+                <tr><td style="padding:8px 0; color:#6b7280;">Course</td><td style="padding:8px 0; font-weight:600;">${courseName}</td></tr>
+                <tr><td style="padding:8px 0; color:#6b7280;">Status</td><td style="padding:8px 0;"><span style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:16px; font-size:12px; font-weight:600;">Under Review</span></td></tr>
+              </table>
             </div>
-            <h1 style="color: #1f2937; margin: 0; font-size: 24px;">CareerBox</h1>
-          </div>
-
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="width: 80px; height: 80px; background-color: #10b981; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 36px;">✓</span>
+            <div style="background-color: #eff6ff; padding: 16px; border-radius: 8px; border-left: 4px solid #3b82f6; font-size: 13px; color:#1e40af;">
+              If you have questions, contact <a href="mailto:support@careerbox.in" style="color:#1e40af; text-decoration:underline;">support@careerbox.in</a>.
             </div>
-            <h2 style="color: #1f2937; margin: 0 0 10px 0; font-size: 28px;">Application Submitted!</h2>
-            <p style="color: #6b7280; font-size: 16px; margin: 0;">Dear ${userName}, your course application has been successfully submitted.</p>
-          </div>
-
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Application Details</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Application ID:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${applicationId
-                  .slice(-8)
-                  .toUpperCase()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Institute:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${instituteName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Course:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${courseName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Status:</td>
-                <td style="padding: 8px 0;">
-                  <span style="background-color: #fbbf24; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">UNDER REVIEW</span>
-                </td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">What happens next?</h3>
-            <div style="text-align: left;">
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #6366f1; font-weight: bold; margin-right: 10px; margin-top: 2px;">1.</span>
-                <span style="color: #4b5563;">Our admission team will review your application within 2-3 business days</span>
-              </div>
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #6366f1; font-weight: bold; margin-right: 10px; margin-top: 2px;">2.</span>
-                <span style="color: #4b5563;">We may contact you for additional information or documents</span>
-              </div>
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #6366f1; font-weight: bold; margin-right: 10px; margin-top: 2px;">3.</span>
-                <span style="color: #4b5563;">You'll receive an update on your application status via email</span>
-              </div>
-              <div style="display: flex; align-items: flex-start;">
-                <span style="color: #6366f1; font-weight: bold; margin-right: 10px; margin-top: 2px;">4.</span>
-                <span style="color: #4b5563;">If selected, you'll receive further instructions for enrollment</span>
-              </div>
+            <div style="text-align: center; margin-top: 24px;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="background: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">Go to Dashboard</a>
             </div>
           </div>
-
-          <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <h4 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">Need Help?</h4>
-            <p style="color: #1e40af; margin: 0; font-size: 14px;">
-              If you have any questions about your application, please contact us at 
-              <a href="mailto:support@careerbox.in" style="color: #1e40af; text-decoration: underline;">support@careerbox.in</a>
-            </p>
-          </div>
-
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-              This email was sent to ${email}. If you didn't apply for this course, please ignore this email.
-            </p>
-            <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
-              © 2024 CareerBox. All rights reserved.
-            </p>
+          <div style="text-align: center; padding: 16px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} CareerBox. All rights reserved.</p>
           </div>
         </div>
       </div>
@@ -359,85 +267,68 @@ export async function sendCourseApplicationAdminNotification (
     to: adminEmail,
     subject: `New Course Application - ${instituteName}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
-        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #dc2626, #b91c1c); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 24px; font-weight: bold;">!</span>
+      <div style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+          <div style="text-align: center; padding: 28px 24px 0;">
+            <img src="${process.env.NEXT_PUBLIC_APP_URL}/Logo.svg" alt="CareerBox Logo" width="32" height="32" style="display:inline-block; object-fit: contain;" />
+            <h1 style="margin: 12px 0 0; font-size: 22px; color: #111827;">CareerBox</h1>
+          </div>
+          <div style="padding: 24px;">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #111827;">New Course Application</h2>
+            <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <h3 style="color: #111827; margin: 0 0 12px; font-size: 16px;">Student Details</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #374151;">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Name:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${userName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Email:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${userEmail}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Phone:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${userPhone || 'Not provided'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">City:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${userCity || 'Not provided'}</td>
+                </tr>
+              </table>
             </div>
-            <h1 style="color: #1f2937; margin: 0; font-size: 24px;">New Course Application</h1>
+            <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <h3 style="color: #111827; margin: 0 0 12px; font-size: 16px;">Application Details</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #374151;">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Application ID:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${applicationId.slice(-8).toUpperCase()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Institute:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${instituteName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Course:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${courseName}</td>
+                </tr>
+              </table>
+            </div>
+            <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <h3 style="color: #111827; margin: 0 0 12px; font-size: 16px;">Eligibility Exams</h3>
+              <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
+                ${examsHtml}
+              </ul>
+            </div>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/admin/student-leads" 
+                 style="background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+                View Application
+              </a>
+            </div>
           </div>
-
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Student Details</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Name:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${userName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Email:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${userEmail}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Phone:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${
-                  userPhone || 'Not provided'
-                }</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">City:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${
-                  userCity || 'Not provided'
-                }</td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Application Details</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Application ID:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${applicationId
-                  .slice(-8)
-                  .toUpperCase()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Institute:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${instituteName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Course:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${courseName}</td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Eligibility Exams</h3>
-            <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
-              ${examsHtml}
-            </ul>
-          </div>
-
-          <div style="text-align: center; margin-bottom: 30px;">
-            <a href="${
-              process.env.NEXT_PUBLIC_APP_URL
-            }/dashboard/admin/student-leads" 
-               style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 14px 28px; 
-                      text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
-              View Application
-            </a>
-          </div>
-
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-              This is an automated notification from CareerBox.
-            </p>
-            <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
-              © 2024 CareerBox. All rights reserved.
-            </p>
+          <div style="text-align: center; padding: 16px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">This is an automated notification from CareerBox.</p>
+            <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">© 2024 CareerBox. All rights reserved.</p>
           </div>
         </div>
       </div>
@@ -457,95 +348,71 @@ export async function sendBusinessRegistrationConfirmation (
     to: email,
     subject: 'Business Registration Request Received - CareerBox',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
-        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <!-- Header -->
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 24px; font-weight: bold;">CB</span>
+      <div style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 24px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+          <div style="text-align: center; padding: 28px 24px 0;">
+            <img src="${process.env.NEXT_PUBLIC_APP_URL}/Logo.svg" alt="CareerBox Logo" width="32" height="32" style="display:inline-block; object-fit: contain;" />
+            <h1 style="margin: 12px 0 0; font-size: 22px; color: #111827;">CareerBox</h1>
+          </div>
+          <div style="padding: 24px;">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #111827;">Registration Request Received!</h2>
+            <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px;">Your business registration has been submitted successfully.</p>
+            <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <h3 style="color: #111827; margin: 0 0 12px; font-size: 16px;">Registration Details</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #374151;">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Registration ID:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${registrationId.slice(-8).toUpperCase()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Business Name:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${organizationName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Contact Person:</td>
+                  <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${contactName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Status:</td>
+                  <td style="padding: 8px 0;">
+                    <span style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:16px; font-size:12px; font-weight:600;">Under Review</span>
+                  </td>
+                </tr>
+              </table>
             </div>
-            <h1 style="color: #1f2937; margin: 0; font-size: 24px;">CareerBox</h1>
-          </div>
-
-          <!-- Main Content -->
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="width: 80px; height: 80px; background-color: #10b981; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 36px;">✓</span>
-            </div>
-            <h2 style="color: #1f2937; margin: 0 0 10px 0; font-size: 28px;">Registration Request Received!</h2>
-            <p style="color: #6b7280; font-size: 16px; margin: 0;">Your business registration has been successfully submitted.</p>
-          </div>
-
-          <!-- Registration Details -->
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">Registration Details</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Registration ID:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">#${registrationId
-                  .slice(-8)
-                  .toUpperCase()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Business Name:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${organizationName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Contact Person:</td>
-                <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${contactName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Status:</td>
-                <td style="padding: 8px 0;">
-                  <span style="background-color: #fbbf24; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">UNDER REVIEW</span>
-                </td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- What's Next -->
-          <div style="margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 18px;">What happens next?</h3>
-            <div style="text-align: left;">
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #f59e0b; font-weight: bold; margin-right: 10px; margin-top: 2px;">1.</span>
-                <span style="color: #4b5563;">Our team will review your registration details within 2-3 business days</span>
-              </div>
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #f59e0b; font-weight: bold; margin-right: 10px; margin-top: 2px;">2.</span>
-                <span style="color: #4b5563;">We may contact you for additional information or verification</span>
-              </div>
-              <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
-                <span style="color: #f59e0b; font-weight: bold; margin-right: 10px; margin-top: 2px;">3.</span>
-                <span style="color: #4b5563;">Once approved, you'll receive access to your business dashboard</span>
-              </div>
-              <div style="display: flex; align-items: flex-start;">
-                <span style="color: #f59e0b; font-weight: bold; margin-right: 10px; margin-top: 2px;">4.</span>
-                <span style="color: #4b5563;">You can then start posting jobs, finding talent, and more!</span>
+            <div style="margin-bottom: 16px;">
+              <h3 style="color: #111827; margin: 0 0 12px; font-size: 16px;">What happens next?</h3>
+              <div style="text-align: left; color: #4b5563; font-size: 14px;">
+                <div style="display: flex; margin-bottom: 8px;">
+                  <span style="color: #4f46e5; font-weight: 600; margin-right: 10px;">1.</span>
+                  <span>Our team will review your registration details within 2-3 business days</span>
+                </div>
+                <div style="display: flex; margin-bottom: 8px;">
+                  <span style="color: #4f46e5; font-weight: 600; margin-right: 10px;">2.</span>
+                  <span>We may contact you for additional information or verification</span>
+                </div>
+                <div style="display: flex; margin-bottom: 8px;">
+                  <span style="color: #4f46e5; font-weight: 600; margin-right: 10px;">3.</span>
+                  <span>Once approved, you'll receive access to your business dashboard</span>
+                </div>
+                <div style="display: flex;">
+                  <span style="color: #4f46e5; font-weight: 600; margin-right: 10px;">4.</span>
+                  <span>You can then start posting jobs, finding talent, and more!</span>
+                </div>
               </div>
             </div>
-          </div>
-
-          <!-- Action Button -->
-          <div style="text-align: center; margin-bottom: 30px;">
-            <a href="${dashboardLink}" 
-               style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 14px 28px; 
-                      text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
-              Go to Dashboard
-            </a>
-          </div>
-
-          <!-- Support -->
-          <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
-            <h4 style="color: #d97706; margin: 0 0 10px 0; font-size: 16px;">Need Help?</h4>
-            <p style="color: #d97706; margin: 0; font-size: 14px;">
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${dashboardLink}" 
+                 style="background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+                Go to Dashboard
+              </a>
+            </div>
+            <div style="background-color: #eff6ff; padding: 16px; border-radius: 8px; border-left: 4px solid #3b82f6; font-size: 13px; color:#1e40af;">
               If you have any questions about your registration, please contact our support team at 
-              <a href="mailto:support@careerbox.in" style="color: #d97706; text-decoration: underline;">support@careerbox.in</a>
-            </p>
+              <a href="mailto:support@careerbox.in" style="color:#1e40af; text-decoration:underline;">support@careerbox.in</a>
+            </div>
           </div>
-
-          <!-- Footer -->
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          <div style="text-align: center; padding: 16px; border-top: 1px solid #e5e7eb;">
             <p style="color: #9ca3af; font-size: 12px; margin: 0;">
               This email was sent to ${email}. If you didn't register for CareerBox, please ignore this email.
             </p>

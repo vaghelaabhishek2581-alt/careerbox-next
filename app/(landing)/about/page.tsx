@@ -297,12 +297,21 @@ export default function AboutPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-8xl mx-auto">
               {teamMembers.map((member) => (
                 <Card key={member.id} className="text-center hover:shadow-xl transition-all duration-300 border-gray-100 overflow-hidden group">
-                  <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-                  <CardContent className="p-8 -mt-16 relative">
-                    <div className="w-32 h-32 bg-white p-1 rounded-full mx-auto mb-6 shadow-lg">
+                  {/* <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600"></div> */}
+                  <CardContent className="p-8 relative">
+                    <div className="w-48 h-48 bg-white p-1 rounded-full mx-auto mb-6 shadow-lg">
                        <div className="w-full h-full bg-gray-100 rounded-full overflow-hidden relative">
-                         {/* Placeholder avatar if image not available */}
-                         <Users className="h-full w-full p-6 text-gray-400" />
+                         {member.avatar ? (
+                           <Image
+                             src={member.avatar}
+                             alt={member.name}
+                             fill
+                             sizes="128px"
+                             className="object-cover"
+                           />
+                         ) : (
+                           <Users className="h-full w-full p-6 text-gray-400" />
+                         )}
                        </div>
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
