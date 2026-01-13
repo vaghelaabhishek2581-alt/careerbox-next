@@ -256,3 +256,5 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
   );
 });
 
+ProfileHeader.displayName = "ProfileHeader";
+
