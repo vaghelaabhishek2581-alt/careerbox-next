@@ -34,13 +34,13 @@ export function InstituteMenu() {
     // { label: "Events", icon: Calendar, href: "/institute/events" },
     // { label: "Products & Services", icon: Package, href: "/institute/products" },
     // { label: "Analytics", icon: BarChart2, href: "/institute/analytics" },
-    // { label: "Billing & Payments", icon: Wallet, href: "/institute/billing" },
+    { label: "Billing & Payments", icon: Wallet, href: "/institute/billing" },
     // { label: "Activity", icon: Activity, href: "/institute/activity" },
     { label: "Edit Page", icon: Edit, href: "/institute/profile" },
   ];
 
   const bottomMenuItems = [
-    // { label: "Upgrade to Premium", icon: CreditCard, href: "/institute/premium" },
+    { label: "Subscriptions", icon: CreditCard, href: "/institute/subscription" },
     // { label: "Be Sponsored", icon: Megaphone, href: "/institute/sponsored" },
     { label: "Settings", icon: Settings, href: "/institute/settings" },
   ];

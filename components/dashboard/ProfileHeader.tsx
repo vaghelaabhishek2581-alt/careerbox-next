@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Edit2, Plus, MapPin, Mail, Globe, Share2, MoreHorizontal, Camera, Verified, Upload, X, Loader2, Edit2Icon } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Edit2, Plus, MapPin, Mail, Globe, Share2, MoreHorizontal, Camera, Verified, Upload, X, Loader2, Edit2Icon, Link as LinkIcon, Clipboard, Check, Mail as MailIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -7,6 +7,8 @@ import { uploadProfileImage as uploadProfileImageAction, updateLocalProfile } fr
 import type { IProfile } from "@/lib/redux/slices/profileSlice";
 import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog";
 import { ImageViewerDialog } from "@/components/ui/ImageViewerDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ProfileHeaderProps {
   profile: IProfile;
@@ -25,6 +27,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
   const [cropType, setCropType] = useState<"profile" | "cover">("profile");
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerType, setViewerType] = useState<"profile" | "cover">("profile");
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   async function handleCropped(file: File) {
     await dispatch(uploadProfileImageAction({ type: cropType, file })).unwrap();
@@ -43,6 +48,72 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
       setViewerOpen(false);
     } catch {}
   }
+
+  const displayName = useMemo(() => {
+    const first = profile?.personalDetails?.firstName || "";
+    const last = profile?.personalDetails?.lastName || "";
+    return `${first} ${last}`.trim() || "CareerBox Profile";
+  }, [profile]);
+
+  const headline = profile?.personalDetails?.professionalHeadline || "View my CareerBox profile";
+
+  const shareUrl = useMemo(() => {
+    const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const id = profile?.personalDetails?.publicProfileId || "";
+    return `${base}/profile/${id}`;
+  }, [profile]);
+
+  const shareMessage = useMemo(() => {
+    const name = displayName;
+    const role = (headline || "").trim();
+    const intro = role ? `I'm ${name}, ${role}.` : `I'm ${name}.`;
+    const loc = profile?.location ? `Based in ${profile.location}.` : "";
+    const topSkills = Array.isArray(profile?.skills)
+      ? profile.skills.map(s => s?.name).filter(Boolean).slice(0, 3)
+      : [];
+    const skillsLine = topSkills.length ? `Skills: ${topSkills.join(", ")}.` : "";
+    const aboutRaw = (profile?.personalDetails?.aboutMe || "").trim();
+    const aboutSnippet = aboutRaw
+      ? (aboutRaw.length > 160 ? `${aboutRaw.slice(0, 157)}...` : aboutRaw)
+      : "";
+    const cta = "View my full profile on CareerBox for experience, education, and achievements.";
+    return [intro, loc, skillsLine, aboutSnippet, cta].filter(Boolean).join(" ");
+  }, [displayName, headline, profile]);
+
+  async function handleShare() {
+    try {
+      if (typeof window !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share({
+          title: `${displayName} — CareerBox Profile`,
+          text: shareMessage,
+          url: shareUrl,
+        });
+        toast({ title: "Shared", description: "Profile shared successfully." });
+        return;
+      }
+    } catch {}
+    setShareOpen(true);
+  }
+
+  async function handleCopy() {
+    try {
+      if (typeof window !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(`${shareMessage}\n\n${shareUrl}`);
+        setCopied(true);
+        toast({ title: "Message copied", description: "Share message and link copied to clipboard." });
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {}
+  }
+
+  function openShareLink(url: string) {
+    if (typeof window !== "undefined") {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedText = encodeURIComponent(shareMessage);
 
   return (
     <div className="w-full flex flex-col items-center justify-center border-1 border-gray-200">
@@ -162,7 +233,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
                   <span className="hidden sm:inline">Edit Profile</span>
                   <span className="sm:hidden">Edit</span>
                 </Button>
-                <Button variant="outline" className="flex-1 sm:flex-initial text-xs sm:text-sm">
+                <Button variant="outline" onClick={handleShare} className="flex-1 sm:flex-initial text-xs sm:text-sm">
                   <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Share</span>
                   <span className="sm:hidden">Share</span>
@@ -174,6 +245,53 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
             </div>
           </div>
         </div>
+
+        <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-lg">Share Profile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <LinkIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm truncate">{shareUrl}</span>
+                </div>
+                <Button variant="secondary" size="sm" onClick={handleCopy} className="gap-1">
+                  {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <Button variant="outline" onClick={() => openShareLink(`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`)}>
+                  LinkedIn
+                </Button>
+                <Button variant="outline" onClick={() => openShareLink(`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`)}>
+                  Twitter
+                </Button>
+                <Button variant="outline" onClick={() => openShareLink(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`)}>
+                  Facebook
+                </Button>
+                <Button variant="outline" onClick={() => openShareLink(`https://wa.me/?text=${encodedText}%0A%0A${encodedUrl}`)}>
+                  WhatsApp
+                </Button>
+                <Button variant="outline" onClick={() => openShareLink(`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`)}>
+                  Telegram
+                </Button>
+                <Button variant="outline" onClick={() => openShareLink(`mailto:?subject=${encodeURIComponent(`${displayName} — CareerBox Profile`)}&body=${encodedText}%0A%0A${encodedUrl}`)}>
+                  <MailIcon className="h-4 w-4 mr-2" />
+                  Email
+                </Button>
+                <Button variant="outline" onClick={() => openShareLink(`https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(`${displayName} — CareerBox Profile`)}&body=${encodedText}%0A%0A${encodedUrl}`)}>
+                  Gmail
+                </Button>
+              </div>
+              <div className="flex items-center justify-end">
+                <Button onClick={() => setShareOpen(false)}>Close</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* About Section - Separate Card */}
         {profile?.personalDetails?.aboutMe &&
