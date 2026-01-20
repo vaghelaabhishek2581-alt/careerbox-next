@@ -437,7 +437,7 @@ export default function InstituteLeadsPage() {
               <Button variant="outline" onClick={() => setUpgradeOpen(false)}>
                 Not now
               </Button>
-              <Button onClick={() => { setUpgradeOpen(false); router.push('/pricing'); }}>
+              <Button onClick={() => { setUpgradeOpen(false); router.push('/institute/subscription'); }}>
                 Upgrade Now
               </Button>
             </DialogFooter>

@@ -67,19 +67,26 @@ export async function connectToDatabase() {
   return cached.conn
 }
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  if (cached.conn) {
-    await cached.conn.disconnect()
-    console.log('Mongoose connection closed')
-  }
-  process.exit(0)
-})
+declare global {
+  var __mongooseShutdownRegistered: boolean | undefined
+}
 
-process.on('SIGTERM', async () => {
-  if (cached.conn) {
-    await cached.conn.disconnect()
-    console.log('Mongoose connection closed')
-  }
-  process.exit(0)
-})
+if (!global.__mongooseShutdownRegistered) {
+  process.on('SIGINT', async () => {
+    if (cached.conn) {
+      await cached.conn.disconnect()
+      console.log('Mongoose connection closed')
+    }
+    process.exit(0)
+  })
+  
+  process.on('SIGTERM', async () => {
+    if (cached.conn) {
+      await cached.conn.disconnect()
+      console.log('Mongoose connection closed')
+    }
+    process.exit(0)
+  })
+  
+  global.__mongooseShutdownRegistered = true
+}

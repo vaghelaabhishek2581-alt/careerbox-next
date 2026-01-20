@@ -66,9 +66,6 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
   variant = "modal",
   profile: externalProfile,
 }) => {
-  // Early return MUST be at the very beginning, before any hooks
-  if (!isEditing) return null;
-
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const profile = useAppSelector((state) => state.profile.profile);
@@ -737,6 +734,8 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
     </div>
   );
 
+  if (!isEditing) return null;
+
   if (variant === 'full-screen') {
     return (
       <>
@@ -749,9 +748,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
             className="fixed inset-0 z-50 mt-[18vh] rounded-t-2xl bg-background overflow-hidden"
           >
             <header className="flex items-center justify-between px-6 py-4 border-b">
-              <h1 className="text-lg font-semibold">
-                Personal Details
-              </h1>
+              <h1 className="text-lg font-semibold">Personal Details</h1>
               <div className="flex items-center gap-2">
                 <Button
                   type="submit"
@@ -777,7 +774,6 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
           </section>
         </div>
 
-        {/* Email Verification Dialog - Outside the main form */}
         {emailVerificationOpen && (
           <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -816,12 +812,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
         <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Personal Details</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -829,7 +820,6 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
         </div>
       </div>
 
-      {/* Email Verification Dialog - Outside the main form */}
       {emailVerificationOpen && (
         <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">

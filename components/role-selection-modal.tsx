@@ -94,7 +94,7 @@ export default function RoleSelectionModal({
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">Select Your Active Role</DialogTitle>
           <DialogDescription className="text-center">
-            You have multiple roles. Please select which role you'd like to use for this session.
+            You have multiple roles. Please select which role you&apos;d like to use for this session.
           </DialogDescription>
         </DialogHeader>
 

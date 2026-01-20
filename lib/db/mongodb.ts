@@ -98,13 +98,20 @@ export async function closeDatabaseConnection(): Promise<void> {
   }
 }
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  await closeDatabaseConnection()
-  process.exit(0)
-})
+declare global {
+  var __mongodbShutdownRegistered: boolean | undefined
+}
 
-process.on('SIGTERM', async () => {
-  await closeDatabaseConnection()
-  process.exit(0)
-})
+if (!global.__mongodbShutdownRegistered) {
+  process.on('SIGINT', async () => {
+    await closeDatabaseConnection()
+    process.exit(0)
+  })
+  
+  process.on('SIGTERM', async () => {
+    await closeDatabaseConnection()
+    process.exit(0)
+  })
+  
+  global.__mongodbShutdownRegistered = true
+}

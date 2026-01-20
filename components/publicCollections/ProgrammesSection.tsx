@@ -43,10 +43,6 @@ export function ProgrammesSection({ programmes, onApplyClick, onCourseClick, aut
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedDuration, setSelectedDuration] = useState<string>('all')
 
-  if (!programmes || programmes.length === 0) {
-    return null
-  }
-
   // Extract unique values for filters
   const allCourses = programmes.flatMap(p => p.course || [])
   const levels = Array.from(new Set(allCourses.map(c => c.level).filter(Boolean)))
@@ -91,6 +87,10 @@ export function ProgrammesSection({ programmes, onApplyClick, onCourseClick, aut
     setSelectedLevel('all')
     setSelectedCategory('all')
     setSelectedDuration('all')
+  }
+
+  if (!programmes || programmes.length === 0) {
+    return null
   }
 
   return (

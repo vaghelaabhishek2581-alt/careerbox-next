@@ -323,8 +323,7 @@ export default function Header() {
                     {/* Mobile Navigation */}
                     <nav className="flex flex-col space-y-1">
                       {navigation.map((item) => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const IconComponent = (item as any).icon;
+                        const IconComponent = (item as { icon?: React.ComponentType<{ className?: string }> }).icon;
                         const isActive = pathname === item.href;
                         return (
                           <Link
@@ -483,8 +482,6 @@ export default function Header() {
           </Sheet>
         </>
       )}
-
-
     </>
   );
 }
