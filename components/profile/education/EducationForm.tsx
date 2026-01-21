@@ -102,7 +102,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({
   };
 
   const content = (
-    <div className="flex h-full min-h-[90vh]">
+    <div className="flex h-full min-h-[90vh] pb-24">
       {/* Left side - Form */}
       <div className="flex-1 lg:w-1/2 p-6 overflow-y-auto border-r border-gray-200 pb-28">
         <Form {...form}>

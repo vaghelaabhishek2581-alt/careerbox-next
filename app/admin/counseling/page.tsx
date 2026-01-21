@@ -1,131 +1,242 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  HeadphonesIcon, 
-  Search, 
-  Clock, 
-  User, 
-  Phone, 
-  Mail, 
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  HeadphonesIcon,
+  Search,
+  Clock,
+  User,
+  Phone,
+  Mail,
   MessageSquare,
   CheckCircle,
   XCircle,
   Eye,
-  Plus,
   Download,
   BookOpen,
-  Target
-} from 'lucide-react';
+  Target,
+  MapPin,
+  RefreshCw,
+  Trash2,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface CounselingRequest {
   id: string;
-  studentName: string;
-  userId: string;
+  name: string;
+  email: string;
   phone: string;
-  currentEducation: string;
-  careerInterests: string[];
-  urgencyLevel: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
-  requestDate: string;
-  description: string;
+  state: string;
+  city: string;
+  courseLevel: string;
+  courseInterest: string;
+  status: "pending" | "contacted" | "completed";
+  submittedAt: string;
+  source?: string;
+  adminNotes?: string;
   counselorAssigned?: string;
+  contactedAt?: string;
+  completedAt?: string;
 }
 
-const mockRequests: CounselingRequest[] = [
-  {
-    id: '1',
-    studentName: 'Rahul Sharma',
-    userId: 'user_123',
-    phone: '+91 9876543210',
-    currentEducation: 'B.Tech Computer Science - 3rd Year',
-    careerInterests: ['Software Development', 'Data Science'],
-    urgencyLevel: 'high',
-    status: 'pending',
-    requestDate: '2024-01-15T10:30:00Z',
-    description: 'Need guidance on career path between software development and data science.',
-    counselorAssigned: 'Dr. Priya Mehta'
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface StatusStats {
+  pending: number;
+  contacted: number;
+  completed: number;
+}
+
+const statusConfig = {
+  pending: {
+    label: "Pending",
+    color: "bg-yellow-100 text-yellow-800",
+    icon: Clock,
   },
-  {
-    id: '2',
-    studentName: 'Priya Patel',
-    userId: 'user_456',
-    phone: '+91 9876543211',
-    currentEducation: 'MBA - 1st Year',
-    careerInterests: ['Marketing', 'Business Development'],
-    urgencyLevel: 'medium',
-    status: 'in_progress',
-    requestDate: '2024-01-14T14:20:00Z',
-    description: 'Want to understand career opportunities in marketing.',
-    counselorAssigned: 'Prof. Ankit Kumar'
+  contacted: {
+    label: "Contacted",
+    color: "bg-blue-100 text-blue-800",
+    icon: Phone,
   },
-  {
-    id: '3',
-    studentName: 'Arjun Singh',
-    userId: 'user_789',
-    phone: '+91 9876543212',
-    currentEducation: 'B.Com - 2nd Year',
-    careerInterests: ['Finance', 'Investment Banking'],
-    urgencyLevel: 'urgent',
-    status: 'assigned',
-    requestDate: '2024-01-16T09:15:00Z',
-    description: 'Need immediate guidance on finance career options and certification requirements.'
-  }
-];
+  completed: {
+    label: "Completed",
+    color: "bg-green-100 text-green-800",
+    icon: CheckCircle,
+  },
+};
+
+const courseLevelLabels: Record<string, string> = {
+  undergraduate: "Undergraduate",
+  postgraduate: "Postgraduate",
+  professional: "Professional",
+  medical: "Medical",
+  diploma: "Diploma",
+  certification: "Certification",
+  other: "Other",
+  Undergraduate: "Undergraduate (After 12th)",
+  PG: "Post Graduate (After Graduation)",
+  Doctorate: "M.Phil / Ph.D",
+  Advance_diploma: "Advance Diploma",
+  abroad: "Abroad Education",
+  Job_guarantee: "Job Guarantee Program",
+};
 
 export default function CareerCounselingPage() {
-  const [requests, setRequests] = useState<CounselingRequest[]>(mockRequests);
-  const [selectedRequest, setSelectedRequest] = useState<CounselingRequest | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [response, setResponse] = useState('');
-
-  const filteredRequests = requests.filter(request => {
-    const matchesSearch = request.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.careerInterests.some(interest => 
-                           interest.toLowerCase().includes(searchTerm.toLowerCase())
-                         );
-    const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const [requests, setRequests] = useState<CounselingRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
   });
+  const [statusStats, setStatusStats] = useState<StatusStats>({
+    pending: 0,
+    contacted: 0,
+    completed: 0,
+  });
+  const [selectedRequest, setSelectedRequest] =
+    useState<CounselingRequest | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [counselorAssigned, setCounselorAssigned] = useState("");
+  const [updating, setUpdating] = useState(false);
 
-  const getStatusConfig = (status: string) => {
-    const configs = {
-      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      assigned: { color: 'bg-blue-100 text-blue-800', icon: User },
-      in_progress: { color: 'bg-purple-100 text-purple-800', icon: HeadphonesIcon },
-      completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle }
-    };
-    return configs[status as keyof typeof configs] || configs.pending;
-  };
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString(),
+      });
+
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (searchTerm) params.append("search", searchTerm);
+
+      const response = await fetch(`/api/admin/counselling?${params}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setRequests(data.data.requests);
+        setPagination(data.data.pagination);
+        setStatusStats(data.data.statusStats);
+      }
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [pagination.page, pagination.limit, statusFilter, searchTerm]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const handleViewRequest = (request: CounselingRequest) => {
     setSelectedRequest(request);
-    setResponse('');
+    setAdminNotes(request.adminNotes || "");
+    setCounselorAssigned(request.counselorAssigned || "");
     setIsModalOpen(true);
   };
 
-  const handleUpdateStatus = (requestId: string, newStatus: string) => {
-    setRequests(prev => prev.map(req => 
-      req.id === requestId ? { ...req, status: newStatus as any } : req
-    ));
+  const handleUpdateStatus = async (requestId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/admin/counselling/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        fetchRequests();
+        if (selectedRequest?.id === requestId) {
+          setSelectedRequest((prev) =>
+            prev ? { ...prev, status: newStatus as any } : null
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
   };
 
-  const stats = {
-    total: requests.length,
-    pending: requests.filter(r => r.status === 'pending').length,
-    inProgress: requests.filter(r => r.status === 'in_progress').length,
-    completed: requests.filter(r => r.status === 'completed').length
+  const handleSaveDetails = async () => {
+    if (!selectedRequest) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(
+        `/api/admin/counselling/${selectedRequest.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ adminNotes, counselorAssigned }),
+        }
+      );
+
+      if (response.ok) {
+        fetchRequests();
+        setSelectedRequest((prev) =>
+          prev ? { ...prev, adminNotes, counselorAssigned } : null
+        );
+      }
+    } catch (error) {
+      console.error("Error saving details:", error);
+    } finally {
+      setUpdating(false);
+    }
   };
+
+  const handleDeleteRequest = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this request?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/counselling/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        fetchRequests();
+        if (selectedRequest?.id === id) {
+          setIsModalOpen(false);
+          setSelectedRequest(null);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting request:", error);
+    }
+  };
+
+  const totalRequests =
+    statusStats.pending + statusStats.contacted + statusStats.completed;
 
   return (
     <div className="space-y-4">
@@ -139,42 +250,66 @@ export default function CareerCounselingPage() {
           <p className="text-sm text-gray-600">Manage counseling requests</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm"><Plus className="h-4 w-4 mr-1" />Schedule</Button>
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" />Export</Button>
+          <Button size="sm" variant="outline" onClick={fetchRequests}>
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-1" />
+            Export
+          </Button>
         </div>
       </div>
 
       {/* Compact Stats */}
       <div className="grid grid-cols-4 gap-3">
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100">
+        <Card
+          className="bg-gradient-to-r from-blue-50 to-blue-100 cursor-pointer"
+          onClick={() => setStatusFilter("all")}
+        >
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-lg font-bold text-blue-700">{stats.total}</p>
+              <p className="text-lg font-bold text-blue-700">{totalRequests}</p>
               <p className="text-xs text-blue-600">Total</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100">
+        <Card
+          className="bg-gradient-to-r from-yellow-50 to-yellow-100 cursor-pointer"
+          onClick={() => setStatusFilter("pending")}
+        >
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-lg font-bold text-yellow-700">{stats.pending}</p>
+              <p className="text-lg font-bold text-yellow-700">
+                {statusStats.pending}
+              </p>
               <p className="text-xs text-yellow-600">Pending</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100">
+        <Card
+          className="bg-gradient-to-r from-purple-50 to-purple-100 cursor-pointer"
+          onClick={() => setStatusFilter("contacted")}
+        >
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-lg font-bold text-purple-700">{stats.inProgress}</p>
-              <p className="text-xs text-purple-600">Active</p>
+              <p className="text-lg font-bold text-purple-700">
+                {statusStats.contacted}
+              </p>
+              <p className="text-xs text-purple-600">Contacted</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-r from-green-50 to-green-100">
+        <Card
+          className="bg-gradient-to-r from-green-50 to-green-100 cursor-pointer"
+          onClick={() => setStatusFilter("completed")}
+        >
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-lg font-bold text-green-700">{stats.completed}</p>
-              <p className="text-xs text-green-600">Done</p>
+              <p className="text-lg font-bold text-green-700">
+                {statusStats.completed}
+              </p>
+              <p className="text-xs text-green-600">Completed</p>
             </div>
           </CardContent>
         </Card>
@@ -185,9 +320,10 @@ export default function CareerCounselingPage() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search by name or interests..."
+            placeholder="Search by name, email, phone, course interest..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && fetchRequests()}
             className="pl-10 h-9"
           />
         </div>
@@ -198,96 +334,167 @@ export default function CareerCounselingPage() {
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="assigned">Assigned</SelectItem>
-            <SelectItem value="in_progress">Active</SelectItem>
-            <SelectItem value="completed">Done</SelectItem>
+            <SelectItem value="contacted">Contacted</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Compact Requests List */}
-      <div className="space-y-3">
-        {filteredRequests.map((request) => {
-          const statusConfig = getStatusConfig(request.status);
-          const StatusIcon = statusConfig.icon;
+      {/* Requests List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : requests.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <HeadphonesIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">No counseling requests found</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {requests.map((request) => {
+            const status = statusConfig[request.status] || statusConfig.pending;
+            const StatusIcon = status.icon;
 
-          return (
-            <Card key={request.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <h3 className="font-semibold text-gray-900">{request.studentName}</h3>
+            return (
+              <Card
+                key={request.id}
+                className="hover:shadow-md transition-shadow"
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-500" />
+                        <h3 className="font-semibold text-gray-900">
+                          {request.name}
+                        </h3>
+                      </div>
+                      <Badge className={status.color}>
+                        <StatusIcon className="w-3 h-3 mr-1" />
+                        {status.label}
+                      </Badge>
                     </div>
-                    <Badge className={statusConfig.color}>
-                      <StatusIcon className="w-3 h-3 mr-1" />
-                      {request.status}
-                    </Badge>
-                    <Badge variant="outline" className={
-                      request.urgencyLevel === 'urgent' ? 'border-red-300 text-red-700' :
-                      request.urgencyLevel === 'high' ? 'border-orange-300 text-orange-700' :
-                      request.urgencyLevel === 'medium' ? 'border-blue-300 text-blue-700' :
-                      'border-gray-300 text-gray-700'
-                    }>
-                      {request.urgencyLevel}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewRequest(request)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Details
+                      </Button>
+                      <Select
+                        value={request.status}
+                        onValueChange={(value) =>
+                          handleUpdateStatus(request.id, value)
+                        }
+                      >
+                        <SelectTrigger className="w-28 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="contacted">Contacted</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteRequest(request.id)}
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleViewRequest(request)}>
-                      <Eye className="h-4 w-4 mr-1" />Details
-                    </Button>
-                    <Select value={request.status} onValueChange={(value) => handleUpdateStatus(request.id, value)}>
-                      <SelectTrigger className="w-24 h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="assigned">Assigned</SelectItem>
-                        <SelectItem value="in_progress">Active</SelectItem>
-                        <SelectItem value="completed">Done</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone className="h-3 w-3" />
+                      <span>{request.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Mail className="h-3 w-3" />
+                      <span className="truncate">{request.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate">
+                        {request.city}, {request.state}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        {new Date(request.submittedAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Phone className="h-3 w-3" />
-                    <span>{request.phone}</span>
+
+                  <div className="mt-2 flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <BookOpen className="h-3 w-3" />
+                      <span>
+                        {courseLevelLabels[request.courseLevel] ||
+                          request.courseLevel}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Target className="h-3 w-3" />
+                      <span className="truncate">{request.courseInterest}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <BookOpen className="h-3 w-3" />
-                    <span className="truncate">{request.currentEducation}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Target className="h-3 w-3" />
-                    <span className="truncate">{request.careerInterests.join(', ')}</span>
-                  </div>
-                </div>
-                
-                {request.counselorAssigned && (
-                  <div className="mt-2 text-sm">
-                    <span className="text-gray-500">Counselor: </span>
-                    <span className="font-medium text-blue-600">{request.counselorAssigned}</span>
-                  </div>
-                )}
-                
-                <p className="text-sm text-gray-700 mt-2 line-clamp-2">{request.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-        
-        {filteredRequests.length === 0 && (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <HeadphonesIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No counseling requests found</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+
+                  {request.counselorAssigned && (
+                    <div className="mt-2 text-sm">
+                      <span className="text-gray-500">Counselor: </span>
+                      <span className="font-medium text-blue-600">
+                        {request.counselorAssigned}
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-sm text-gray-500">
+            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
+            {pagination.total}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+              disabled={pagination.page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+              disabled={pagination.page === pagination.totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Full Screen Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -299,93 +506,161 @@ export default function CareerCounselingPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="font-semibold mb-2 text-gray-900">Student Information</h3>
+                  <h3 className="font-semibold mb-2 text-gray-900">
+                    Contact Information
+                  </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-gray-500" />
-                      <span><strong>Name:</strong> {selectedRequest.studentName}</span>
+                      <span>
+                        <strong>Name:</strong> {selectedRequest.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <span>
+                        <strong>Email:</strong>{" "}
+                        <a
+                          href={`mailto:${selectedRequest.email}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {selectedRequest.email}
+                        </a>
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-gray-500" />
-                      <span><strong>Phone:</strong> {selectedRequest.phone}</span>
+                      <span>
+                        <strong>Phone:</strong>{" "}
+                        <a
+                          href={`tel:${selectedRequest.phone}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {selectedRequest.phone}
+                        </a>
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-gray-500" />
-                      <span><strong>Education:</strong> {selectedRequest.currentEducation}</span>
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span>
+                        <strong>Location:</strong> {selectedRequest.city},{" "}
+                        {selectedRequest.state}
+                      </span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-2 text-gray-900">Request Details</h3>
+                  <h3 className="font-semibold mb-2 text-gray-900">
+                    Request Details
+                  </h3>
                   <div className="space-y-2 text-sm">
-                    <p><strong>Status:</strong> 
-                      <Badge className={`${getStatusConfig(selectedRequest.status).color} ml-2`}>
-                        {selectedRequest.status}
+                    <p>
+                      <strong>Status:</strong>
+                      <Badge
+                        className={`${
+                          statusConfig[selectedRequest.status]?.color ||
+                          "bg-gray-100"
+                        } ml-2`}
+                      >
+                        {statusConfig[selectedRequest.status]?.label ||
+                          selectedRequest.status}
                       </Badge>
                     </p>
-                    <p><strong>Urgency:</strong> 
-                      <Badge variant="outline" className={`ml-2 ${
-                        selectedRequest.urgencyLevel === 'urgent' ? 'border-red-300 text-red-700' :
-                        selectedRequest.urgencyLevel === 'high' ? 'border-orange-300 text-orange-700' :
-                        'border-blue-300 text-blue-700'
-                      }`}>
-                        {selectedRequest.urgencyLevel}
-                      </Badge>
+                    <p>
+                      <strong>Course Level:</strong>{" "}
+                      {courseLevelLabels[selectedRequest.courseLevel] ||
+                        selectedRequest.courseLevel}
                     </p>
-                    <p><strong>Date:</strong> {new Date(selectedRequest.requestDate).toLocaleDateString()}</p>
-                    {selectedRequest.counselorAssigned && (
-                      <p><strong>Counselor:</strong> {selectedRequest.counselorAssigned}</p>
+                    <p>
+                      <strong>Interest:</strong>{" "}
+                      {selectedRequest.courseInterest}
+                    </p>
+                    <p>
+                      <strong>Submitted:</strong>{" "}
+                      {new Date(selectedRequest.submittedAt).toLocaleString()}
+                    </p>
+                    {selectedRequest.contactedAt && (
+                      <p>
+                        <strong>Contacted:</strong>{" "}
+                        {new Date(selectedRequest.contactedAt).toLocaleString()}
+                      </p>
+                    )}
+                    {selectedRequest.completedAt && (
+                      <p>
+                        <strong>Completed:</strong>{" "}
+                        {new Date(selectedRequest.completedAt).toLocaleString()}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
-              
+
               <div>
-                <h3 className="font-semibold mb-2 text-gray-900">Career Interests</h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedRequest.careerInterests.map((interest, index) => (
-                    <Badge key={index} variant="secondary" className="bg-blue-50 text-blue-700">
-                      {interest}
-                    </Badge>
+                <h3 className="font-semibold mb-2 text-gray-900">
+                  Update Status
+                </h3>
+                <div className="flex gap-2">
+                  {Object.entries(statusConfig).map(([key, config]) => (
+                    <Button
+                      key={key}
+                      variant={
+                        selectedRequest.status === key ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() =>
+                        handleUpdateStatus(selectedRequest.id, key)
+                      }
+                    >
+                      {config.label}
+                    </Button>
                   ))}
                 </div>
               </div>
-              
+
               <div>
-                <h3 className="font-semibold mb-2 text-gray-900">Description</h3>
-                <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
-                  {selectedRequest.description}
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2 text-gray-900">Admin Response</h3>
-                <Textarea
-                  value={response}
-                  onChange={(e) => setResponse(e.target.value)}
-                  placeholder="Type your response or assign a counselor..."
-                  rows={3}
-                  className="text-sm"
+                <Label className="text-gray-700 font-semibold">
+                  Counselor Assigned
+                </Label>
+                <Input
+                  value={counselorAssigned}
+                  onChange={(e) => setCounselorAssigned(e.target.value)}
+                  placeholder="Enter counselor name..."
+                  className="mt-1"
                 />
               </div>
-              
+
+              <div>
+                <Label className="text-gray-700 font-semibold">
+                  Admin Notes
+                </Label>
+                <Textarea
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  placeholder="Add internal notes about this request..."
+                  rows={3}
+                  className="mt-1"
+                />
+              </div>
+
               <div className="flex justify-between items-center pt-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeleteRequest(selectedRequest.id)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
                 <div className="flex gap-2">
-                  <Select value={selectedRequest.status} onValueChange={(value) => handleUpdateStatus(selectedRequest.id, value)}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="assigned">Assigned</SelectItem>
-                      <SelectItem value="in_progress">Active</SelectItem>
-                      <SelectItem value="completed">Done</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setIsModalOpen(false)}>Close</Button>
-                  <Button>Save & Respond</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button onClick={handleSaveDetails} disabled={updating}>
+                    {updating ? "Saving..." : "Save Changes"}
+                  </Button>
                 </div>
               </div>
             </div>

@@ -149,7 +149,7 @@ export function CompanySearch({
                     value === search ? "opacity-100" : "opacity-0"
                   )}
                 />
-                Use "{search}"
+                Use &quot;{search}&quot;
               </CommandItem>
             )}
           </CommandGroup>

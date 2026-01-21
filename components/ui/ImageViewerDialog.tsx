@@ -69,19 +69,17 @@ export function ImageViewerDialog({
               paddingTop: "max(0.75rem, env(safe-area-inset-top))",
             }}
           >
-            <div className="font-semibold">
+            <div className="font-semibold text-lg">
               {title}
             </div>
-            <Button
+            <button
               aria-label="Close"
-              title="Close"
-              variant="ghost"
-              size="sm"
+              type="button"
               onClick={() => onOpenChange(false)}
-              className="h-8 w-8 p-0 text-white hover:bg-white/10"
+              className="close-dialog-button rounded-full p-1.5 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
             >
-              <X className="h-5 w-5" />
-            </Button>
+              <X className="h-6 w-6" />
+            </button>
           </div>
 
           <div className="px-4 py-6">
@@ -122,14 +120,14 @@ export function ImageViewerDialog({
                       <Edit2 className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
-                    <Button variant="ghost" className="justify-start text-white hover:bg-white/10" onClick={onUpdatePhoto}>
+                    {/* <Button variant="ghost" className="justify-start text-white hover:bg-white/10" onClick={onUpdatePhoto}>
                       <Camera className="h-4 w-4 mr-2" />
                       Update photo
                     </Button>
                     <Button variant="ghost" className="justify-start text-white hover:bg-white/10">
                       <Square className="h-4 w-4 mr-2" />
                       Frames
-                    </Button>
+                    </Button> */}
                   </div>
                   <div className="flex items-center">
                     <Button variant="ghost" className="justify-start text-red-300 hover:text-red-200 hover:bg-red-500/10" onClick={onDelete}>

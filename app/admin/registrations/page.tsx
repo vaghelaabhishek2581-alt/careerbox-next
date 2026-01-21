@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/lib/redux/store';
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/lib/redux/store";
 import {
   fetchAllRegistrationIntents,
   reviewRegistrationIntent,
   grantFreeSubscription,
   setFilters,
   setCurrentPage,
-  setSelectedIntent
-} from '@/lib/redux/slices/adminSlice';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+  setSelectedIntent,
+} from "@/lib/redux/slices/adminSlice";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -29,16 +29,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Building2,
   Briefcase,
@@ -56,29 +55,36 @@ import {
   Mail,
   Phone,
   Calendar,
-  AlertTriangle
-} from 'lucide-react';
-import { format } from 'date-fns';
+  AlertTriangle,
+} from "lucide-react";
+import { format } from "date-fns";
 
-import { RegistrationReviewDialog } from '@/components/admin/RegistrationReviewDialog';
+import { RegistrationReviewDialog } from "@/components/admin/RegistrationReviewDialog";
+import {
+  fetchLatestSubscriptionByUser,
+  updateSubscriptionStatus,
+} from "@/lib/redux/slices/adminSlice";
 
 export default function AdminRegistrationsPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { registrationIntents, loading, error, filters, currentPage, totalPages, totalItems } = useSelector(
-    (state: RootState) => state.admin
-  );
+  const {
+    registrationIntents,
+    loading,
+    error,
+    filters,
+    currentPage,
+    totalPages,
+    totalItems,
+    selectedSubscription,
+  } = useSelector((state: RootState) => state.admin);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [reviewDialog, setReviewDialog] = useState(false);
-  // const [grantDialog, setGrantDialog] = useState(false);
   const [viewDialog, setViewDialog] = useState(false);
   const [selectedIntent, setSelectedIntentLocal] = useState<any>(null);
   const [viewingIntent, setViewingIntent] = useState<any>(null);
-  // const [grantSuccess, setGrantSuccess] = useState(false);
-  // const [grantError, setGrantError] = useState('');
-  // const [grantLoading, setGrantLoading] = useState(false);
 
   useEffect(() => {
     dispatch(fetchAllRegistrationIntents({ page: 1 }));
@@ -87,43 +93,63 @@ export default function AdminRegistrationsPage() {
   const handleSearch = () => {
     const newFilters: any = {};
     if (searchTerm) newFilters.search = searchTerm;
-    if (statusFilter && statusFilter !== 'all') newFilters.status = statusFilter;
-    if (typeFilter && typeFilter !== 'all') newFilters.type = typeFilter;
-    
+    if (statusFilter && statusFilter !== "all")
+      newFilters.status = statusFilter;
+    if (typeFilter && typeFilter !== "all") newFilters.type = typeFilter;
+
     dispatch(setFilters(newFilters));
     dispatch(fetchAllRegistrationIntents({ page: 1, filters: newFilters }));
   };
 
+  const handleViewIntent = (intent: any) => {
+    setViewingIntent(intent);
+    setViewDialog(true);
+    if (intent?.userId) {
+      dispatch(fetchLatestSubscriptionByUser({ userId: intent.userId }));
+    }
+  };
+
+  const handleReviewIntent = (intent: any) => {
+    setSelectedIntentLocal(intent);
+    setReviewDialog(true);
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      approved: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      rejected: { color: 'bg-red-100 text-red-800', icon: XCircle },
-      payment_required: { color: 'bg-blue-100 text-blue-800', icon: CreditCard },
-      completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
+      pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
+      approved: { color: "bg-green-100 text-green-800", icon: CheckCircle },
+      rejected: { color: "bg-red-100 text-red-800", icon: XCircle },
+      payment_required: {
+        color: "bg-blue-100 text-blue-800",
+        icon: CreditCard,
+      },
+      completed: { color: "bg-green-100 text-green-800", icon: CheckCircle },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    const config =
+      statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     const IconComponent = config.icon;
 
     return (
       <Badge className={config.color}>
         <IconComponent className="w-3 h-3 mr-1" />
-        {status.replace('_', ' ')}
+        {status.replace("_", " ")}
       </Badge>
     );
   };
 
   const getTypeIcon = (type: string) => {
-    return type === 'institute' ? Building2 : Briefcase;
+    return type === "institute" ? Building2 : Briefcase;
   };
 
   // Calculate stats
   const stats = {
     totalRegistrations: registrationIntents.length,
-    pendingReview: registrationIntents.filter(r => r.status === 'pending').length,
-    approved: registrationIntents.filter(r => r.status === 'approved').length,
-    completed: registrationIntents.filter(r => r.status === 'completed').length,
+    pendingReview: registrationIntents.filter((r) => r.status === "pending")
+      .length,
+    approved: registrationIntents.filter((r) => r.status === "approved").length,
+    completed: registrationIntents.filter((r) => r.status === "completed")
+      .length,
   };
 
   return (
@@ -131,13 +157,22 @@ export default function AdminRegistrationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Registration Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Registration Management
+          </h1>
           <p className="text-gray-600 mt-2">
             Review and manage institute and business registration requests
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => dispatch(fetchAllRegistrationIntents({ page: currentPage, filters }))}>
+          <Button
+            variant="outline"
+            onClick={() =>
+              dispatch(
+                fetchAllRegistrationIntents({ page: currentPage, filters })
+              )
+            }
+          >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -154,8 +189,12 @@ export default function AdminRegistrationsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Registrations</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalRegistrations}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Registrations
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.totalRegistrations}
+                </p>
               </div>
               <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <FileText className="h-6 w-6 text-blue-600" />
@@ -168,8 +207,12 @@ export default function AdminRegistrationsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pendingReview}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Pending Review
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.pendingReview}
+                </p>
               </div>
               <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <Clock className="h-6 w-6 text-yellow-600" />
@@ -183,7 +226,9 @@ export default function AdminRegistrationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Approved</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.approved}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.approved}
+                </p>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="h-6 w-6 text-green-600" />
@@ -197,7 +242,9 @@ export default function AdminRegistrationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.completed}
+                </p>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="h-6 w-6 text-green-600" />
@@ -236,7 +283,9 @@ export default function AdminRegistrationsPage() {
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="payment_required">Payment Required</SelectItem>
+                <SelectItem value="payment_required">
+                  Payment Required
+                </SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
@@ -292,12 +341,28 @@ export default function AdminRegistrationsPage() {
                     <TableRow key={intent.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${intent.type === 'institute' ? 'bg-orange-100' : 'bg-purple-100'}`}>
-                            <TypeIcon className={`h-5 w-5 ${intent.type === 'institute' ? 'text-orange-600' : 'text-purple-600'}`} />
+                          <div
+                            className={`p-2 rounded-lg ${
+                              intent.type === "institute"
+                                ? "bg-orange-100"
+                                : "bg-purple-100"
+                            }`}
+                          >
+                            <TypeIcon
+                              className={`h-5 w-5 ${
+                                intent.type === "institute"
+                                  ? "text-orange-600"
+                                  : "text-purple-600"
+                              }`}
+                            />
                           </div>
                           <div>
-                            <p className="font-medium">{intent.organizationName}</p>
-                            <p className="text-sm text-gray-500">{intent.email}</p>
+                            <p className="font-medium">
+                              {intent.organizationName}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {intent.email}
+                            </p>
                           </div>
                         </div>
                       </TableCell>
@@ -312,17 +377,28 @@ export default function AdminRegistrationsPage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{intent.city}, {intent.state}</p>
-                          <p className="text-sm text-gray-500">{intent.country}</p>
+                          <p className="font-medium">
+                            {intent.city}, {intent.state}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {intent.country}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={intent.type === 'institute' ? 'outline' : 'secondary'} className="capitalize">
+                        <Badge
+                          variant={
+                            intent.type === "institute"
+                              ? "outline"
+                              : "secondary"
+                          }
+                          className="capitalize"
+                        >
                           {intent.type}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        {intent.type === 'institute' ? (
+                        {intent.type === "institute" ? (
                           intent.isAdminInstitute ? (
                             <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
                           ) : (
@@ -332,202 +408,35 @@ export default function AdminRegistrationsPage() {
                           <span className="text-gray-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {getStatusBadge(intent.status)}
-                      </TableCell>
+                      <TableCell>{getStatusBadge(intent.status)}</TableCell>
                       <TableCell>
                         <div>
-                          <p className="text-sm">{format(new Date(intent.createdAt), 'MMM dd, yyyy')}</p>
-                          <p className="text-xs text-gray-500">{format(new Date(intent.createdAt), 'HH:mm')}</p>
+                          <p className="text-sm">
+                            {format(new Date(intent.createdAt), "MMM dd, yyyy")}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {format(new Date(intent.createdAt), "HH:mm")}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Dialog open={viewDialog} onOpenChange={setViewDialog}>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setViewingIntent(intent);
-                                  setViewDialog(true);
-                                }}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Registration Details</DialogTitle>
-                              </DialogHeader>
-                              {viewingIntent && (
-                                <div className="space-y-6">
-                                  {/* Header with status */}
-                                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                      <div className={`p-3 rounded-lg ${viewingIntent.type === 'institute' ? 'bg-orange-100' : 'bg-purple-100'}`}>
-                                        {viewingIntent.type === 'institute' ? (
-                                          <Building2 className={`h-6 w-6 text-orange-600`} />
-                                        ) : (
-                                          <Briefcase className={`h-6 w-6 text-purple-600`} />
-                                        )}
-                                      </div>
-                                      <div>
-                                        <h3 className="text-lg font-semibold">{viewingIntent.organizationName}</h3>
-                                        <p className="text-sm text-gray-600 capitalize">{viewingIntent.type}</p>
-                                      </div>
-                                    </div>
-                                    {getStatusBadge(viewingIntent.status)}
-                                  </div>
-
-                                  {/* Basic Information */}
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                      <h4 className="font-semibold text-gray-900 border-b pb-2">Contact Information</h4>
-                                      <div className="space-y-3">
-                                        <div>
-                                          <Label className="text-sm font-medium text-gray-700">Contact Person</Label>
-                                          <p className="text-sm text-gray-900">{viewingIntent.contactName}</p>
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium text-gray-700">Email</Label>
-                                          <p className="text-sm text-gray-900 flex items-center gap-2">
-                                            <Mail className="w-4 h-4 text-gray-500" />
-                                            {viewingIntent.email}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <Label className="text-sm font-medium text-gray-700">Phone</Label>
-                                          <p className="text-sm text-gray-900 flex items-center gap-2">
-                                            <Phone className="w-4 h-4 text-gray-500" />
-                                            {viewingIntent.contactPhone}
-                                          </p>
-                                        </div>
-                                        {viewingIntent.website && (
-                                          <div>
-                                            <Label className="text-sm font-medium text-gray-700">Website</Label>
-                                            <p className="text-sm text-blue-600 hover:underline">
-                                              <a href={viewingIntent.website} target="_blank" rel="noopener noreferrer">
-                                                {viewingIntent.website}
-                                              </a>
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                      <h4 className="font-semibold text-gray-900 border-b pb-2">Organization Details</h4>
-                                      <div className="space-y-3">
-                                        <div>
-                                          <Label className="text-sm font-medium text-gray-700">Address</Label>
-                                          <p className="text-sm text-gray-900 flex items-start gap-2">
-                                            <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
-                                            <span>
-                                              {viewingIntent.address}<br />
-                                              {viewingIntent.city}, {viewingIntent.state}<br />
-                                              {viewingIntent.country}
-                                              {viewingIntent.zipCode && ` - ${viewingIntent.zipCode}`}
-                                            </span>
-                                          </p>
-                                        </div>
-                                        {viewingIntent.establishmentYear && (
-                                          <div>
-                                            <Label className="text-sm font-medium text-gray-700">Establishment Year</Label>
-                                            <p className="text-sm text-gray-900 flex items-center gap-2">
-                                              <Calendar className="w-4 h-4 text-gray-500" />
-                                              {viewingIntent.establishmentYear}
-                                            </p>
-                                          </div>
-                                        )}
-                                        <div>
-                                          <Label className="text-sm font-medium text-gray-700">Applied On</Label>
-                                          <p className="text-sm text-gray-900 flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-gray-500" />
-                                            {format(new Date(viewingIntent.createdAt), 'MMMM dd, yyyy \'at\' HH:mm')}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Description */}
-                                  {viewingIntent.description && (
-                                    <div>
-                                      <h4 className="font-semibold text-gray-900 border-b pb-2 mb-3">Description</h4>
-                                      <div className="bg-gray-50 p-4 rounded-lg">
-                                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingIntent.description}</p>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Admin Notes (if any) */}
-                                  {viewingIntent.adminNotes && (
-                                    <div>
-                                      <h4 className="font-semibold text-gray-900 border-b pb-2 mb-3">Admin Notes</h4>
-                                      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-                                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingIntent.adminNotes}</p>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Timeline */}
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900 border-b pb-2 mb-3">Timeline</h4>
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-3 text-sm">
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                        <span className="text-gray-600">Submitted:</span>
-                                        <span className="font-medium">{format(new Date(viewingIntent.createdAt), 'MMM dd, yyyy HH:mm')}</span>
-                                      </div>
-                                      {viewingIntent.updatedAt && viewingIntent.updatedAt !== viewingIntent.createdAt && (
-                                        <div className="flex items-center gap-3 text-sm">
-                                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                          <span className="text-gray-600">Last Updated:</span>
-                                          <span className="font-medium">{format(new Date(viewingIntent.updatedAt), 'MMM dd, yyyy HH:mm')}</span>
-                                        </div>
-                                      )}
-                                      {viewingIntent.completedAt && (
-                                        <div className="flex items-center gap-3 text-sm">
-                                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                          <span className="text-gray-600">Completed:</span>
-                                          <span className="font-medium">{format(new Date(viewingIntent.completedAt), 'MMM dd, yyyy HH:mm')}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div className="flex justify-end">
-                                    <Button variant="outline" onClick={() => setViewDialog(false)}>
-                                      Close
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewIntent(intent)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
 
                           <Button
                             variant="outline"
                             size="sm"
                             className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                            onClick={() => {
-                              setSelectedIntentLocal(intent);
-                              setReviewDialog(true);
-                            }}
+                            onClick={() => handleReviewIntent(intent)}
                           >
                             <FileText className="w-4 h-4" />
                           </Button>
-                          
-                          <RegistrationReviewDialog 
-                            open={reviewDialog && selectedIntent?.id === intent.id}
-                            onOpenChange={(open) => {
-                              setReviewDialog(open);
-                              if (!open) setSelectedIntentLocal(null);
-                            }}
-                            intent={intent}
-                            onSuccess={() => dispatch(fetchAllRegistrationIntents({ page: currentPage, filters }))}
-                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -538,6 +447,345 @@ export default function AdminRegistrationsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* View Details Dialog - OUTSIDE the map loop */}
+      <Dialog
+        open={viewDialog}
+        onOpenChange={(open) => {
+          setViewDialog(open);
+          if (!open) setViewingIntent(null);
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Registration Details</DialogTitle>
+          </DialogHeader>
+          {viewingIntent && (
+            <div className="space-y-6">
+              {/* Header with status */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-3 rounded-lg ${
+                      viewingIntent.type === "institute"
+                        ? "bg-orange-100"
+                        : "bg-purple-100"
+                    }`}
+                  >
+                    {viewingIntent.type === "institute" ? (
+                      <Building2 className="h-6 w-6 text-orange-600" />
+                    ) : (
+                      <Briefcase className="h-6 w-6 text-purple-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      {viewingIntent.organizationName}
+                    </h3>
+                    <p className="text-sm text-gray-600 capitalize">
+                      {viewingIntent.type}
+                    </p>
+                    {/* Subscription status */}
+                    <div className="mt-2">
+                      {selectedSubscription?.status === "active" ? (
+                        <Badge className="bg-green-100 text-green-800">
+                          Active Subscription
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-800">
+                          Deactivated
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {getStatusBadge(viewingIntent.status)}
+              </div>
+
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900 border-b pb-2">
+                    Contact Information
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">
+                        Contact Person
+                      </Label>
+                      <p className="text-sm text-gray-900">
+                        {viewingIntent.contactName}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">
+                        Email
+                      </Label>
+                      <p className="text-sm text-gray-900 flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        {viewingIntent.email}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">
+                        Phone
+                      </Label>
+                      <p className="text-sm text-gray-900 flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-500" />
+                        {viewingIntent.contactPhone}
+                      </p>
+                    </div>
+                    {viewingIntent.website && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">
+                          Website
+                        </Label>
+                        <p className="text-sm text-blue-600 hover:underline">
+                          <a
+                            href={(viewingIntent.website || "")
+                              .toString()
+                              .replace(/`/g, "")
+                              .trim()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {(viewingIntent.website || "")
+                              .toString()
+                              .replace(/`/g, "")
+                              .trim()}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                    {viewingIntent.publicProfileId && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">
+                          Public Profile
+                        </Label>
+                        <p className="text-sm text-blue-600 hover:underline break-all">
+                          <a
+                            href={`https://careerbox.in/profile/${viewingIntent.publicProfileId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {`https://careerbox.in/profile/${viewingIntent.publicProfileId}`}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900 border-b pb-2">
+                    Organization Details
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">
+                        Address
+                      </Label>
+                      <p className="text-sm text-gray-900 flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
+                        <span>
+                          {viewingIntent.address}
+                          <br />
+                          {viewingIntent.city}, {viewingIntent.state}
+                          <br />
+                          {viewingIntent.country}
+                          {viewingIntent.zipCode &&
+                            ` - ${viewingIntent.zipCode}`}
+                        </span>
+                      </p>
+                    </div>
+                    {viewingIntent.establishmentYear && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">
+                          Establishment Year
+                        </Label>
+                        <p className="text-sm text-gray-900 flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                          {viewingIntent.establishmentYear}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">
+                        Applied On
+                      </Label>
+                      <p className="text-sm text-gray-900 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        {format(
+                          new Date(viewingIntent.createdAt),
+                          "MMMM dd, yyyy 'at' HH:mm"
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {viewingIntent.description && (
+                <div>
+                  <h4 className="font-semibold text-gray-900 border-b pb-2 mb-3">
+                    Description
+                  </h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {viewingIntent.description}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Notes (if any) */}
+              {viewingIntent.adminNotes && (
+                <div>
+                  <h4 className="font-semibold text-gray-900 border-b pb-2 mb-3">
+                    Admin Notes
+                  </h4>
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {viewingIntent.adminNotes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Timeline */}
+              <div>
+                <h4 className="font-semibold text-gray-900 border-b pb-2 mb-3">
+                  Timeline
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-gray-600">Submitted:</span>
+                    <span className="font-medium">
+                      {format(
+                        new Date(viewingIntent.createdAt),
+                        "MMM dd, yyyy HH:mm"
+                      )}
+                    </span>
+                  </div>
+                  {viewingIntent.updatedAt &&
+                    viewingIntent.updatedAt !== viewingIntent.createdAt && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <span className="text-gray-600">Last Updated:</span>
+                        <span className="font-medium">
+                          {format(
+                            new Date(viewingIntent.updatedAt),
+                            "MMM dd, yyyy HH:mm"
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  {viewingIntent.completedAt && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-600">Completed:</span>
+                      <span className="font-medium">
+                        {format(
+                          new Date(viewingIntent.completedAt),
+                          "MMM dd, yyyy HH:mm"
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2">
+                {/* Activate when not active */}
+                <Button
+                  variant="default"
+                  disabled={
+                    loading ||
+                    !selectedSubscription?.id ||
+                    selectedSubscription?.status === "active"
+                  }
+                  onClick={() => {
+                    if (!selectedSubscription?.id) return;
+                    dispatch(
+                      updateSubscriptionStatus({
+                        subscriptionId: selectedSubscription.id,
+                        status: "active",
+                      })
+                    ).then(() => {
+                      if (viewingIntent?.userId) {
+                        dispatch(
+                          fetchLatestSubscriptionByUser({
+                            userId: viewingIntent.userId,
+                          })
+                        );
+                      }
+                    });
+                  }}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {loading ? "Processing..." : "Activate Subscription"}
+                </Button>
+
+                {/* Deactivate when active */}
+                <Button
+                  variant="destructive"
+                  disabled={
+                    loading ||
+                    !selectedSubscription?.id ||
+                    selectedSubscription?.status !== "active"
+                  }
+                  onClick={() => {
+                    if (!selectedSubscription?.id) return;
+                    dispatch(
+                      updateSubscriptionStatus({
+                        subscriptionId: selectedSubscription.id,
+                        status: "inactive",
+                      })
+                    ).then(() => {
+                      if (viewingIntent?.userId) {
+                        dispatch(
+                          fetchLatestSubscriptionByUser({
+                            userId: viewingIntent.userId,
+                          })
+                        );
+                      }
+                    });
+                  }}
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  {loading ? "Processing..." : "Deactivate Subscription"}
+                </Button>
+                <Button variant="outline" onClick={() => setViewDialog(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Dialog - OUTSIDE the map loop */}
+      {selectedIntent && (
+        <RegistrationReviewDialog
+          open={reviewDialog}
+          onOpenChange={(open) => {
+            setReviewDialog(open);
+            if (!open) setSelectedIntentLocal(null);
+          }}
+          intent={selectedIntent}
+          onSuccess={() =>
+            dispatch(
+              fetchAllRegistrationIntents({
+                page: currentPage,
+                filters,
+              })
+            )
+          }
+        />
+      )}
     </div>
   );
 }

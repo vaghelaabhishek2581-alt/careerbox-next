@@ -58,7 +58,7 @@ export function ImageCropperDialog({
   const aspect = TW / TH;
 
   const cleanupImage = useCallback(() => {
-    if (imageSrc) {
+    if (imageSrc && imageSrc.startsWith("blob:")) {
       URL.revokeObjectURL(imageSrc);
     }
     setImageSrc(null);
@@ -86,15 +86,38 @@ export function ImageCropperDialog({
     if (open && initialImageUrl && !imageEl) {
       const img = new Image();
       img.crossOrigin = "anonymous";
+      
+      let isMounted = true;
+      let src = initialImageUrl;
+
+      // Use proxy for external URLs to avoid CORS issues
+      if (initialImageUrl.startsWith("http") || initialImageUrl.startsWith("https")) {
+        const isLocal = typeof window !== "undefined" && initialImageUrl.startsWith(window.location.origin);
+        if (!isLocal) {
+          src = `/api/proxy-image?url=${encodeURIComponent(initialImageUrl)}`;
+        }
+      }
+
       img.onload = () => {
-        setImageSrc(initialImageUrl);
+        if (!isMounted) return;
+        setImageSrc(src);
         setImageEl(img);
         fitImageToCanvas(img);
       };
-      img.src = initialImageUrl;
+
+      img.onerror = (e) => {
+        console.error("Failed to load image for cropping", src, e);
+      };
+
+      img.src = src;
+
+      return () => {
+        isMounted = false;
+        img.onload = null;
+        img.onerror = null;
+      };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialImageUrl]);
+  }, [open, initialImageUrl, imageEl]);
 
   useEffect(() => {
     draw();
@@ -165,7 +188,7 @@ export function ImageCropperDialog({
     }
     setScale(initialScale);
     setOffset({ x: 0, y: 0 });
-    draw();
+    // draw() will be called by useEffect when state updates
   }
 
   function draw() {

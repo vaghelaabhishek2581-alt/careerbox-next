@@ -24,10 +24,10 @@ export default function PublicProfileClient({ profile }: PublicProfileClientProp
         <>
             <style dangerouslySetInnerHTML={{
                 __html: `
-                  .public-profile-readonly button:has(svg) {
+                  .public-profile-readonly button:has(svg):not(.close-dialog-button) {
                     pointer-events: none;
                   }
-                  .public-profile-readonly button:has(svg):not(:has(.lucide-share-2)):not(:has(.lucide-more-horizontal)) {
+                  .public-profile-readonly button:has(svg):not(:has(.lucide-share-2)):not(:has(.lucide-more-horizontal)):not(.close-dialog-button) {
                     display: none !important;
                   }
                   .public-profile-readonly [class*="camera"] {
@@ -37,14 +37,14 @@ export default function PublicProfileClient({ profile }: PublicProfileClientProp
                     display: none !important;
                   }
                   /* Allow controls inside image viewer */
-                  .cb-image-viewer button {
+                  .public-profile-readonly .cb-image-viewer button {
                     display: inline-flex !important;
                     pointer-events: auto !important;
                   }
                 `
             }} />
 
-            <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 public-profile-readonly">
+            <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 mb-14 public-profile-readonly">
                 {/* Two-Column Layout - Same as user dashboard */}
                 <div className="flex flex-col lg:flex-row gap-6 relative">
 
@@ -60,9 +60,9 @@ export default function PublicProfileClient({ profile }: PublicProfileClientProp
                         </div>
 
                         {/* Stats Cards */}
-                        <div className="mb-6">
+                        {/* <div className="mb-6">
                             <StatsCards profile={profile} />
-                        </div>
+                        </div> */}
 
                         {/* Work Experience and Education */}
                         <div className="space-y-6">
@@ -92,7 +92,7 @@ export default function PublicProfileClient({ profile }: PublicProfileClientProp
                             onEdit={noOpHandler}
                         />
 
-                        <CareerProgressSection profile={profile} />
+                        {/* <CareerProgressSection profile={profile} /> */}
                     </div>
                 </div>
             </div>

@@ -26,6 +26,7 @@ import {
   Users,
   Calendar,
   ShoppingBag,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "./logo";
@@ -34,21 +35,46 @@ import Breadcrumb from "./breadcrumb";
 import SearchSuggestions from "./SearchSuggestions";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { SidebarManager } from "@/components/institute/SidebarManager";
+import { Sidebar as UserSidebar } from "@/components/user/Sidebar";
 
 const publicNavigation = [
   { name: "Get Free Counselling", href: "/career-counselling" }
 ];
 
-const privateNavigation = [
-  { name: "Home", href: "/recommendation-collections", icon: Home },
-  { name: "Discover", href: "/explore", icon: Compass },
-  { name: "Jobs", href: "/jobs", icon: Briefcase },
-  // { name: "Connections", href: "/connections", icon: Users },
-  { name: "Messages", href: "/messages", icon: MessageCircle },
-  { name: "Notifications", href: "/notifications", icon: Bell },
-  // { name: "Events", href: "/events", icon: Calendar },
-  // { name: "Marketplace", href: "/marketplace", icon: ShoppingBag },
-];
+const getPrivateNavigation = (role: string) => {
+  if (role === "institute") {
+    return [
+      { name: "Home", href: "/institute/dashboard", icon: Home },
+      { name: "Courses", href: "/institute/courses", icon: BookOpen },
+      // { name: "Students", href: "/institute/students", icon: Users },
+      // { name: "Messages", href: "/messages", icon: MessageCircle },
+      // { name: "Notifications", href: "/notifications", icon: Bell },
+    ];
+  }
+  if (role === "business") {
+    return [
+      { name: "Home", href: "/business", icon: Home },
+      { name: "Jobs", href: "/jobs", icon: Briefcase },
+      // { name: "Messages", href: "/messages", icon: MessageCircle },
+      // { name: "Notifications", href: "/notifications", icon: Bell },
+    ];
+  }
+  if (role === "admin") {
+    return [
+      { name: "Home", href: "/admin", icon: Home },
+      { name: "Discover", href: "/recommendation-collections", icon: Compass },
+      // { name: "Messages", href: "/messages", icon: MessageCircle },
+      // { name: "Notifications", href: "/notifications", icon: Bell },
+    ];
+  }
+  return [
+    { name: "Home", href: "/user/dashboard", icon: Home },
+    { name: "Discover", href: "/explore", icon: Compass },
+    // { name: "Jobs", href: "/jobs", icon: Briefcase },
+    // { name: "Messages", href: "/messages", icon: MessageCircle },
+    // { name: "Notifications", href: "/notifications", icon: Bell },
+  ];
+};
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -58,6 +84,7 @@ export default function Header() {
 
   // Determine navigation items
   const isLoggedIn = status === "authenticated" && !!session?.user;
+  const userRole = session?.user?.activeRole || session?.user?.roles?.[0] || "user";
   const navigation = isLoggedIn ? [] : publicNavigation;
 
   // Rotating search placeholder terms
@@ -213,7 +240,7 @@ export default function Header() {
                 <div className="flex items-center gap-1">
                   {/* Private Navigation Icons */}
                   <div className="flex items-center gap-1 mr-4">
-                    {privateNavigation.map((item) => {
+                    {getPrivateNavigation(userRole).map((item) => {
                       const isActive = pathname === item.href;
                       const Icon = item.icon;
                       return (
@@ -267,10 +294,9 @@ export default function Header() {
             {status === "authenticated" && session?.user ? (
               <div className="flex items-center gap-2 lg:hidden">
                 {/* Mobile Notification Icon (Top Right) */}
-                <Link href="/notifications" className="p-2 text-gray-600 hover:text-blue-600 relative">
+                {/* <Link href="/notifications" className="p-2 text-gray-600 hover:text-blue-600 relative">
                     <Bell className="h-6 w-6" />
-                    {/* Optional: Add notification badge here */}
-                </Link>
+                </Link> */}
                 {/* User Profile Menu in Top Header for Mobile */}
                 <UserProfileMenu />
               </div>
@@ -297,8 +323,7 @@ export default function Header() {
                     {/* Mobile Navigation */}
                     <nav className="flex flex-col space-y-1">
                       {navigation.map((item) => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const IconComponent = (item as any).icon;
+                        const IconComponent = (item as { icon?: React.ComponentType<{ className?: string }> }).icon;
                         const isActive = pathname === item.href;
                         return (
                           <Link
@@ -366,7 +391,7 @@ export default function Header() {
         <>
           <div className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-gray-200 lg:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe">
             <div className="flex items-center justify-around">
-              {privateNavigation.filter(item => item.name !== "Notifications").map((item) => {
+              {getPrivateNavigation(userRole).filter(item => item.name !== "Notifications").map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
                 return (
@@ -423,31 +448,33 @@ export default function Header() {
                   <div onClick={() => setIsMobileMenuOpen(false)}>
                     {pathname?.startsWith('/institute') ? (
                       <SidebarManager />
+                    ) : pathname?.startsWith('/user') ? (
+                      <UserSidebar />
                     ) : (
-                    /* Default Mobile Menu for non-institute pages */
-                    <nav className="space-y-1">
-                      {privateNavigation.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href;
-                        return (
-                          <Link
-                            key={item.name}
-                            href={item.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={cn(
-                              "flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-lg transition-colors",
-                              isActive 
-                                ? "bg-blue-50 text-blue-600" 
-                                : "text-gray-700 hover:bg-gray-100"
-                            )}
-                          >
-                            <Icon className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-gray-500")} />
-                            {item.name}
-                          </Link>
-                        );
-                      })}
-                    </nav>
-                  )}
+                      /* Default Mobile Menu for other pages */
+                      <nav className="space-y-1">
+                        {getPrivateNavigation(userRole).map((item) => {
+                          const Icon = item.icon;
+                          const isActive = pathname === item.href;
+                          return (
+                            <Link
+                              key={item.name}
+                              href={item.href}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={cn(
+                                "flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-lg transition-colors",
+                                isActive 
+                                  ? "bg-blue-50 text-blue-600" 
+                                  : "text-gray-700 hover:bg-gray-100"
+                              )}
+                            >
+                              <Icon className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-gray-500")} />
+                              {item.name}
+                            </Link>
+                          );
+                        })}
+                      </nav>
+                    )}
                   </div>
                 </div>
               </div>
@@ -455,8 +482,6 @@ export default function Header() {
           </Sheet>
         </>
       )}
-
-
     </>
   );
 }

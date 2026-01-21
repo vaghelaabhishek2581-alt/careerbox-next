@@ -97,7 +97,7 @@ export default function ModernProfileDashboard() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 ">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Two-Column Layout */}
         <div className="flex flex-col lg:flex-row gap-6 relative">
 
@@ -112,9 +112,9 @@ export default function ModernProfileDashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div className="mb-6">
+            {/* <div className="mb-6">
               <StatsCards profile={profile} />
-            </div>
+            </div> */}
 
             {/* Work Experience and Education */}
             <div className="space-y-6">
@@ -145,7 +145,7 @@ export default function ModernProfileDashboard() {
               onEdit={() => openModal("languages")}
             />
 
-            <CareerProgressSection profile={profile} />
+            {/* <CareerProgressSection profile={profile} /> */}
           </div>
         </div>
       </div>

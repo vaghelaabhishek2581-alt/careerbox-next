@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/redux/store';
-import { fetchAdminStats, fetchAllRegistrationIntents } from '@/lib/redux/slices/adminSlice';
+import { fetchAllRegistrationIntents } from '@/lib/redux/slices/adminSlice';
+import { fetchDashboardStats, setDateRange } from '@/lib/redux/slices/dashboardSlice';
 import { RegistrationReviewDialog } from '@/components/admin/RegistrationReviewDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,12 +32,14 @@ import {
 
 export default function AdminDashboard() {
   const dispatch = useDispatch<AppDispatch>();
-  const { stats, registrationIntents, loading } = useSelector((state: RootState) => state.admin);
+  const { registrationIntents, loading } = useSelector((state: RootState) => state.admin);
+  const { stats, selectedDateRange } = useSelector((state: RootState) => state.dashboard);
   const [reviewDialog, setReviewDialog] = useState(false);
   const [selectedIntent, setSelectedIntent] = useState<any>(null);
 
   useEffect(() => {
-    dispatch(fetchAdminStats());
+    dispatch(setDateRange('30d')); // Set initial date range
+    dispatch(fetchDashboardStats({ role: 'admin', dateRange: '30d' }));
     dispatch(fetchAllRegistrationIntents({ page: 1 }));
   }, [dispatch]);
 

@@ -821,8 +821,8 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6 lg:py-8">
         <div className="space-y-6">
-          {/* Desktop Grid Layout */}
-          <div className="hidden lg:grid lg:grid-cols-4 gap-6 lg:gap-8">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
             <div className="lg:col-span-3 space-y-6">
               <Card>
                 <CardHeader>
@@ -887,9 +887,9 @@ export function InstituteDetailPage({ institute }: InstituteDetailPageProps) {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                           {filteredProgrammes.map((programme: any, index: number) => (
-                            <div key={index} className="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] cursor-pointer"
+                            <div key={index} className="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 p-4 sm:p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] cursor-pointer min-w-0"
                               onClick={() => handleProgrammeClick(programme.id || programme.name)}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex-1">

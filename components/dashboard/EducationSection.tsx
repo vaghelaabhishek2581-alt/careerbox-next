@@ -65,7 +65,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
               ) : "Duration not specified";
 
               return (
-                <div key={education.id} className="relative group bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div key={education.id} className="relative group bg-white transition-shadow">
                   <div className="flex items-start gap-4">
                     {/* Icon with current indicator */}
                     <div className={`relative h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0 ${

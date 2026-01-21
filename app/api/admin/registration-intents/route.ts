@@ -4,21 +4,32 @@ import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import RegistrationIntent from '@/src/models/RegistrationIntent'
 import AdminInstitute from '@/src/models/AdminInstitute'
+import Profile from '@/src/models/Profile'
 
 // Validation schemas
 const registrationIntentsQuerySchema = z.object({
-  page: z.string().transform(val => parseInt(val, 10)).default('1'),
-  limit: z.string().transform(val => parseInt(val, 10)).default('20'),
-  status: z.enum(['pending', 'approved', 'rejected', 'payment_required', 'completed']).optional(),
+  page: z
+    .string()
+    .transform(val => parseInt(val, 10))
+    .default('1'),
+  limit: z
+    .string()
+    .transform(val => parseInt(val, 10))
+    .default('20'),
+  status: z
+    .enum(['pending', 'approved', 'rejected', 'payment_required', 'completed'])
+    .optional(),
   type: z.enum(['institute', 'business']).optional(),
   search: z.string().optional(),
   dateRangeStart: z.string().optional(),
   dateRangeEnd: z.string().optional(),
-  sortBy: z.enum(['createdAt', 'organizationName', 'status', 'updatedAt']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  sortBy: z
+    .enum(['createdAt', 'organizationName', 'status', 'updatedAt'])
+    .default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc')
 })
 
-export async function GET(request: NextRequest) {
+export async function GET (request: NextRequest) {
   try {
     // Authentication check with admin role requirement
     const authResult = await getAuthenticatedUser(request)
@@ -28,21 +39,24 @@ export async function GET(request: NextRequest) {
 
     const { user } = authResult
     if (!user?.roles?.includes('admin')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      )
     }
 
     // Parse and validate query parameters
     const { searchParams } = new URL(request.url)
     const queryParams = Object.fromEntries(searchParams.entries())
-    
+
     const validatedParams = registrationIntentsQuerySchema.parse(queryParams)
-    const { 
-      page, 
-      limit, 
-      status, 
-      type, 
-      search, 
-      dateRangeStart, 
+    const {
+      page,
+      limit,
+      status,
+      type,
+      search,
+      dateRangeStart,
       dateRangeEnd,
       sortBy,
       sortOrder
@@ -52,15 +66,15 @@ export async function GET(request: NextRequest) {
 
     // Build query filter
     const filter: any = {}
-    
+
     if (status) {
       filter.status = status
     }
-    
+
     if (type) {
       filter.type = type
     }
-    
+
     if (dateRangeStart || dateRangeEnd) {
       filter.createdAt = {}
       if (dateRangeStart) {
@@ -109,6 +123,30 @@ export async function GET(request: NextRequest) {
       totalItems = await RegistrationIntent.countDocuments(filter)
     }
 
+    // Lookup user profile by userId
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user'
+      }
+    })
+    // Unwind the user array to simplify projection (preserve nulls)
+    pipeline.push({ $unwind: { path: '$user', preserveNullAndEmptyArrays: true } })
+
+    // Lookup user's Profile by user._id
+    pipeline.push({
+      $lookup: {
+        from: 'profiles',
+        localField: 'user._id',
+        foreignField: 'userId',
+        as: 'profile'
+      }
+    })
+    // Unwind the profile array (preserve nulls)
+    pipeline.push({ $unwind: { path: '$profile', preserveNullAndEmptyArrays: true } })
+
     // Lookup to check if institute exists in AdminInstitute
     pipeline.push({
       $lookup: {
@@ -138,16 +176,16 @@ export async function GET(request: NextRequest) {
 
     // Pagination
     const skip = (page - 1) * limit
-    pipeline.push(
-      { $skip: skip },
-      { $limit: limit }
-    )
+    pipeline.push({ $skip: skip }, { $limit: limit })
 
     // Project final fields
     pipeline.push({
       $project: {
         id: { $toString: '$_id' },
         userId: { $toString: '$userId' },
+        // Include publicProfileId from Profile
+        publicProfileId: '$profile.personalDetails.publicProfileId',
+        // Registration Intent fields
         type: 1,
         status: 1,
         organizationName: 1,
@@ -169,50 +207,115 @@ export async function GET(request: NextRequest) {
         instituteId: 1,
         createdAt: 1,
         updatedAt: 1,
+        // ✅ USER DATA (from your User schema)
+        user: {
+          id: { $toString: '$user._id' },
+          email: '$user.email',
+          role: '$user.role',
+          activeRole: '$user.activeRole',
+          roles: '$user.roles',
+          emailVerified: '$user.emailVerified',
+          subscriptionActive: '$user.subscriptionActive',
+          needsOnboarding: '$user.needsOnboarding',
+          needsRoleSelection: '$user.needsRoleSelection',
+          isTeamMember: '$user.isTeamMember',
+          teamMemberOf: '$user.teamMemberOf',
+          teamMemberRole: '$user.teamMemberRole',
+          isOrganizationOwner: '$user.isOrganizationOwner',
+          lastLogin: '$user.lastLogin',
+          userCreatedAt: '$user.createdAt'
+        },
         _id: 0
       }
     })
 
     // Execute aggregation
     let registrationIntents = []
-    
+
     try {
       registrationIntents = await RegistrationIntent.aggregate(pipeline)
     } catch (aggregationError) {
       console.error('Aggregation failed, trying simple find:', aggregationError)
-      
+
       // Fallback to simple find query
       const simpleQuery = await RegistrationIntent.find(filter)
+        .populate({
+          path: 'userId',
+          select: `
+      email role activeRole roles emailVerified
+      subscriptionActive needsOnboarding needsRoleSelection
+      isTeamMember teamMemberOf teamMemberRole
+      isOrganizationOwner lastLogin createdAt
+    `
+        })
         .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
-        .skip((page - 1) * limit)
+        .skip(skip)
         .limit(limit)
         .lean()
-      
+
+      // Fetch profiles for all userIds in one query
+      const userIdsForProfiles = simpleQuery
+        .map((intent: any) => {
+          const uid = intent.userId && typeof intent.userId === 'object' && intent.userId?._id ? intent.userId._id : intent.userId
+          return uid
+        })
+        .filter(Boolean)
+
+      const profiles = await Profile.find({ userId: { $in: userIdsForProfiles } })
+        .select('userId personalDetails.publicProfileId')
+        .lean()
+      const profileMap = new Map(
+        profiles.map((p: any) => [p.userId.toString(), p.personalDetails?.publicProfileId])
+      )
+
       // Transform the data manually
-      registrationIntents = simpleQuery.map((intent: any) => ({
-        id: intent._id.toString(),
-        userId: intent.userId.toString(),
-        type: intent.type,
-        status: intent.status,
-        organizationName: intent.organizationName,
-        email: intent.email,
-        contactName: intent.contactName,
-        contactPhone: intent.contactPhone,
-        address: intent.address,
-        city: intent.city,
-        state: intent.state,
-        country: intent.country,
-        zipCode: intent.zipCode,
-        description: intent.description,
-        website: intent.website,
-        establishmentYear: intent.establishmentYear,
-        instituteId: intent.instituteId,
-        adminNotes: intent.adminNotes,
-        reviewedBy: intent.reviewedBy,
-        reviewedAt: intent.reviewedAt,
-        createdAt: intent.createdAt,
-        updatedAt: intent.updatedAt
-      }))
+      registrationIntents = simpleQuery.map((intent: any) => {
+        const currentUserIdStr = typeof intent.userId === 'object' && intent.userId?._id ? intent.userId._id.toString() : intent.userId?.toString()
+        return {
+          id: intent._id.toString(),
+          userId: currentUserIdStr,
+          publicProfileId: currentUserIdStr ? profileMap.get(currentUserIdStr) : undefined,
+          user: typeof intent.userId === 'object' && intent.userId?._id
+            ? {
+                id: intent.userId._id.toString(),
+                email: intent.userId.email,
+                role: intent.userId.role,
+                activeRole: intent.userId.activeRole,
+                roles: intent.userId.roles,
+                emailVerified: intent.userId.emailVerified,
+                subscriptionActive: intent.userId.subscriptionActive,
+                needsOnboarding: intent.userId.needsOnboarding,
+                needsRoleSelection: intent.userId.needsRoleSelection,
+                isTeamMember: intent.userId.isTeamMember,
+                teamMemberOf: intent.userId.teamMemberOf,
+                teamMemberRole: intent.userId.teamMemberRole,
+                isOrganizationOwner: intent.userId.isOrganizationOwner,
+                lastLogin: intent.userId.lastLogin,
+                userCreatedAt: intent.userId.createdAt
+              }
+            : null,
+          type: intent.type,
+          status: intent.status,
+          organizationName: intent.organizationName,
+          email: intent.email,
+          contactName: intent.contactName,
+          contactPhone: intent.contactPhone,
+          address: intent.address,
+          city: intent.city,
+          state: intent.state,
+          country: intent.country,
+          zipCode: intent.zipCode,
+          description: intent.description,
+          website: intent.website,
+          establishmentYear: intent.establishmentYear,
+          instituteId: intent.instituteId,
+          adminNotes: intent.adminNotes,
+          reviewedBy: intent.reviewedBy,
+          reviewedAt: intent.reviewedAt,
+          createdAt: intent.createdAt,
+          updatedAt: intent.updatedAt
+        }
+      })
     }
 
     // Calculate pagination info
@@ -232,10 +335,9 @@ export async function GET(request: NextRequest) {
         hasPrevPage
       }
     })
-
   } catch (error) {
     console.error('Error fetching admin registration intents:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid query parameters', details: error.errors },

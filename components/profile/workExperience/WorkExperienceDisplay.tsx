@@ -198,7 +198,7 @@ export const WorkExperienceDisplay: React.FC<WorkExperienceDisplayProps> = ({
                             </div>
                           )}
                         </div>
-                        <DropdownMenu>
+                        {/* <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
@@ -241,7 +241,7 @@ export const WorkExperienceDisplay: React.FC<WorkExperienceDisplayProps> = ({
                               {experience.positions.length === 1 ? 'Delete Experience' : 'Delete Position'}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu> */}
                       </div>
                     </div>
                   );

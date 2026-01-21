@@ -35,7 +35,8 @@ import {
   Moon,
   RefreshCw,
   LayoutGrid,
-  Plus
+  Plus,
+  BookOpen
 } from "lucide-react";
 import InstituteSelector from "@/components/institute-selector";
 import { handleUserSignOut } from "@/src/services/auth/auth.service";
@@ -156,17 +157,17 @@ export default function UserProfileMenu() {
   const dashboardRoutes: Record<string, string> = {
     admin: '/admin',
     institute: '/institute/dashboard',
-    business: '/business',
-    user: '/user',
-    student: '/user',
-    professional: '/user',
+    business: '/business/dashboard',
+    user: '/user/dashboard',
+    student: '/user/dashboard',
+    professional: '/user/dashboard',
   };
 
   const handleActiveProfileClick = () => {
     if (userRole === 'institute') {
       router.push('/institute/dashboard');
     } else {
-      router.push(dashboardRoutes[userRole] || '/user');
+      router.push(dashboardRoutes[userRole] || '/user/dashboard');
     }
   };
 
@@ -219,11 +220,33 @@ export default function UserProfileMenu() {
     }
   };
 
-  const manageItems = [
-    { name: "Applied Courses", href: "/user/applied-courses", icon: GraduationCap },
-    { name: "Preferences", href: "/settings/preferences", icon: Settings },
-    { name: "Create New Page", href: "/user/create-page", icon: Plus },
-  ];
+  const getManageItems = (role: string) => {
+    if (role === 'institute') {
+      return [
+        { name: "Institute Profile", href: "/institute/profile", icon: Building2 },
+        { name: "Courses", href: "/institute/courses", icon: BookOpen },
+        { name: "Students", href: "/institute/students", icon: Users },
+      ];
+    }
+    if (role === 'business') {
+      return [
+        { name: "Recruitment", href: "/business", icon: Briefcase },
+        { name: "Preferences", href: "/settings/preferences", icon: Settings },
+      ];
+    }
+    if (role === 'admin') {
+      return [
+        { name: "Admin Panel", href: "/admin", icon: Activity },
+        { name: "Settings & privacy", href: "/settings/accounts", icon: Settings },
+      ];
+    }
+    return [
+      { name: "Applied Courses", href: "/user/applied-courses", icon: GraduationCap },
+      { name: "Preferences", href: "/settings/preferences", icon: Settings },
+      { name: "Create New Page", href: "/user/create-page", icon: Plus },
+    ];
+  };
+  const manageItems = getManageItems(userRole);
 
   const registrationItems = [
     { name: "Registration Status", href: "/user/registration-status", icon: FileText },

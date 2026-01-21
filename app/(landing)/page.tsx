@@ -19,14 +19,10 @@ import {
 
 // Mentors data for Verified Experts carousel (module-scope)
 const mentors = [
-  // { name: 'Mahesh Patel', role: 'Sr. Mentor', qualification: 'M.Sc. Tech', experience: '5 Year Experience', image: '/maheshpatel.png', id: 'maheshpatel', rating: 4.5, reviews: 120, counsellingCount: 150 },
-  { name: 'Anita Sharma', role: 'Sr. Mentor', qualification: 'MBA', experience: '8 Year Experience', image: '/counsellor1.png', id: 'anitasharma', rating: 4.8, reviews: 150, counsellingCount: 200 },
-  { name: 'Rahul Verma', role: 'Sr. Mentor', qualification: 'B.Tech', experience: '6 Year Experience', image: '/counsellor2.png', id: 'rahulverma', rating: 4.6, reviews: 130, counsellingCount: 180 },
-  { name: 'Neha Gupta', role: 'Sr. Mentor', qualification: 'M.Sc.', experience: '7 Year Experience', image: '/counsellor3.png', id: 'nehagupta', rating: 4.7, reviews: 140, counsellingCount: 200 },
-  { name: 'Vikas Mehra', role: 'Sr. Mentor', qualification: 'MCA', experience: '9 Year Experience', image: '/counsellor4.png', id: 'vikasmehra', rating: 4.9, reviews: 160, counsellingCount: 250 },
-  { name: 'Priya Rao', role: 'Sr. Mentor', qualification: 'M.Tech', experience: '5 Year Experience', image: '/counsellor5.png', id: 'priyarao', rating: 4.5, reviews: 120, counsellingCount: 150 },
-  { name: 'Amit Desai', role: 'Sr. Mentor', qualification: 'MBA', experience: '10 Year Experience', image: '/counsellor6.png', id: 'amitdesai', rating: 4.8, reviews: 150, counsellingCount: 200 },
-  { name: 'Kavita Joshi', role: 'Sr. Mentor', qualification: 'B.Sc.', experience: '4 Year Experience', image: '/counsellor7.png', id: 'kavitajoshi', rating: 4.5, reviews: 120, counsellingCount: 150 },
+  { name: 'Mahesh Patel', role: 'Sr. Mentor(MD)', qualification: 'MA', experience: '20 Year Experience', image: '/counsellor1.png', id: 'mbpatel', rating: 4.9, reviews: 150, counsellingCount: 20000 },
+  { name: 'Mahesh Patel', role: 'Sr. Mentor(Founder)', qualification: 'MSc.Tech', experience: '6 Year Experience', image: '/counsellor2.png', id: 'mkpatel', rating: 4.6, reviews: 130, counsellingCount: 4500 },
+  { name: 'Abhishek Vaghela', role: 'Counsellor', qualification: 'B.Tech CE', experience: '4 Year Experience', image: '/counsellor3.png', id: 'abhishekvaghela', rating: 4.5, reviews: 140, counsellingCount: 1200 },
+  { name: 'Vatsal Zinzuwadiya', role: 'Cousellor', qualification: 'B.Tech CE', experience: '3 Year Experience', image: '/counsellor4.png', id: 'vatsalzinzuvadiya', rating: 4.2, reviews: 90, counsellingCount: 480 },
 ];
 
 // Students band profiles (placeholder avatars; replace with real student images when available)
@@ -517,8 +513,8 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="text-center">
               <div className="mx-auto inline-flex flex-col items-center bg-black/50 rounded-2xl px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 shadow-sm">
-                <div className="text-white text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight">1 MILLION +</div>
-                <div className="mt-1 sm:mt-2 text-white/90 text-base sm:text-lg md:text-xl">Students already joined</div>
+                <div className="text-white text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">MILLIONS OF STUDENT</div>
+                <div className="mt-1 sm:mt-2 text-white/90 text-base sm:text-lg md:text-xl">needs better career counselling</div>
               </div>
             </div>
           </div>  
@@ -528,7 +524,7 @@ export default function LandingPage() {
               <img
                 key={i}
                 src={`https://i.pravatar.cc/100?u=recent-${i + 1}`}
-                alt="Recently joined student"
+                alt="students need counselling"
                 className="student-tile absolute w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-lg object-cover shadow-md"
                 style={{ willChange: 'transform, opacity' }}
               />
