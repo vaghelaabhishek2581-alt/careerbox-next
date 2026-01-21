@@ -8,7 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 
 export function InstituteProfileCard() {
-  const { selectedInstitute, currentInstitute } = useSelector((state: RootState) => state.institute as any);
+  const { selectedInstitute, currentInstitute } = useSelector(
+    (state: RootState) => state.institute as any
+  );
   const institute = selectedInstitute || currentInstitute;
 
   const coverImage = institute?.coverImage || "";
@@ -53,8 +55,17 @@ export function InstituteProfileCard() {
         </div>
 
         <div className="flex gap-2">
-          <Link href={slug ? `/recommendation-collections/${slug}` : "/recommendation-collections"}>
-            <Button variant="outline" className="flex-1 rounded-full border-blue-600 text-blue-600 hover:bg-blue-50 h-9 text-xs font-medium">
+          <Link
+            href={
+              slug
+                ? `/recommendation-collections/${slug}`
+                : "/recommendation-collections"
+            }
+          >
+            <Button
+              variant="outline"
+              className="flex-1 rounded-full border-blue-600 text-blue-600 hover:bg-blue-50 h-9 text-xs font-medium"
+            >
               Public View
             </Button>
           </Link>

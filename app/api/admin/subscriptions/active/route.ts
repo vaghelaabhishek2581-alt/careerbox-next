@@ -1,0 +1,66 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
+import { connectToDatabase } from '@/lib/db/mongoose'
+import Subscription from '@/src/models/Subscription'
+import { ApiResponse } from '@/lib/types/api.types'
+
+// GET /api/admin/subscriptions/active?userId=...
+// Returns the active subscription for a given user (admin-only)
+export async function GET(req: NextRequest) {
+  try {
+    const auth = await getAuthenticatedUser(req)
+    if (!auth?.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const userId = searchParams.get('userId')
+
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
+    }
+
+    await connectToDatabase()
+
+    const subscription = await Subscription.findOne({ userId, status: 'active' })
+      .lean()
+      .exec()
+
+    if (!subscription) {
+      const response: ApiResponse<null> = {
+        success: true,
+        data: null,
+        message: 'No active subscription found'
+      }
+      return NextResponse.json(response)
+    }
+
+    const responseSubscription = {
+      id: subscription._id.toString(),
+      userId: subscription.userId?.toString() || '',
+      organizationId: subscription.organizationId?.toString() || '',
+      organizationType: subscription.organizationType,
+      planName: subscription.planName,
+      planType: subscription.planType,
+      status: subscription.status,
+      isActive: (subscription as any).isActive ?? subscription.status === 'active',
+      amount: subscription.amount,
+      currency: subscription.currency,
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+      grantedBy: subscription.grantedBy,
+      grantReason: subscription.grantReason,
+      createdAt: subscription.createdAt
+    }
+
+    const response: ApiResponse<typeof responseSubscription> = {
+      success: true,
+      data: responseSubscription
+    }
+
+    return NextResponse.json(response)
+  } catch (error) {
+    console.error('Error fetching active subscription:', error)
+    return NextResponse.json({ error: 'Failed to fetch active subscription' }, { status: 500 })
+  }
+}
