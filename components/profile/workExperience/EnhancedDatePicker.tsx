@@ -244,12 +244,23 @@ export const EnhancedDatePicker: React.FC<EnhancedDatePickerProps> = ({
               selected={date}
               onSelect={handleDateSelect}
               month={new Date(viewYear, viewMonth)}
-              onMonthChange={(newMonth) => {
-                setViewMonth(newMonth.getMonth());
-                setViewYear(newMonth.getFullYear());
+              onMonthChange={(date) => {
+                setViewYear(date.getFullYear());
+                setViewMonth(date.getMonth());
               }}
               disabled={isDateDisabled}
-              className="border-none p-0"
+              className="rounded-md border"
+              classNames={{
+                day: 'h-9 w-9 p-0 font-normal aria-selected:opacity-100',
+                head_cell: 'hidden',
+                row: 'w-full mt-4',
+                cell: 'h-9 w-9 p-0 text-center text-sm',
+                nav_button_previous: 'hidden',
+                nav_button_next: 'hidden',
+              }}
+              components={{
+                Head: () => null, // Hide the default header
+              }}
             />
           )}
         </div>
