@@ -10,7 +10,7 @@ export default function SidebarManager() {
     "/user/create-page",
     "/user/register-institute",
     "/user/register-business",
-  ].includes(pathname);
+  ].includes(pathname || "");
   if (hideSidebar) return null;
   return <Sidebar />;
 }

@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     // Transform subscription for response
     const responseSubscription = {
-      id: subscription._id.toString(),
+      id: subscription.id,
       userId: subscription.userId.toString(),
       organizationId: subscription.organizationId.toString(),
       organizationType: subscription.organizationType,
