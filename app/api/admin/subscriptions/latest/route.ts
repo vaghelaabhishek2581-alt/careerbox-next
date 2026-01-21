@@ -24,22 +24,6 @@ export async function GET (req: NextRequest) {
 
     const subscription = await Subscription.findOne({ userId })
       .sort({ createdAt: -1 })
-      .lean<{
-        _id: { toString(): string }
-        userId?: { toString(): string }
-        organizationId?: { toString(): string }
-        organizationType?: string
-        planName: string
-        planType: string
-        status: string
-        amount?: number
-        currency?: string
-        startDate?: Date
-        endDate?: Date
-        grantedBy?: string
-        grantReason?: string
-        createdAt: Date
-      }>()
       .exec()
 
     if (!subscription) {
@@ -52,7 +36,7 @@ export async function GET (req: NextRequest) {
     }
 
     const responseSubscription = {
-      id: subscription._id.toString(),
+      id: subscription.id,
       userId: subscription.userId?.toString() || '',
       organizationId: subscription.organizationId?.toString() || '',
       organizationType: subscription.organizationType,

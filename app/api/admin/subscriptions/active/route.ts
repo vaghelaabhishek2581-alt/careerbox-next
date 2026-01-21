@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
     await connectToDatabase()
 
     const subscription = await Subscription.findOne({ userId, status: 'active' })
-      .lean()
       .exec()
 
     if (!subscription) {
@@ -36,7 +35,7 @@ export async function GET(req: NextRequest) {
     }
 
     const responseSubscription = {
-      id: subscription._id.toString(),
+      id: subscription.id,
       userId: subscription.userId?.toString() || '',
       organizationId: subscription.organizationId?.toString() || '',
       organizationType: subscription.organizationType,

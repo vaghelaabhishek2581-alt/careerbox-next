@@ -65,7 +65,7 @@ export async function PATCH(
     }
 
     const responseSubscription = {
-      id: subscription._id.toString(),
+      id: subscription.id,
       userId: subscription.userId?.toString() || '',
       organizationId: subscription.organizationId?.toString() || '',
       organizationType: subscription.organizationType,

@@ -401,6 +401,109 @@ export const updateSubscriptionStatus = createAsyncThunk(
 )
 
 // ============================================================================
+// PAYMENTS THUNKS
+// ============================================================================
+
+// Fetch All Payments
+export const fetchAllPayments = createAsyncThunk(
+  'admin/fetchAllPayments',
+  async (
+    { page = 1, filters }: { page?: number; filters?: AdminFilters },
+    { rejectWithValue }
+  ) => {
+    try {
+      const queryParams = new URLSearchParams()
+      queryParams.set('page', page.toString())
+
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value && typeof value === 'string') {
+            queryParams.set(key, value)
+          } else if (
+            value &&
+            typeof value === 'object' &&
+            'start' in value &&
+            'end' in value
+          ) {
+            // date range filters
+            // @ts-ignore
+            queryParams.set(`${key}Start`, value.start)
+            // @ts-ignore
+            queryParams.set(`${key}End`, value.end)
+          }
+        })
+      }
+
+      const response = await fetch(`/api/admin/payments?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        return rejectWithValue(error.error || error.message || 'Failed to fetch payments')
+      }
+
+      return await response.json()
+    } catch (error) {
+      return rejectWithValue('Network error occurred')
+    }
+  }
+)
+
+// Process Refund
+export const processRefund = createAsyncThunk(
+  'admin/processRefund',
+  async (
+    { paymentId, amount, reason, notes }: { paymentId: string; amount?: number; reason: string; notes?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch(`/api/admin/payments/${encodeURIComponent(paymentId)}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, reason, notes })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        return rejectWithValue(error.error || error.message || 'Failed to process refund')
+      }
+
+      return await response.json()
+    } catch (error) {
+      return rejectWithValue('Network error occurred')
+    }
+  }
+)
+
+// Update Payment Status
+export const updatePaymentStatus = createAsyncThunk(
+  'admin/updatePaymentStatus',
+  async (
+    { paymentId, status, notes }: { paymentId: string; status: 'created' | 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded'; notes?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch(`/api/admin/payments/${encodeURIComponent(paymentId)}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, notes })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        return rejectWithValue(error.error || error.message || 'Failed to update payment status')
+      }
+
+      return await response.json()
+    } catch (error) {
+      return rejectWithValue('Network error occurred')
+    }
+  }
+)
+
+// ============================================================================
 // SLICE
 // ============================================================================
 
@@ -553,6 +656,69 @@ const adminSlice = createSlice({
         }
       })
       .addCase(updateSubscriptionStatus.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+
+      // Fetch All Payments
+      .addCase(fetchAllPayments.pending, state => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(fetchAllPayments.fulfilled, (state, action) => {
+        state.loading = false
+        state.payments = action.payload.data || []
+        state.currentPage = action.payload.pagination?.currentPage || 1
+        state.totalPages = action.payload.pagination?.totalPages || 1
+        state.totalItems = action.payload.pagination?.totalItems || 0
+      })
+      .addCase(fetchAllPayments.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+
+      // Process Refund
+      .addCase(processRefund.pending, state => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(processRefund.fulfilled, (state, action) => {
+        state.loading = false
+        const updatedPayment = action.payload.data
+        if (updatedPayment) {
+          const index = state.payments.findIndex(p => p.id === updatedPayment.id)
+          if (index !== -1) {
+            state.payments[index] = updatedPayment
+          }
+          if (state.selectedPayment?.id === updatedPayment.id) {
+            state.selectedPayment = updatedPayment
+          }
+        }
+      })
+      .addCase(processRefund.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+
+      // Update Payment Status
+      .addCase(updatePaymentStatus.pending, state => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(updatePaymentStatus.fulfilled, (state, action) => {
+        state.loading = false
+        const updatedPayment = action.payload.data
+        if (updatedPayment) {
+          const index = state.payments.findIndex(p => p.id === updatedPayment.id)
+          if (index !== -1) {
+            state.payments[index] = updatedPayment
+          }
+          if (state.selectedPayment?.id === updatedPayment.id) {
+            state.selectedPayment = updatedPayment
+          }
+        }
+      })
+      .addCase(updatePaymentStatus.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload as string
       })
