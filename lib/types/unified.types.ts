@@ -351,6 +351,7 @@ export const BusinessProfileSchema = z.object({
   website: z.string().url().optional(),
   logo: z.string().url().optional(),
   coverImage: z.string().url().optional(),
+  publicProfileId: z.string().optional(),
 
   // Business Details
   foundedYear: z.number().optional(),
@@ -416,6 +417,7 @@ export const InstituteProfileSchema = z.object({
   website: z.string().url().optional(),
   logo: z.string().url().optional(),
   coverImage: z.string().url().optional(),
+  publicProfileId: z.string().optional(),
 
   // Institute Details
   establishedYear: z.number().optional(),
