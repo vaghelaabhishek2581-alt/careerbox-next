@@ -139,10 +139,11 @@ export interface IProfile {
 
 interface ProfileState {
   profile: IProfile | null
-  isLoading: boolean // Only for initial profile fetch
+  isLoading: boolean
+  hasFetched: boolean  // ← ADD THIS
   isUploadingImage: boolean
-  isUpdating: boolean // For profile updates (personal details, work, education, etc.)
-  isCreating: boolean // For creating new profile
+  isUpdating: boolean
+  isCreating: boolean
   error: string | null
   isDirty: boolean
 }
@@ -150,6 +151,7 @@ interface ProfileState {
 const initialState: ProfileState = {
   profile: null,
   isLoading: false,
+  hasFetched: false,  // ← ADD THIS
   isUploadingImage: false,
   isUpdating: false,
   isCreating: false,
@@ -161,6 +163,7 @@ const initialState: ProfileState = {
 // ASYNC THUNKS
 // ============================================================================
 
+// Fetch user profile
 // Fetch user profile
 export const fetchProfile = createAsyncThunk(
   'profile/fetchProfile',
@@ -176,6 +179,18 @@ export const fetchProfile = createAsyncThunk(
       return data.profile
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch profile')
+    }
+  },
+  {
+    // Prevent duplicate fetches - this is the key fix!
+    condition: (_, { getState }) => {
+      const { profile } = getState() as { profile: ProfileState }
+      // Cancel if already fetched or currently loading
+      if (profile.hasFetched || profile.isLoading) {
+        console.log('⏭️ fetchProfile cancelled - already fetched or loading')
+        return false
+      }
+      return true
     }
   }
 )
@@ -810,13 +825,18 @@ const profileSlice = createSlice({
       state.profile = null
       state.error = null
       state.isDirty = false
+      state.hasFetched = false
     },
+      resetProfileFetchState: (state) => {
+    state.hasFetched = false
+  },
     updateLocalProfile: (state, action: PayloadAction<Partial<IProfile>>) => {
       if (state.profile) {
         state.profile = { ...state.profile, ...action.payload }
         state.isDirty = true
       }
     },
+
     // Optimistic updates for skills
     removeSkillOptimistic: (state, action: PayloadAction<string>) => {
       if (state.profile && state.profile.skills) {
@@ -1174,7 +1194,8 @@ export const {
   removeWorkExperienceOptimistic,
   addEducationOptimistic,
   updateEducationOptimistic,
-  removeEducationOptimistic
+  removeEducationOptimistic,
+  resetProfileFetchState
 } = profileSlice.actions
 
 // Selectors
@@ -1185,5 +1206,6 @@ export const selectIsCreating = (state: { profile: ProfileState }) => state.prof
 export const selectIsUploadingImage = (state: { profile: ProfileState }) => state.profile.isUploadingImage
 export const selectError = (state: { profile: ProfileState }) => state.profile.error
 export const selectIsDirty = (state: { profile: ProfileState }) => state.profile.isDirty
+export const selectHasFetched = (state: { profile: ProfileState }) => state.profile.hasFetched
 
 export default profileSlice.reducer

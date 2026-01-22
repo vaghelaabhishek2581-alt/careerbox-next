@@ -411,7 +411,7 @@ export default function InstituteLeadsPage() {
                   </span>
                   {lead.publicProfileId && (
                     <a
-                      href={`/user/public-profile/${lead.publicProfileId}`}
+                      href={`/profile/${lead.publicProfileId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline text-sm"

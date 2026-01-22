@@ -437,11 +437,13 @@ export interface FacultyMember {
   updatedAt: string
 }
 
+// In instituteSlice.ts
+
 interface InstituteState {
   institutes: Institute[]
   currentInstitute: Institute | null
-  userInstitutes: InstituteData[]  // All institutes belonging to the user
-  selectedInstitute: InstituteData | null  // Currently selected institute for operations
+  userInstitutes: InstituteData[]
+  selectedInstitute: InstituteData | null
   instituteProfile: InstituteProfile | null
   registrationDetails: RegistrationDetails | null
   documents: DocumentInfo[]
@@ -454,7 +456,8 @@ interface InstituteState {
   scholarships: Scholarship[]
   faculty: FacultyMember[]
   loading: boolean
-  isUploadingImage: boolean  // For image upload loading state
+  hasFetched: boolean  // ← ADD THIS
+  isUploadingImage: boolean
   error: string | null
   pagination: {
     page: number
@@ -482,6 +485,7 @@ const initialState: InstituteState = {
   scholarships: [],
   faculty: [],
   loading: false,
+  hasFetched: false,  // ← ADD THIS
   isUploadingImage: false,
   error: null,
   pagination: {
@@ -700,6 +704,18 @@ export const fetchUserInstitutes = createAsyncThunk(
     } catch (error) {
       console.error('Redux: API call failed:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch institutes');
+    }
+  },
+  {
+    // This prevents the thunk from running if already fetched or loading
+    condition: (_, { getState }) => {
+      const { institute } = getState() as { institute: InstituteState }
+      // Return false to cancel the thunk
+      if (institute.hasFetched || institute.loading) {
+        console.log('⏭️ fetchUserInstitutes cancelled - already fetched or loading')
+        return false
+      }
+      return true
     }
   }
 )
@@ -1484,7 +1500,7 @@ const instituteSlice = createSlice({
       .addCase(fetchUserInstitutes.fulfilled, (state, action) => {
         console.log('Redux: fetchUserInstitutes.fulfilled called with payload:', action.payload);
         state.loading = false
-        
+        state.hasFetched = true  // ← ADD THIS
         // Handle double-wrapped API response
         const outerResponse = action.payload as ApiResponse<any>
         console.log('Redux: Outer response:', outerResponse);
@@ -1514,6 +1530,8 @@ const instituteSlice = createSlice({
       })
       .addCase(fetchUserInstitutes.rejected, (state, action) => {
         state.loading = false
+          state.hasFetched = true  // ← ADD THIS (prevents retry loops on failure)
+
         state.error = action.error.message || 'Failed to fetch user institutes'
       })
       // Fetch Institute Data by ID

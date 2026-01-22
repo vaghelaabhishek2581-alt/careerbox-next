@@ -5,7 +5,7 @@ import axios, {
   AxiosError
 } from 'axios'
 import axiosRetry from 'axios-retry'
-import { getSession } from 'next-auth/react'
+import type { Session } from 'next-auth'
 
 // Types
 export interface ApiResponse<T = any> {
@@ -37,6 +37,20 @@ const RETRY_CONFIG = {
       error.code === 'ECONNABORTED'
     )
   }
+}
+
+// Session cache to avoid calling getSession() on every request
+// This is updated by the SessionProvider via the setSession method
+let cachedSession: Session | null = null
+
+// Export a function to update the cached session from SessionProvider
+export function setApiClientSession(session: Session | null) {
+  cachedSession = session
+}
+
+// Export a function to get the current cached session
+export function getApiClientSession(): Session | null {
+  return cachedSession
 }
 
 class ApiClient {
@@ -74,23 +88,26 @@ class ApiClient {
 
   private setupInterceptors () {
     // Request interceptor to add auth headers
+    // Uses cached session instead of calling getSession() on every request
     this.instance.interceptors.request.use(
-      async config => {
+      config => {
         try {
-          // Get session for web app
-          const session = await getSession()
+          // Use cached session instead of fetching - prevents /api/auth/session spam
+          const session = cachedSession
           if (session?.user?.id) {
             config.headers['X-User-ID'] = session.user.id
             config.headers['X-User-Email'] = session.user.email
-            config.headers['X-User-Role'] = session.user.activeRole || 'user'
+            config.headers['X-User-Role'] = (session.user as any).activeRole || 'user'
           }
 
-          // Add CSRF token if available
-          const csrfToken = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute('content')
-          if (csrfToken) {
-            config.headers['X-CSRF-Token'] = csrfToken
+          // Add CSRF token if available (only in browser)
+          if (typeof document !== 'undefined') {
+            const csrfToken = document
+              .querySelector('meta[name="csrf-token"]')
+              ?.getAttribute('content')
+            if (csrfToken) {
+              config.headers['X-CSRF-Token'] = csrfToken
+            }
           }
 
           // Add request timestamp
