@@ -166,6 +166,16 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
     ? (profile as BusinessProfile).isVerified
     : (profile as InstituteProfile).isVerified
 
+  // Share modal state and URL
+  const [shareOpen, setShareOpen] = useState(false)
+  const publicId = isUser
+    ? (profile as UserProfile).personalDetails?.publicProfileId || (profile as any).publicProfileId
+    : isBusiness
+    ? (profile as BusinessProfile).publicProfileId || (profile as any).publicProfileId
+    : (profile as InstituteProfile).publicProfileId
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.FRONTEND_ORIGIN || '')
+  const shareUrl = publicId ? `${baseUrl}/profile/${publicId}` : ''
+
   return (
     <Card className="overflow-hidden">
       {/* Cover Image */}
@@ -245,7 +255,7 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>
@@ -259,6 +269,56 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
             </Button>
           </div>
         </div>
+
+        {/* Share Modal */}
+        <AlertDialog open={shareOpen} onOpenChange={setShareOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Share Profile</AlertDialogTitle>
+              <AlertDialogDescription>
+                Copy and share your public profile URL.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-3">
+              {publicId ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <input
+                      readOnly
+                      value={shareUrl}
+                      className="w-full rounded-md border px-3 py-2 text-sm"
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navigator.clipboard.writeText(shareUrl)}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Anyone can view your public profile via this link.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-destructive">Public profile ID is not available.</p>
+              )}
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Close</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (shareUrl) {
+                    navigator.clipboard.writeText(shareUrl)
+                  }
+                  setShareOpen(false)
+                }}
+              >
+                Copy & Close
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Card>
   )
