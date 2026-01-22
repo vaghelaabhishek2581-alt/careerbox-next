@@ -179,6 +179,15 @@ export const ImprovedDatePicker: React.FC<ImprovedDatePickerProps> = ({
           month={viewDate}
           onMonthChange={setViewDate}
           initialFocus
+          classNames={{
+            nav_button_previous: 'hidden',
+            nav_button_next: 'hidden',
+            caption: 'hidden',
+            caption_label: 'hidden',
+          }}
+          components={{
+            Caption: () => null,
+          }}
         />
 
         {/* Clear Button */}

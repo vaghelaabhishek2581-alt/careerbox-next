@@ -154,8 +154,9 @@ export const EnhancedDatePicker: React.FC<EnhancedDatePickerProps> = ({
                     onClick={() => setViewMode('month')}
                     className="text-sm font-medium"
                   >
-                    {months[viewMonth]}
+                    {months[viewMonth].slice(0, 3)}
                   </Button>
+                  <span className="text-sm font-medium">,</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -257,9 +258,12 @@ export const EnhancedDatePicker: React.FC<EnhancedDatePickerProps> = ({
                 cell: 'h-9 w-9 p-0 text-center text-sm',
                 nav_button_previous: 'hidden',
                 nav_button_next: 'hidden',
+                caption: 'hidden',
+                caption_label: 'hidden',
               }}
               components={{
                 Head: () => null, // Hide the default header
+                Caption: () => null, // Hide month/year caption to avoid duplicate labels
               }}
             />
           )}
