@@ -64,15 +64,31 @@ export async function POST (request: NextRequest) {
       )
     }
 
-    // Check if publicId exists for any other user
-    const existingUser = await db.collection('users').findOne({
-      _id: { $ne: new ObjectId(userId) },
-      'personalDetails.publicProfileId': publicId
-    })
+    // Normalize input and use case-insensitive matching via collation
+    const normalizedId = publicId.trim()
+    const collation = { locale: 'en', strength: 2 }
+
+    // Check across profiles (users), businesses, and institutes
+    const [existingProfile, existingBusiness, existingInstitute] = await Promise.all([
+      db.collection('profiles').findOne({
+        userId: { $ne: new ObjectId(userId) },
+        'personalDetails.publicProfileId': normalizedId
+      }, { collation }),
+      db.collection('businesses').findOne({
+        userId: { $ne: new ObjectId(userId) },
+        publicProfileId: normalizedId
+      }, { collation }),
+      db.collection('institutes').findOne({
+        userId: { $ne: new ObjectId(userId) },
+        publicProfileId: normalizedId
+      }, { collation })
+    ])
+
+    const exists = Boolean(existingProfile || existingBusiness || existingInstitute)
 
     return NextResponse.json({
-      available: !existingUser,
-      suggestions: existingUser ? generateSuggestions(publicId) : []
+      available: !exists,
+      suggestions: exists ? generateSuggestions(normalizedId) : []
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
