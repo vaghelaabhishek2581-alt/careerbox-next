@@ -58,9 +58,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
   const headline = profile?.personalDetails?.professionalHeadline || "View my CareerBox profile";
 
   const shareUrl = useMemo(() => {
-    const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const id = profile?.personalDetails?.publicProfileId || "";
-    return `${base}/profile/${id}`;
+    const base = 'https://careerbox.in'
+    const id = profile?.personalDetails?.publicProfileId || '';
+    return new URL(`/profile/${id}`, base).toString();
   }, [profile]);
 
   const shareMessage = useMemo(() => {

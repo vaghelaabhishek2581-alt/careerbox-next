@@ -14,7 +14,9 @@ export async function POST (request: NextRequest) {
 
     if (token) {
       // Add token to blacklist using the token's jti (JWT ID) or sub (user ID) + iat (issued at)
-      const tokenIdentifier = token.jti as string || `${token.sub || 'unknown'}-${token.iat || Date.now()}`
+      const tokenIdentifier =
+        (token.jti as string) ||
+        `${token.sub || 'unknown'}-${token.iat || Date.now()}`
 
       await blacklistToken({
         tokenId: tokenIdentifier,
@@ -42,7 +44,9 @@ export async function POST (request: NextRequest) {
         ) {
           const payload = decodedToken.payload as any
 
-          const tokenIdentifier = payload.jti as string || `${payload.sub || 'unknown'}-${payload.iat || Date.now()}`
+          const tokenIdentifier =
+            (payload.jti as string) ||
+            `${payload.sub || 'unknown'}-${payload.iat || Date.now()}`
 
           await blacklistToken({
             tokenId: tokenIdentifier,

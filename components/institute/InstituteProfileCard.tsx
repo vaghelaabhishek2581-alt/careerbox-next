@@ -55,20 +55,22 @@ export function InstituteProfileCard() {
         </div>
 
         <div className="flex gap-2">
-          <Link
-            href={
-              slug
-                ? `/recommendation-collections/${slug}`
-                : "/recommendation-collections"
-            }
-          >
-            <Button
-              variant="outline"
-              className="flex-1 rounded-full border-blue-600 text-blue-600 hover:bg-blue-50 h-9 text-xs font-medium"
+          {institute?.subscriptionId && (
+            <Link
+              href={
+                slug
+                  ? `/recommendation-collections/${slug}`
+                  : "/recommendation-collections"
+              }
             >
-              Public View
-            </Button>
-          </Link>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-full border-blue-600 text-blue-600 hover:bg-blue-50 h-9 text-xs font-medium"
+              >
+                Public View
+              </Button>
+            </Link>
+          )}
           <Link href="/institute/courses">
             <Button className="flex-1 rounded-full bg-blue-600 hover:bg-blue-700 h-9 text-xs font-medium">
               <Plus className="h-3 w-3 mr-1" /> Create

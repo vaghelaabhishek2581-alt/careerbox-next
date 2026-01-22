@@ -173,8 +173,8 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
     : isBusiness
     ? (profile as BusinessProfile).publicProfileId || (profile as any).publicProfileId
     : (profile as InstituteProfile).publicProfileId
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.FRONTEND_ORIGIN || '')
-  const shareUrl = publicId ? `${baseUrl}/profile/${publicId}` : ''
+  const baseUrl = 'https://careerbox.in'
+  const shareUrl = publicId ? new URL(`/profile/${publicId}`, baseUrl).toString() : ''
 
   return (
     <Card className="overflow-hidden">
