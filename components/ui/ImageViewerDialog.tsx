@@ -56,12 +56,12 @@ export function ImageViewerDialog({
       />
       <div className={cn("absolute inset-0 flex items-start sm:items-center justify-center p-4 overflow-y-auto", open ? "opacity-100" : "opacity-0")}>
         <div
-          className="bg-[#1f2937] text-white rounded-2xl shadow-xl border border-slate-700 w-full max-w-4xl h-[100vh] sm:max-h-[calc(100vh-2rem)] overflow-y-auto"
-          style={{
-            paddingTop: "max(1rem, env(safe-area-inset-top))",
-            paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-          }}
-        >
+          className="bg-[#1f2937] text-white rounded-2xl shadow-xl border border-slate-700 w-full max-w-4xl max-h-[calc(100vh-2rem)] overflow-y-auto"
+           style={{
+             paddingTop: "max(1rem, env(safe-area-inset-top))",
+             paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+           }}
+         >
           <div
             className="flex items-center justify-between px-4 py-3 border-b border-slate-700 sticky top-0 bg-[#1f2937] z-10"
             style={{
@@ -91,28 +91,25 @@ export function ImageViewerDialog({
             </div>
 
             <div className="flex justify-center mb-6">
-              {type === "profile" ? (
-                <div className="w-[420px] h-[420px] max-w-full max-h-[60vh] rounded-full overflow-hidden bg-black/50 flex items-center justify-center">
-                  {imageUrl ? (
-                    <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-sm text-slate-300">No profile photo</div>
+              {imageUrl ? (
+                <div
+                  className={cn(
+                    "relative flex items-center justify-center bg-black/50 rounded-xl overflow-hidden",
+                    type === "profile"
+                      ? "max-w-[90vw] sm:max-w-3xl max-h-[70vh]"
+                      : "max-w-[90vw] sm:max-w-5xl max-h-[70vh]"
                   )}
+                >
+                  <img src={imageUrl} alt="" className="max-w-full max-h-[70vh] object-contain" />
                 </div>
               ) : (
-                <div className="w-[800px] h-[450px] max-w-full max-h-[60vh] rounded-xl overflow-hidden bg-black/50 flex items-center justify-center">
-                  {imageUrl ? (
-                    <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-sm text-slate-300">No cover image</div>
-                  )}
-                </div>
+                <div className="text-sm text-slate-300">{type === "profile" ? "No profile photo" : "No cover image"}</div>
               )}
             </div>
 
             {showActions && (
-              <div className="border-t border-slate-700 px-4 pt-4 sticky bottom-0 bg-[#1f2937]"
-                style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
+              <div className="border-t border-slate-700 px-4 pt-4 bg-[#1f2937]"
+              style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">

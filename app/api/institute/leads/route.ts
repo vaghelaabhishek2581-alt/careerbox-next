@@ -100,24 +100,32 @@ export async function GET (req: NextRequest) {
       .lean()
 
     // Fetch publicProfileId from Profile model (personalDetails.publicProfileId)
-    const userIds = leads.map(lead => lead.userId).filter(Boolean)
-    const profiles = await Profile.find({ userId: { $in: userIds } })
-      .select('userId personalDetails.publicProfileId')
-      .lean()
-    const userPublicProfiles = new Map(
-      profiles.map((p: any) => [
-        p.userId.toString(),
-        p.personalDetails?.publicProfileId
-      ])
-    )
+    if (isPaidPlan) {
+      const userIds = leads.map(lead => lead.userId).filter(Boolean)
+      const profiles = await Profile.find({ userId: { $in: userIds } })
+        .select('userId personalDetails.publicProfileId')
+        .lean()
+      const userPublicProfiles = new Map(
+        profiles.map((p: any) => [
+          p.userId.toString(),
+          p.personalDetails?.publicProfileId
+        ])
+      )
 
-    leads = leads.map((lead: any) => {
-      const publicProfileId = userPublicProfiles.get(lead.userId?.toString())
-      return {
+      leads = leads.map((lead: any) => {
+        const publicProfileId = userPublicProfiles.get(lead.userId?.toString())
+        return {
+          ...lead,
+          publicProfileId: publicProfileId || null
+        }
+      })
+    } else {
+      // Free plan: do not expose publicProfileId
+      leads = leads.map((lead: any) => ({
         ...lead,
-        publicProfileId: publicProfileId || null
-      }
-    })
+        publicProfileId: null
+      }))
+    }
 
     // If free plan, mask contact details
     if (!isPaidPlan) {
