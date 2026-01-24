@@ -147,6 +147,9 @@ export function InstituteCard({
     if ((institute as any).overview?.description && isValidValue((institute as any).overview.description)) {
       return (institute as any).overview.description
     }
+    if ((institute as any).description && isValidValue((institute as any).description)) {
+      return (institute as any).description
+    }
 
     return ''
   }

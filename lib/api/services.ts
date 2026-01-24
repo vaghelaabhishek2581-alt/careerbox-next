@@ -226,11 +226,20 @@ export class BusinessesAPI {
 // Search API
 export class SearchAPI {
   static async search(query: string, filters?: any): Promise<ApiResponse<any>> {
-    return apiClient.post('/api/search', { query, filters })
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                params.append(key, String(value));
+            }
+        });
+    }
+    return apiClient.get(`/api/search?${params.toString()}`)
   }
 
   static async getSuggestions(query: string): Promise<ApiResponse<any>> {
-    return apiClient.get(`/api/search/suggestions?q=${encodeURIComponent(query)}`)
+    return apiClient.get(`/api/suggest?q=${encodeURIComponent(query)}`)
   }
 }
 
