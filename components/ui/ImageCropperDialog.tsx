@@ -371,7 +371,7 @@ export function ImageCropperDialog({
             </div>
             <Button variant="ghost" size="sm" onClick={() => { onOpenChange(false); cleanupImage(); }} className="h-8 w-8 p-0">
               <X className="h-4 w-4" />
-            </Button>
+            </Button> 
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
@@ -542,4 +542,3 @@ export function ImageCropperDialog({
     </div>
   );
 }
-
