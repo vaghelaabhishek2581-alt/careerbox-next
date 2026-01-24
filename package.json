@@ -6,7 +6,8 @@
     "dev": "node --import tsx server.mts",
     "build": "next build",
     "start": "set NODE_ENV=production&& node --import tsx server.mts",
-    "lint": "next lint"
+    "lint": "next lint",
+    "testAlgo": "nodemon testAlgo.js"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",

@@ -26,7 +26,9 @@ export default async function InvoicesPage() {
           <h1 className="text-xl md:text-2xl font-bold text-gray-900">Invoices</h1>
         </div>
         <div className="flex items-center gap-2 mt-3 sm:mt-0">
-          <Button variant="outline">Export</Button>
+          <a href="/api/billing/invoices/export">
+            <Button variant="outline">Export</Button>
+          </a>
           <Link href="/institute/billing">
             <Button variant="outline">Back to Billing</Button>
           </Link>

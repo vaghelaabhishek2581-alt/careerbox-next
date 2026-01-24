@@ -15,6 +15,7 @@ import instituteReducer from './slices/instituteSlice'
 import applicationReducer from './slices/applicationSlice'
 import adminReducer from './slices/adminSlice'
 import registrationReducer from './slices/registrationSlice'
+import institutePublishReducer from './slices/institutePublishSlice'
 
 export const store = configureStore({
   reducer: {
@@ -34,6 +35,7 @@ export const store = configureStore({
     applications: applicationReducer,
     admin: adminReducer,
     registration: registrationReducer
+    ,institutePublish: institutePublishReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

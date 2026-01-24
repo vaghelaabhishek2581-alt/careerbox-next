@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/src/hooks/use-toast";
 import { Save, RefreshCw, Trash2, Plus } from "lucide-react";
+import PublishToggle from "@/components/PublishToggle";
 
 function StringList({
   label,
@@ -65,11 +66,24 @@ function StringList({
   );
 }
 
+// Helper to display numeric values - returns empty string for null, undefined, or 0
+function displayNumber(value: number | null | undefined): string {
+  if (value === null || value === undefined || value === 0) return "";
+  return String(value);
+}
+
+// Helper to parse numeric input - returns undefined for empty strings
+function parseNumber(value: string): number | undefined {
+  if (!value || value.trim() === "") return undefined;
+  const num = Number(value);
+  return isNaN(num) ? undefined : num;
+}
+
 export default function AdminInstituteDetailPage() {
   const params = useParams<{ slug: string }>();
   const slug = useMemo(
     () => decodeURIComponent(String(params?.slug || "")),
-    [params]
+    [params],
   );
   const router = useRouter();
   const { toast } = useToast();
@@ -79,10 +93,6 @@ export default function AdminInstituteDetailPage() {
 
   // Form state mirrors AdminInstitute fields
   const [form, setForm] = useState<any>({});
-  // JSON import dialog state
-  const [jsonOpen, setJsonOpen] = useState(false);
-  const [jsonBusy, setJsonBusy] = useState(false);
-  const [jsonText, setJsonText] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -90,7 +100,7 @@ export default function AdminInstituteDetailPage() {
         if (!slug) return;
         setLoading(true);
         const res = await fetch(
-          `/api/admin/institutes/${encodeURIComponent(slug)}`
+          `/api/admin/institutes/${encodeURIComponent(slug)}`,
         );
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
@@ -115,7 +125,6 @@ export default function AdminInstituteDetailPage() {
       let cur: any = next;
       for (let i = 0; i < path.length - 1; i++) {
         const key = path[i];
-        // Create a new object for each level to ensure React detects the change
         cur[key] = cur[key] ? { ...cur[key] } : {};
         cur = cur[key];
       }
@@ -150,7 +159,7 @@ export default function AdminInstituteDetailPage() {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
-        }
+        },
       );
       if (!res.ok) throw new Error(await res.text());
       toast({ title: "Saved" });
@@ -165,26 +174,6 @@ export default function AdminInstituteDetailPage() {
     }
   }
 
-  // Import JSON into current form (merge)
-  async function onImportSubmit() {
-    try {
-      setJsonBusy(true);
-      const parsed = JSON.parse(jsonText || "{}");
-      setForm((prev: any) => ({ ...prev, ...(parsed || {}) }));
-      toast({ title: "Imported JSON into form" });
-      setJsonOpen(false);
-      setJsonText("");
-    } catch (e: any) {
-      toast({
-        title: "Import failed",
-        description: e?.message || String(e),
-        variant: "destructive",
-      });
-    } finally {
-      setJsonBusy(false);
-    }
-  }
-
   if (!form) return null;
 
   return (
@@ -194,6 +183,7 @@ export default function AdminInstituteDetailPage() {
           Admin Institute: {form?.name || slug}
         </h1>
         <div className="flex items-center gap-2">
+          <PublishToggle instituteId={String(form?._id || "")} />
           <Button
             variant="outline"
             onClick={() => router.refresh()}
@@ -246,12 +236,9 @@ export default function AdminInstituteDetailPage() {
           <div>
             <Label>Established Year</Label>
             <Input
-              value={form?.establishedYear ?? ""}
+              value={displayNumber(form?.establishedYear)}
               onChange={(e) =>
-                setPath(
-                  ["establishedYear"],
-                  e.target.value ? Number(e.target.value) : undefined
-                )
+                setPath(["establishedYear"], parseNumber(e.target.value))
               }
             />
           </div>
@@ -321,11 +308,13 @@ export default function AdminInstituteDetailPage() {
             <div>
               <Label>NAAC CGPA</Label>
               <Input
-                value={getPath(["accreditation", "naac", "cgpa"], "")}
+                value={displayNumber(
+                  getPath(["accreditation", "naac", "cgpa"], undefined),
+                )}
                 onChange={(e) =>
                   setPath(
                     ["accreditation", "naac", "cgpa"],
-                    e.target.value ? Number(e.target.value) : undefined
+                    parseNumber(e.target.value),
                   )
                 }
               />
@@ -333,11 +322,13 @@ export default function AdminInstituteDetailPage() {
             <div>
               <Label>NAAC Cycle</Label>
               <Input
-                value={getPath(["accreditation", "naac", "cycleNumber"], "")}
+                value={displayNumber(
+                  getPath(["accreditation", "naac", "cycleNumber"], undefined),
+                )}
                 onChange={(e) =>
                   setPath(
                     ["accreditation", "naac", "cycleNumber"],
-                    e.target.value ? Number(e.target.value) : undefined
+                    parseNumber(e.target.value),
                   )
                 }
               />
@@ -349,7 +340,7 @@ export default function AdminInstituteDetailPage() {
                 onChange={(e) =>
                   setPath(
                     ["accreditation", "naac", "validUntil"],
-                    e.target.value
+                    e.target.value,
                   )
                 }
               />
@@ -361,7 +352,7 @@ export default function AdminInstituteDetailPage() {
                 onChange={(e) =>
                   setPath(
                     ["accreditation", "ugc", "recognition"],
-                    e.target.value
+                    e.target.value,
                   )
                 }
               />
@@ -388,7 +379,10 @@ export default function AdminInstituteDetailPage() {
             </div>
             <div className="space-y-2">
               {Object.entries(
-                getPath(["accreditation", "nirf"], {} as Record<string, string>)
+                getPath(
+                  ["accreditation", "nirf"],
+                  {} as Record<string, string>,
+                ),
               ).map(([k, v]: any, idx: number) => {
                 const originalKey = k;
                 return (
@@ -494,11 +488,13 @@ export default function AdminInstituteDetailPage() {
           <div>
             <Label>Latitude</Label>
             <Input
-              value={getPath(["location", "coordinates", "latitude"], "")}
+              value={displayNumber(
+                getPath(["location", "coordinates", "latitude"], undefined),
+              )}
               onChange={(e) =>
                 setPath(
                   ["location", "coordinates", "latitude"],
-                  e.target.value ? Number(e.target.value) : undefined
+                  parseNumber(e.target.value),
                 )
               }
             />
@@ -506,11 +502,13 @@ export default function AdminInstituteDetailPage() {
           <div>
             <Label>Longitude</Label>
             <Input
-              value={getPath(["location", "coordinates", "longitude"], "")}
+              value={displayNumber(
+                getPath(["location", "coordinates", "longitude"], undefined),
+              )}
               onChange={(e) =>
                 setPath(
                   ["location", "coordinates", "longitude"],
-                  e.target.value ? Number(e.target.value) : undefined
+                  parseNumber(e.target.value),
                 )
               }
             />
@@ -575,7 +573,7 @@ export default function AdminInstituteDetailPage() {
                   [
                     ...(getPath(["overview"], []) as any[]),
                     { key: "", value: "" },
-                  ]
+                  ],
                 )
               }
             >
@@ -628,7 +626,7 @@ export default function AdminInstituteDetailPage() {
                     </Button>
                   </div>
                 </div>
-              )
+              ),
             )}
           </div>
         </CardContent>
@@ -674,10 +672,10 @@ export default function AdminInstituteDetailPage() {
                     [
                       ...(getPath(
                         ["campusDetails", "facilities"],
-                        []
+                        [],
                       ) as any[]),
                       { key: "", value: "" },
-                    ]
+                    ],
                   )
                 }
               >
@@ -700,7 +698,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["campusDetails", "facilities"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], key: e.target.value };
@@ -717,7 +715,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["campusDetails", "facilities"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], value: e.target.value };
@@ -735,7 +733,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["campusDetails", "facilities"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr.splice(idx, 1);
@@ -746,7 +744,7 @@ export default function AdminInstituteDetailPage() {
                       </Button>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
@@ -772,11 +770,13 @@ export default function AdminInstituteDetailPage() {
             <div>
               <Label>Total Students</Label>
               <Input
-                value={getPath(["academics", "totalStudents"], "")}
+                value={displayNumber(
+                  getPath(["academics", "totalStudents"], undefined),
+                )}
                 onChange={(e) =>
                   setPath(
                     ["academics", "totalStudents"],
-                    e.target.value ? Number(e.target.value) : undefined
+                    parseNumber(e.target.value),
                   )
                 }
               />
@@ -784,11 +784,13 @@ export default function AdminInstituteDetailPage() {
             <div>
               <Label>Total Faculty</Label>
               <Input
-                value={getPath(["academics", "totalFaculty"], "")}
+                value={displayNumber(
+                  getPath(["academics", "totalFaculty"], undefined),
+                )}
                 onChange={(e) =>
                   setPath(
                     ["academics", "totalFaculty"],
-                    e.target.value ? Number(e.target.value) : undefined
+                    parseNumber(e.target.value),
                   )
                 }
               />
@@ -806,11 +808,13 @@ export default function AdminInstituteDetailPage() {
             <div>
               <Label>International Students</Label>
               <Input
-                value={getPath(["academics", "internationalStudents"], "")}
+                value={displayNumber(
+                  getPath(["academics", "internationalStudents"], undefined),
+                )}
                 onChange={(e) =>
                   setPath(
                     ["academics", "internationalStudents"],
-                    e.target.value ? Number(e.target.value) : undefined
+                    parseNumber(e.target.value),
                   )
                 }
               />
@@ -818,11 +822,13 @@ export default function AdminInstituteDetailPage() {
             <div>
               <Label>Total Programs</Label>
               <Input
-                value={getPath(["academics", "totalPrograms"], "")}
+                value={displayNumber(
+                  getPath(["academics", "totalPrograms"], undefined),
+                )}
                 onChange={(e) =>
                   setPath(
                     ["academics", "totalPrograms"],
-                    e.target.value ? Number(e.target.value) : undefined
+                    parseNumber(e.target.value),
                   )
                 }
               />
@@ -842,7 +848,7 @@ export default function AdminInstituteDetailPage() {
                     [
                       ...(getPath(["academics", "schools"], []) as any[]),
                       { name: "", established: undefined, programs: [] },
-                    ]
+                    ],
                   )
                 }
               >
@@ -880,7 +886,7 @@ export default function AdminInstituteDetailPage() {
                           ];
                           arr[idx] = {
                             ...arr[idx],
-                            established: e.target.value,
+                            established: e.target.value || undefined,
                           };
                           setPath(["academics", "schools"], arr);
                         }}
@@ -922,7 +928,7 @@ export default function AdminInstituteDetailPage() {
                       </Button>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
@@ -940,10 +946,10 @@ export default function AdminInstituteDetailPage() {
                     [
                       ...(getPath(
                         ["academics", "programOverviews"],
-                        []
+                        [],
                       ) as any[]),
                       { key: "", value: "" },
-                    ]
+                    ],
                   )
                 }
               >
@@ -966,7 +972,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["academics", "programOverviews"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], key: e.target.value };
@@ -983,7 +989,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["academics", "programOverviews"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], value: e.target.value };
@@ -1000,7 +1006,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["academics", "programOverviews"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr.splice(idx, 1);
@@ -1011,7 +1017,7 @@ export default function AdminInstituteDetailPage() {
                       </Button>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
@@ -1037,10 +1043,10 @@ export default function AdminInstituteDetailPage() {
                     [
                       ...(getPath(
                         ["faculty_student_ratio", "faculties"],
-                        []
+                        [],
                       ) as any[]),
                       { key: "", value: "" },
-                    ]
+                    ],
                   )
                 }
               >
@@ -1064,7 +1070,7 @@ export default function AdminInstituteDetailPage() {
                         const arr = [
                           ...(getPath(
                             ["faculty_student_ratio", "faculties"],
-                            []
+                            [],
                           ) as any[]),
                         ];
                         arr[idx] = { ...arr[idx], key: e.target.value };
@@ -1081,7 +1087,7 @@ export default function AdminInstituteDetailPage() {
                         const arr = [
                           ...(getPath(
                             ["faculty_student_ratio", "faculties"],
-                            []
+                            [],
                           ) as any[]),
                         ];
                         arr[idx] = { ...arr[idx], value: e.target.value };
@@ -1098,7 +1104,7 @@ export default function AdminInstituteDetailPage() {
                         const arr = [
                           ...(getPath(
                             ["faculty_student_ratio", "faculties"],
-                            []
+                            [],
                           ) as any[]),
                         ];
                         arr.splice(idx, 1);
@@ -1126,10 +1132,10 @@ export default function AdminInstituteDetailPage() {
                     [
                       ...(getPath(
                         ["faculty_student_ratio", "students"],
-                        []
+                        [],
                       ) as any[]),
                       { title: "", data: [] },
-                    ]
+                    ],
                   )
                 }
               >
@@ -1151,7 +1157,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["faculty_student_ratio", "students"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[sectionIdx] = {
@@ -1172,7 +1178,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["faculty_student_ratio", "students"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr.splice(sectionIdx, 1);
@@ -1195,7 +1201,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["faculty_student_ratio", "students"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           const data = [...(arr[sectionIdx].data || [])];
@@ -1221,7 +1227,7 @@ export default function AdminInstituteDetailPage() {
                               const arr = [
                                 ...(getPath(
                                   ["faculty_student_ratio", "students"],
-                                  []
+                                  [],
                                 ) as any[]),
                               ];
                               const data = [...arr[sectionIdx].data];
@@ -1232,7 +1238,7 @@ export default function AdminInstituteDetailPage() {
                               arr[sectionIdx] = { ...arr[sectionIdx], data };
                               setPath(
                                 ["faculty_student_ratio", "students"],
-                                arr
+                                arr,
                               );
                             }}
                             placeholder="Total students"
@@ -1246,7 +1252,7 @@ export default function AdminInstituteDetailPage() {
                               const arr = [
                                 ...(getPath(
                                   ["faculty_student_ratio", "students"],
-                                  []
+                                  [],
                                 ) as any[]),
                               ];
                               const data = [...arr[sectionIdx].data];
@@ -1257,7 +1263,7 @@ export default function AdminInstituteDetailPage() {
                               arr[sectionIdx] = { ...arr[sectionIdx], data };
                               setPath(
                                 ["faculty_student_ratio", "students"],
-                                arr
+                                arr,
                               );
                             }}
                           />
@@ -1271,7 +1277,7 @@ export default function AdminInstituteDetailPage() {
                               const arr = [
                                 ...(getPath(
                                   ["faculty_student_ratio", "students"],
-                                  []
+                                  [],
                                 ) as any[]),
                               ];
                               const data = [...arr[sectionIdx].data];
@@ -1279,7 +1285,7 @@ export default function AdminInstituteDetailPage() {
                               arr[sectionIdx] = { ...arr[sectionIdx], data };
                               setPath(
                                 ["faculty_student_ratio", "students"],
-                                arr
+                                arr,
                               );
                             }}
                           >
@@ -1330,7 +1336,7 @@ export default function AdminInstituteDetailPage() {
                   setPath(["admissions", "reservationPolicy"], {
                     ...(getPath(
                       ["admissions", "reservationPolicy"],
-                      {}
+                      {},
                     ) as any),
                     "": "",
                   })
@@ -1344,8 +1350,8 @@ export default function AdminInstituteDetailPage() {
               {Object.entries(
                 getPath(
                   ["admissions", "reservationPolicy"],
-                  {} as Record<string, string>
-                )
+                  {} as Record<string, string>,
+                ),
               ).map(([k, v]: any, idx: number) => (
                 <div
                   className="grid grid-cols-1 md:grid-cols-3 gap-2"
@@ -1359,7 +1365,7 @@ export default function AdminInstituteDetailPage() {
                         const obj: any = {
                           ...(getPath(
                             ["admissions", "reservationPolicy"],
-                            {}
+                            {},
                           ) as any),
                         };
                         const val = obj[k];
@@ -1378,7 +1384,7 @@ export default function AdminInstituteDetailPage() {
                         const obj: any = {
                           ...(getPath(
                             ["admissions", "reservationPolicy"],
-                            {}
+                            {},
                           ) as any),
                         };
                         obj[k] = e.target.value;
@@ -1396,7 +1402,7 @@ export default function AdminInstituteDetailPage() {
                         const obj: any = {
                           ...(getPath(
                             ["admissions", "reservationPolicy"],
-                            {}
+                            {},
                           ) as any),
                         };
                         delete obj[k];
@@ -1471,7 +1477,7 @@ export default function AdminInstituteDetailPage() {
                     [
                       ...(getPath(
                         ["rankings", "national", "national"],
-                        []
+                        [],
                       ) as any[]),
                       {
                         agency: "",
@@ -1479,7 +1485,7 @@ export default function AdminInstituteDetailPage() {
                         rank: "",
                         year: new Date().getFullYear(),
                       },
-                    ]
+                    ],
                   )
                 }
               >
@@ -1503,7 +1509,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["rankings", "national", "national"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], agency: e.target.value };
@@ -1519,7 +1525,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["rankings", "national", "national"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], category: e.target.value };
@@ -1535,7 +1541,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["rankings", "national", "national"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], rank: e.target.value };
@@ -1551,10 +1557,13 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["rankings", "national", "national"],
-                              []
+                              [],
                             ) as any[]),
                           ];
-                          arr[idx] = { ...arr[idx], year: e.target.value };
+                          arr[idx] = {
+                            ...arr[idx],
+                            year: e.target.value || undefined,
+                          };
                           setPath(["rankings", "national", "national"], arr);
                         }}
                       />
@@ -1568,7 +1577,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["rankings", "national", "national"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr.splice(idx, 1);
@@ -1601,7 +1610,7 @@ export default function AdminInstituteDetailPage() {
                         entityName: "",
                         rankData: [],
                       },
-                    ]
+                    ],
                   )
                 }
               >
@@ -1715,20 +1724,18 @@ export default function AdminInstituteDetailPage() {
                             <div>
                               <Label>Year</Label>
                               <Input
-                                value={rd.year || ""}
+                                value={displayNumber(rd.year)}
                                 onChange={(e) => {
                                   const arr = [
                                     ...(getPath(
                                       ["rankings", "data"],
-                                      []
+                                      [],
                                     ) as any[]),
                                   ];
                                   const rankData = [...arr[pubIdx].rankData];
                                   rankData[rdIdx] = {
                                     ...rankData[rdIdx],
-                                    year: e.target.value
-                                      ? Number(e.target.value)
-                                      : new Date().getFullYear(),
+                                    year: parseNumber(e.target.value),
                                   };
                                   arr[pubIdx] = { ...arr[pubIdx], rankData };
                                   setPath(["rankings", "data"], arr);
@@ -1743,7 +1750,7 @@ export default function AdminInstituteDetailPage() {
                                   const arr = [
                                     ...(getPath(
                                       ["rankings", "data"],
-                                      []
+                                      [],
                                     ) as any[]),
                                   ];
                                   const rankData = [...arr[pubIdx].rankData];
@@ -1765,7 +1772,7 @@ export default function AdminInstituteDetailPage() {
                                   const arr = [
                                     ...(getPath(
                                       ["rankings", "data"],
-                                      []
+                                      [],
                                     ) as any[]),
                                   ];
                                   const rankData = [...arr[pubIdx].rankData];
@@ -1778,11 +1785,11 @@ export default function AdminInstituteDetailPage() {
                               </Button>
                             </div>
                           </div>
-                        )
+                        ),
                       )}
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
@@ -1798,11 +1805,16 @@ export default function AdminInstituteDetailPage() {
           <div>
             <Label>Research Centers</Label>
             <Input
-              value={getPath(["researchAndInnovation", "researchCenters"], "")}
+              value={displayNumber(
+                getPath(
+                  ["researchAndInnovation", "researchCenters"],
+                  undefined,
+                ),
+              )}
               onChange={(e) =>
                 setPath(
                   ["researchAndInnovation", "researchCenters"],
-                  e.target.value ? Number(e.target.value) : undefined
+                  parseNumber(e.target.value),
                 )
               }
             />
@@ -1810,11 +1822,13 @@ export default function AdminInstituteDetailPage() {
           <div>
             <Label>Patents Filed</Label>
             <Input
-              value={getPath(["researchAndInnovation", "patentsFiled"], "")}
+              value={displayNumber(
+                getPath(["researchAndInnovation", "patentsFiled"], undefined),
+              )}
               onChange={(e) =>
                 setPath(
                   ["researchAndInnovation", "patentsFiled"],
-                  e.target.value ? Number(e.target.value) : undefined
+                  parseNumber(e.target.value),
                 )
               }
             />
@@ -1822,14 +1836,16 @@ export default function AdminInstituteDetailPage() {
           <div>
             <Label>Publications / Year</Label>
             <Input
-              value={getPath(
-                ["researchAndInnovation", "publicationsPerYear"],
-                ""
+              value={displayNumber(
+                getPath(
+                  ["researchAndInnovation", "publicationsPerYear"],
+                  undefined,
+                ),
               )}
               onChange={(e) =>
                 setPath(
                   ["researchAndInnovation", "publicationsPerYear"],
-                  e.target.value ? Number(e.target.value) : undefined
+                  parseNumber(e.target.value),
                 )
               }
             />
@@ -1841,7 +1857,7 @@ export default function AdminInstituteDetailPage() {
               onChange={(e) =>
                 setPath(
                   ["researchAndInnovation", "researchFunding"],
-                  e.target.value
+                  e.target.value,
                 )
               }
             />
@@ -1849,11 +1865,13 @@ export default function AdminInstituteDetailPage() {
           <div>
             <Label>PhD Scholars</Label>
             <Input
-              value={getPath(["researchAndInnovation", "phdScholars"], "")}
+              value={displayNumber(
+                getPath(["researchAndInnovation", "phdScholars"], undefined),
+              )}
               onChange={(e) =>
                 setPath(
                   ["researchAndInnovation", "phdScholars"],
-                  e.target.value ? Number(e.target.value) : undefined
+                  parseNumber(e.target.value),
                 )
               }
             />
@@ -1863,12 +1881,12 @@ export default function AdminInstituteDetailPage() {
             <Input
               value={getPath(
                 ["researchAndInnovation", "incubationCenter", "name"],
-                ""
+                "",
               )}
               onChange={(e) =>
                 setPath(
                   ["researchAndInnovation", "incubationCenter", "name"],
-                  e.target.value
+                  e.target.value,
                 )
               }
             />
@@ -1876,9 +1894,15 @@ export default function AdminInstituteDetailPage() {
           <div>
             <Label>Startups Funded</Label>
             <Input
-              value={getPath(
-                ["researchAndInnovation", "incubationCenter", "startupsFunded"],
-                ""
+              value={displayNumber(
+                getPath(
+                  [
+                    "researchAndInnovation",
+                    "incubationCenter",
+                    "startupsFunded",
+                  ],
+                  undefined,
+                ),
               )}
               onChange={(e) =>
                 setPath(
@@ -1887,7 +1911,7 @@ export default function AdminInstituteDetailPage() {
                     "incubationCenter",
                     "startupsFunded",
                   ],
-                  e.target.value ? Number(e.target.value) : undefined
+                  parseNumber(e.target.value),
                 )
               }
             />
@@ -1897,12 +1921,12 @@ export default function AdminInstituteDetailPage() {
             <Input
               value={getPath(
                 ["researchAndInnovation", "incubationCenter", "totalFunding"],
-                ""
+                "",
               )}
               onChange={(e) =>
                 setPath(
                   ["researchAndInnovation", "incubationCenter", "totalFunding"],
-                  e.target.value
+                  e.target.value,
                 )
               }
             />
@@ -1954,8 +1978,8 @@ export default function AdminInstituteDetailPage() {
             {Object.entries(
               getPath(
                 ["mediaGallery", "photos"],
-                {} as Record<string, string[]>
-              )
+                {} as Record<string, string[]>,
+              ),
             ).map(([category, urls]: any, idx: number) => (
               <div className="space-y-2" key={`${category}-${idx}`}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -2023,7 +2047,7 @@ export default function AdminInstituteDetailPage() {
                     [
                       ...(getPath(["mediaGallery", "videos"], []) as any[]),
                       { url: "", title: "", thumbnail: "" },
-                    ]
+                    ],
                   )
                 }
               >
@@ -2046,7 +2070,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["mediaGallery", "videos"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], url: e.target.value };
@@ -2062,7 +2086,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["mediaGallery", "videos"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], title: e.target.value };
@@ -2078,7 +2102,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["mediaGallery", "videos"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr[idx] = { ...arr[idx], thumbnail: e.target.value };
@@ -2095,7 +2119,7 @@ export default function AdminInstituteDetailPage() {
                           const arr = [
                             ...(getPath(
                               ["mediaGallery", "videos"],
-                              []
+                              [],
                             ) as any[]),
                           ];
                           arr.splice(idx, 1);
@@ -2106,7 +2130,7 @@ export default function AdminInstituteDetailPage() {
                       </Button>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
@@ -2133,12 +2157,12 @@ export default function AdminInstituteDetailPage() {
                     {
                       id: "",
                       name: "",
-                      courseCount: 0,
-                      placementRating: 0,
+                      courseCount: undefined,
+                      placementRating: undefined,
                       eligibilityExams: [],
                       course: [],
                     },
-                  ]
+                  ],
                 )
               }
             >
@@ -2186,16 +2210,14 @@ export default function AdminInstituteDetailPage() {
                     <div>
                       <Label>Course Count</Label>
                       <Input
-                        value={prog.courseCount ?? ""}
+                        value={displayNumber(prog.courseCount)}
                         onChange={(e) => {
                           const arr = [
                             ...(getPath(["programmes"], []) as any[]),
                           ];
                           arr[progIdx] = {
                             ...arr[progIdx],
-                            courseCount: e.target.value
-                              ? Number(e.target.value)
-                              : 0,
+                            courseCount: parseNumber(e.target.value),
                           };
                           setPath(["programmes"], arr);
                         }}
@@ -2204,16 +2226,14 @@ export default function AdminInstituteDetailPage() {
                     <div>
                       <Label>Placement Rating</Label>
                       <Input
-                        value={prog.placementRating ?? ""}
+                        value={displayNumber(prog.placementRating)}
                         onChange={(e) => {
                           const arr = [
                             ...(getPath(["programmes"], []) as any[]),
                           ];
                           arr[progIdx] = {
                             ...arr[progIdx],
-                            placementRating: e.target.value
-                              ? Number(e.target.value)
-                              : 0,
+                            placementRating: parseNumber(e.target.value),
                           };
                           setPath(["programmes"], arr);
                         }}
@@ -2254,15 +2274,15 @@ export default function AdminInstituteDetailPage() {
                             duration: "",
                             level: "",
                             category: "",
-                            totalSeats: 0,
+                            totalSeats: undefined,
                             fees: {
-                              tuitionFee: 0,
-                              totalFee: 0,
+                              tuitionFee: undefined,
+                              totalFee: undefined,
                               currency: "INR",
                             },
                             brochure: {
                               url: "",
-                              year: new Date().getFullYear(),
+                              year: undefined,
                             },
                             seoUrl: "",
                             affiliatedUniversity: "",
@@ -2272,9 +2292,9 @@ export default function AdminInstituteDetailPage() {
                             courseLevel: "",
                             eligibilityExams: [],
                             placements: {
-                              averagePackage: 0,
-                              highestPackage: 0,
-                              placementRate: 0,
+                              averagePackage: undefined,
+                              highestPackage: undefined,
+                              placementRate: undefined,
                               topRecruiters: [],
                             },
                           });
@@ -2446,7 +2466,7 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Total Seats</Label>
                                 <Input
-                                  value={course.totalSeats ?? ""}
+                                  value={displayNumber(course.totalSeats)}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2454,9 +2474,7 @@ export default function AdminInstituteDetailPage() {
                                     const courses = [...arr[progIdx].course];
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
-                                      totalSeats: e.target.value
-                                        ? Number(e.target.value)
-                                        : 0,
+                                      totalSeats: parseNumber(e.target.value),
                                     };
                                     arr[progIdx] = {
                                       ...arr[progIdx],
@@ -2469,7 +2487,7 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Review Count</Label>
                                 <Input
-                                  value={course.reviewCount ?? ""}
+                                  value={displayNumber(course.reviewCount)}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2477,9 +2495,7 @@ export default function AdminInstituteDetailPage() {
                                     const courses = [...arr[progIdx].course];
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
-                                      reviewCount: e.target.value
-                                        ? Number(e.target.value)
-                                        : 0,
+                                      reviewCount: parseNumber(e.target.value),
                                     };
                                     arr[progIdx] = {
                                       ...arr[progIdx],
@@ -2492,7 +2508,7 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Questions Count</Label>
                                 <Input
-                                  value={course.questionsCount ?? ""}
+                                  value={displayNumber(course.questionsCount)}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2500,9 +2516,9 @@ export default function AdminInstituteDetailPage() {
                                     const courses = [...arr[progIdx].course];
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
-                                      questionsCount: e.target.value
-                                        ? Number(e.target.value)
-                                        : 0,
+                                      questionsCount: parseNumber(
+                                        e.target.value,
+                                      ),
                                     };
                                     arr[progIdx] = {
                                       ...arr[progIdx],
@@ -2538,7 +2554,7 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Tuition Fee</Label>
                                 <Input
-                                  value={course.fees?.tuitionFee ?? ""}
+                                  value={displayNumber(course.fees?.tuitionFee)}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2547,9 +2563,9 @@ export default function AdminInstituteDetailPage() {
                                     const fees = {
                                       ...(courses[courseIdx].fees || {}),
                                     };
-                                    fees.tuitionFee = e.target.value
-                                      ? Number(e.target.value)
-                                      : 0;
+                                    fees.tuitionFee = parseNumber(
+                                      e.target.value,
+                                    );
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
                                       fees,
@@ -2565,7 +2581,7 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Total Fee</Label>
                                 <Input
-                                  value={course.fees?.totalFee ?? ""}
+                                  value={displayNumber(course.fees?.totalFee)}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2574,9 +2590,7 @@ export default function AdminInstituteDetailPage() {
                                     const fees = {
                                       ...(courses[courseIdx].fees || {}),
                                     };
-                                    fees.totalFee = e.target.value
-                                      ? Number(e.target.value)
-                                      : 0;
+                                    fees.totalFee = parseNumber(e.target.value);
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
                                       fees,
@@ -2665,7 +2679,7 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Brochure Year</Label>
                                 <Input
-                                  value={course.brochure?.year ?? ""}
+                                  value={displayNumber(course.brochure?.year)}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2674,9 +2688,7 @@ export default function AdminInstituteDetailPage() {
                                     const brochure = {
                                       ...(courses[courseIdx].brochure || {}),
                                     };
-                                    brochure.year = e.target.value
-                                      ? Number(e.target.value)
-                                      : 0;
+                                    brochure.year = parseNumber(e.target.value);
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
                                       brochure,
@@ -2834,9 +2846,9 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Avg Package</Label>
                                 <Input
-                                  value={
-                                    course.placements?.averagePackage ?? ""
-                                  }
+                                  value={displayNumber(
+                                    course.placements?.averagePackage,
+                                  )}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2845,9 +2857,9 @@ export default function AdminInstituteDetailPage() {
                                     const placements = {
                                       ...(courses[courseIdx].placements || {}),
                                     };
-                                    placements.averagePackage = e.target.value
-                                      ? Number(e.target.value)
-                                      : 0;
+                                    placements.averagePackage = parseNumber(
+                                      e.target.value,
+                                    );
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
                                       placements,
@@ -2863,9 +2875,9 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Highest Package</Label>
                                 <Input
-                                  value={
-                                    course.placements?.highestPackage ?? ""
-                                  }
+                                  value={displayNumber(
+                                    course.placements?.highestPackage,
+                                  )}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2874,9 +2886,9 @@ export default function AdminInstituteDetailPage() {
                                     const placements = {
                                       ...(courses[courseIdx].placements || {}),
                                     };
-                                    placements.highestPackage = e.target.value
-                                      ? Number(e.target.value)
-                                      : 0;
+                                    placements.highestPackage = parseNumber(
+                                      e.target.value,
+                                    );
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
                                       placements,
@@ -2892,7 +2904,9 @@ export default function AdminInstituteDetailPage() {
                               <div>
                                 <Label>Placement Rate</Label>
                                 <Input
-                                  value={course.placements?.placementRate ?? ""}
+                                  value={displayNumber(
+                                    course.placements?.placementRate,
+                                  )}
                                   onChange={(e) => {
                                     const arr = [
                                       ...(getPath(["programmes"], []) as any[]),
@@ -2901,9 +2915,9 @@ export default function AdminInstituteDetailPage() {
                                     const placements = {
                                       ...(courses[courseIdx].placements || {}),
                                     };
-                                    placements.placementRate = e.target.value
-                                      ? Number(e.target.value)
-                                      : 0;
+                                    placements.placementRate = parseNumber(
+                                      e.target.value,
+                                    );
                                     courses[courseIdx] = {
                                       ...courses[courseIdx],
                                       placements,
@@ -3010,7 +3024,7 @@ export default function AdminInstituteDetailPage() {
                               />
                             </div>
                           </div>
-                        )
+                        ),
                       )}
                     </div>
                   </div>
@@ -3031,7 +3045,7 @@ export default function AdminInstituteDetailPage() {
                     </Button>
                   </div>
                 </div>
-              )
+              ),
             )}
           </div>
         </CardContent>

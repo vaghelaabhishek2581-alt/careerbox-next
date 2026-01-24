@@ -1,27 +1,28 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/lib/redux/store';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/lib/redux/store";
 import {
   fetchAllPayments,
   processRefund,
   updatePaymentStatus,
   setFilters,
   setCurrentPage,
-  setSelectedPayment
-} from '@/lib/redux/slices/adminSlice';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+  setSelectedPayment,
+} from "@/lib/redux/slices/adminSlice";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -29,16 +30,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   CreditCard,
   Search,
@@ -54,30 +55,48 @@ import {
   DollarSign,
   TrendingUp,
   Users,
-  Calendar
-} from 'lucide-react';
-import { format } from 'date-fns';
+  Calendar,
+} from "lucide-react";
+import { format } from "date-fns";
+import { downloadInvoicePdf } from "@/lib/pdf/invoice";
+import { SELLER_DETAILS } from "@/lib/billing/invoice";
 
 export default function AdminPaymentsPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { payments, loading, error, filters, currentPage, totalPages, totalItems } = useSelector(
-    (state: RootState) => state.admin
-  );
+  const {
+    payments,
+    loading,
+    error,
+    filters,
+    currentPage,
+    totalPages,
+    totalItems,
+  } = useSelector((state: RootState) => state.admin);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [planTypeFilter, setPlanTypeFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [planTypeFilter, setPlanTypeFilter] = useState("");
   const [refundDialog, setRefundDialog] = useState(false);
   const [statusDialog, setStatusDialog] = useState(false);
   const [selectedPayment, setSelectedPaymentLocal] = useState<any>(null);
-  const [refundAmount, setRefundAmount] = useState('');
-  const [refundReason, setRefundReason] = useState('');
-  const [newStatus, setNewStatus] = useState('');
-  const [statusNotes, setStatusNotes] = useState('');
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [newStatus, setNewStatus] = useState("");
+  const [statusNotes, setStatusNotes] = useState("");
+  const [invoiceItems, setInvoiceItems] = useState<any[]>([]);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState("all");
+  const [invoiceInstituteFilter, setInvoiceInstituteFilter] = useState("");
+  const [invoiceDateStart, setInvoiceDateStart] = useState("");
+  const [invoiceDateEnd, setInvoiceDateEnd] = useState("");
 
   useEffect(() => {
     dispatch(fetchAllPayments({ page: 1 }));
   }, [dispatch]);
+
+  useEffect(() => {
+    loadInvoices();
+  }, []);
 
   const handleSearch = () => {
     const newFilters = {
@@ -89,25 +108,98 @@ export default function AdminPaymentsPage() {
     dispatch(fetchAllPayments({ page: 1, filters: newFilters }));
   };
 
+  const loadInvoices = async () => {
+    setInvoiceLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.set("page", "1");
+      queryParams.set("limit", "50");
+      if (invoiceStatusFilter && invoiceStatusFilter !== "all") {
+        queryParams.set("status", invoiceStatusFilter);
+      }
+      if (invoiceInstituteFilter) {
+        queryParams.set("instituteId", invoiceInstituteFilter);
+      }
+      if (invoiceDateStart) queryParams.set("dateStart", invoiceDateStart);
+      if (invoiceDateEnd) queryParams.set("dateEnd", invoiceDateEnd);
+
+      const res = await fetch(
+        `/api/billing/invoices?${queryParams.toString()}`,
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setInvoiceItems(data.data || []);
+      } else {
+        setInvoiceItems([]);
+      }
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
+
+  const handleDownloadInvoice = async (inv: any) => {
+    const normalizedAmount = normalizeAmount(
+      Number(inv.subtotal ?? inv.amount),
+      inv.currency || "INR",
+    );
+    await downloadInvoicePdf({
+      id: inv.invoiceId || inv.id,
+      date: inv.invoiceDate,
+      dueDate: inv.dueDate,
+      plan: inv.planName,
+      cycle: inv.interval,
+      method:
+        inv.paymentMethod === "UPI"
+          ? "upi"
+          : inv.paymentMethod === "Card"
+            ? "card"
+            : undefined,
+      transactionId: inv.transactionId || inv.orderId,
+      upiHandle: inv.upiHandle,
+      cardBrand: inv.cardBrand,
+      cardLast4: inv.cardLast4,
+      seller: SELLER_DETAILS,
+      buyer: {
+        name: inv.billingSnapshot?.organizationName || "Institute",
+        addressLine1: inv.billingSnapshot?.addressLine1 || "",
+        addressLine2: inv.billingSnapshot?.addressLine2 || "",
+        country: inv.billingSnapshot?.country || "India",
+        gstin: inv.billingSnapshot?.gstin,
+        state: inv.billingSnapshot?.state,
+        email: inv.billingSnapshot?.email,
+      },
+      lineItems: [
+        {
+          description: `${inv.planName || "Subscription"} (${inv.interval || "yearly"})`,
+          qty: 1,
+          unitPrice: normalizedAmount,
+          sac: "9983",
+        },
+      ],
+    });
+  };
+
   const handleRefund = async () => {
     if (!selectedPayment) return;
 
     try {
-      await dispatch(processRefund({
-        paymentId: selectedPayment.id,
-        amount: refundAmount ? parseFloat(refundAmount) : undefined,
-        reason: refundReason,
-      })).unwrap();
+      await dispatch(
+        processRefund({
+          paymentId: selectedPayment.id,
+          amount: refundAmount ? parseFloat(refundAmount) : undefined,
+          reason: refundReason,
+        }),
+      ).unwrap();
 
       setRefundDialog(false);
-      setRefundAmount('');
-      setRefundReason('');
+      setRefundAmount("");
+      setRefundReason("");
       setSelectedPaymentLocal(null);
 
       // Refresh payments list
       dispatch(fetchAllPayments({ page: currentPage, filters }));
     } catch (error) {
-      console.error('Refund failed:', error);
+      console.error("Refund failed:", error);
     }
   };
 
@@ -115,35 +207,38 @@ export default function AdminPaymentsPage() {
     if (!selectedPayment || !newStatus) return;
 
     try {
-      await dispatch(updatePaymentStatus({
-        paymentId: selectedPayment.id,
-        status: newStatus as any,
-        notes: statusNotes,
-      })).unwrap();
+      await dispatch(
+        updatePaymentStatus({
+          paymentId: selectedPayment.id,
+          status: newStatus as any,
+          notes: statusNotes,
+        }),
+      ).unwrap();
 
       setStatusDialog(false);
-      setNewStatus('');
-      setStatusNotes('');
+      setNewStatus("");
+      setStatusNotes("");
       setSelectedPaymentLocal(null);
 
       // Refresh payments list
       dispatch(fetchAllPayments({ page: currentPage, filters }));
     } catch (error) {
-      console.error('Status update failed:', error);
+      console.error("Status update failed:", error);
     }
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      created: { color: 'bg-gray-100 text-gray-800', icon: Clock },
-      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      paid: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      failed: { color: 'bg-red-100 text-red-800', icon: XCircle },
-      cancelled: { color: 'bg-gray-100 text-gray-800', icon: XCircle },
-      refunded: { color: 'bg-blue-100 text-blue-800', icon: RotateCcw },
+      created: { color: "bg-gray-100 text-gray-800", icon: Clock },
+      pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
+      paid: { color: "bg-green-100 text-green-800", icon: CheckCircle },
+      failed: { color: "bg-red-100 text-red-800", icon: XCircle },
+      cancelled: { color: "bg-gray-100 text-gray-800", icon: XCircle },
+      refunded: { color: "bg-blue-100 text-blue-800", icon: RotateCcw },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.created;
+    const config =
+      statusConfig[status as keyof typeof statusConfig] || statusConfig.created;
     const IconComponent = config.icon;
 
     return (
@@ -154,19 +249,26 @@ export default function AdminPaymentsPage() {
     );
   };
 
-  const formatCurrency = (amount: number, currency: string = 'INR') => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
+  const normalizeAmount = (amount: number, currency: string = "INR") =>
+    currency === "INR" ? amount / 100 : amount;
+  const formatCurrency = (amount: number, currency: string = "INR") => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
       currency: currency,
-    }).format(amount);
+    }).format(normalizeAmount(amount, currency));
   };
 
   // Calculate stats
   const stats = {
-    totalRevenue: payments.reduce((sum, p) => p.status === 'paid' ? sum + p.amount : sum, 0),
+    totalRevenue: payments.reduce(
+      (sum, p) => (p.status === "paid" ? sum + p.amount : sum),
+      0,
+    ),
     totalPayments: payments.length,
-    successfulPayments: payments.filter(p => p.status === 'paid').length,
-    pendingPayments: payments.filter(p => ['created', 'pending'].includes(p.status)).length,
+    successfulPayments: payments.filter((p) => p.status === "paid").length,
+    pendingPayments: payments.filter((p) =>
+      ["created", "pending"].includes(p.status),
+    ).length,
   };
 
   return (
@@ -174,13 +276,20 @@ export default function AdminPaymentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payment Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Payment Management
+          </h1>
           <p className="text-gray-600 mt-2">
             Monitor and manage all payments across the platform
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => dispatch(fetchAllPayments({ page: currentPage, filters }))}>
+          <Button
+            variant="outline"
+            onClick={() =>
+              dispatch(fetchAllPayments({ page: currentPage, filters }))
+            }
+          >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -197,8 +306,12 @@ export default function AdminPaymentsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Revenue
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(stats.totalRevenue)}
+                </p>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="h-6 w-6 text-green-600" />
@@ -211,8 +324,12 @@ export default function AdminPaymentsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Payments</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalPayments}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Payments
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.totalPayments}
+                </p>
               </div>
               <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <CreditCard className="h-6 w-6 text-blue-600" />
@@ -226,7 +343,9 @@ export default function AdminPaymentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Successful</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.successfulPayments}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.successfulPayments}
+                </p>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="h-6 w-6 text-green-600" />
@@ -240,7 +359,9 @@ export default function AdminPaymentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pendingPayments}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.pendingPayments}
+                </p>
               </div>
               <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <Clock className="h-6 w-6 text-yellow-600" />
@@ -336,31 +457,43 @@ export default function AdminPaymentsPage() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{payment.userName}</p>
-                        <p className="text-sm text-gray-500">{payment.userEmail}</p>
+                        <p className="text-sm text-gray-500">
+                          {payment.userEmail}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{payment.organizationName || 'N/A'}</p>
-                        <p className="text-sm text-gray-500">{payment.organizationType || 'Individual'}</p>
+                        <p className="font-medium">
+                          {payment.organizationName || "N/A"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {payment.organizationType || "Individual"}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <p className="font-medium">{formatCurrency(payment.amount, payment.currency)}</p>
-                      <p className="text-sm text-gray-500">{payment.planDuration} months</p>
+                      <p className="font-medium">
+                        {formatCurrency(payment.amount, payment.currency)}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {payment.planDuration} months
+                      </p>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
                         {payment.planType}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {getStatusBadge(payment.status)}
-                    </TableCell>
+                    <TableCell>{getStatusBadge(payment.status)}</TableCell>
                     <TableCell>
                       <div>
-                        <p className="text-sm">{format(new Date(payment.createdAt), 'MMM dd, yyyy')}</p>
-                        <p className="text-xs text-gray-500">{format(new Date(payment.createdAt), 'HH:mm')}</p>
+                        <p className="text-sm">
+                          {format(new Date(payment.createdAt), "MMM dd, yyyy")}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(payment.createdAt), "HH:mm")}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -369,8 +502,11 @@ export default function AdminPaymentsPage() {
                           <Eye className="w-4 h-4" />
                         </Button>
 
-                        {payment.status === 'paid' && (
-                          <Dialog open={refundDialog} onOpenChange={setRefundDialog}>
+                        {payment.status === "paid" && (
+                          <Dialog
+                            open={refundDialog}
+                            onOpenChange={setRefundDialog}
+                          >
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
@@ -386,12 +522,16 @@ export default function AdminPaymentsPage() {
                               </DialogHeader>
                               <div className="space-y-4">
                                 <div>
-                                  <Label>Refund Amount (Leave empty for full refund)</Label>
+                                  <Label>
+                                    Refund Amount (Leave empty for full refund)
+                                  </Label>
                                   <Input
                                     type="number"
                                     placeholder={`Max: ${payment.amount}`}
                                     value={refundAmount}
-                                    onChange={(e) => setRefundAmount(e.target.value)}
+                                    onChange={(e) =>
+                                      setRefundAmount(e.target.value)
+                                    }
                                   />
                                 </div>
                                 <div>
@@ -399,14 +539,22 @@ export default function AdminPaymentsPage() {
                                   <Textarea
                                     placeholder="Enter reason for refund..."
                                     value={refundReason}
-                                    onChange={(e) => setRefundReason(e.target.value)}
+                                    onChange={(e) =>
+                                      setRefundReason(e.target.value)
+                                    }
                                   />
                                 </div>
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="outline" onClick={() => setRefundDialog(false)}>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setRefundDialog(false)}
+                                  >
                                     Cancel
                                   </Button>
-                                  <Button onClick={handleRefund} disabled={!refundReason}>
+                                  <Button
+                                    onClick={handleRefund}
+                                    disabled={!refundReason}
+                                  >
                                     Process Refund
                                   </Button>
                                 </div>
@@ -415,8 +563,13 @@ export default function AdminPaymentsPage() {
                           </Dialog>
                         )}
 
-                        {['created', 'pending', 'failed'].includes(payment.status) && (
-                          <Dialog open={statusDialog} onOpenChange={setStatusDialog}>
+                        {["created", "pending", "failed"].includes(
+                          payment.status,
+                        ) && (
+                          <Dialog
+                            open={statusDialog}
+                            onOpenChange={setStatusDialog}
+                          >
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
@@ -433,14 +586,21 @@ export default function AdminPaymentsPage() {
                               <div className="space-y-4">
                                 <div>
                                   <Label>New Status</Label>
-                                  <Select value={newStatus} onValueChange={setNewStatus}>
+                                  <Select
+                                    value={newStatus}
+                                    onValueChange={setNewStatus}
+                                  >
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select new status" />
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="paid">Paid</SelectItem>
-                                      <SelectItem value="failed">Failed</SelectItem>
-                                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                                      <SelectItem value="failed">
+                                        Failed
+                                      </SelectItem>
+                                      <SelectItem value="cancelled">
+                                        Cancelled
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -449,14 +609,22 @@ export default function AdminPaymentsPage() {
                                   <Textarea
                                     placeholder="Add notes about status change..."
                                     value={statusNotes}
-                                    onChange={(e) => setStatusNotes(e.target.value)}
+                                    onChange={(e) =>
+                                      setStatusNotes(e.target.value)
+                                    }
                                   />
                                 </div>
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="outline" onClick={() => setStatusDialog(false)}>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setStatusDialog(false)}
+                                  >
                                     Cancel
                                   </Button>
-                                  <Button onClick={handleStatusUpdate} disabled={!newStatus}>
+                                  <Button
+                                    onClick={handleStatusUpdate}
+                                    disabled={!newStatus}
+                                  >
                                     Update Status
                                   </Button>
                                 </div>
@@ -464,6 +632,128 @@ export default function AdminPaymentsPage() {
                             </DialogContent>
                           </Dialog>
                         )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoices ({invoiceItems.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            <Select
+              value={invoiceStatusFilter}
+              onValueChange={setInvoiceStatusFilter}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Institute ID"
+              value={invoiceInstituteFilter}
+              onChange={(e) => setInvoiceInstituteFilter(e.target.value)}
+            />
+            <Input
+              type="date"
+              value={invoiceDateStart}
+              onChange={(e) => setInvoiceDateStart(e.target.value)}
+            />
+            <Input
+              type="date"
+              value={invoiceDateEnd}
+              onChange={(e) => setInvoiceDateEnd(e.target.value)}
+            />
+            <Button onClick={loadInvoices}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Apply
+            </Button>
+          </div>
+          {invoiceLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+              Loading invoices...
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice</TableHead>
+                  <TableHead>Institute</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoiceItems.map((inv, index) => (
+                  <TableRow
+                    key={`${inv.invoiceId || inv.id || "invoice"}-${index}`}
+                  >
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{inv.invoiceId || inv.id}</p>
+                        <p className="text-xs text-gray-500">{inv.orderId}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">
+                          {inv.billingSnapshot?.organizationName || "—"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {inv.instituteId || "—"}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-medium">
+                        {formatCurrency(inv.amount, inv.currency)}
+                      </p>
+                      <p className="text-xs text-gray-500">{inv.planName}</p>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(inv.status)}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-sm">
+                          {format(new Date(inv.invoiceDate), "MMM dd, yyyy")}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(inv.invoiceDate), "HH:mm")}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/invoices/${inv.invoiceId || inv.id}`}
+                        >
+                          <Button variant="outline" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadInvoice(inv)}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

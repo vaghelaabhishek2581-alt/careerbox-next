@@ -40,37 +40,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Check if user already has an active subscription
-    const existingSubscription = await Subscription.findOne({
-      userId: userId,
-      status: 'active'
-    })
-
-    if (existingSubscription) {
-      return NextResponse.json(
-        { error: 'User already has an active subscription' },
-        { status: 400 }
-      )
-    }
+    await Subscription.updateMany(
+      { userId: userId, status: 'active' },
+      { $set: { status: 'inactive', isActive: false, updatedAt: new Date() } }
+    )
 
     // Calculate end date
     const startDate = new Date()
     const endDate = new Date()
     endDate.setMonth(endDate.getMonth() + duration)
 
-    // Create subscription
     const subscription = new Subscription({
       userId: userId,
-      organizationId: userId, // Use user ID as organization ID for granted subscriptions
+      organizationId: userId,
       organizationType: organizationType,
       planName: `${planType.charAt(0).toUpperCase() + planType.slice(1)} Plan`,
       planType: planType,
+      billingCycle: duration >= 12 ? 'yearly' : 'monthly',
       status: 'active',
-      amount: 0, // Free subscription granted by admin
+      amount: 0,
       currency: 'INR',
       startDate: startDate,
       endDate: endDate,
-      grantedBy: user.email,
+      grantedBy: user._id,
       grantReason: reason,
       createdAt: new Date(),
     })
