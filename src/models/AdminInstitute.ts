@@ -14,6 +14,11 @@ export interface IAdminInstitute extends Document {
   logo?: string
   coverImage?: string
   website?: string
+  published?: boolean
+  publishLockedByAdmin?: boolean
+  lastPublishChangedBy?: 'admin' | 'institute_admin'
+  lastPublishedAt?: Date
+  lastUnpublishedAt?: Date
 
   accreditation?: any
   location?: any
@@ -182,6 +187,15 @@ const AdminInstituteSchema = new Schema<IAdminInstitute>(
     establishedYear: Number,
     type: String,
     status: String,
+    published: { type: Boolean, default: true },
+    publishLockedByAdmin: { type: Boolean, default: false },
+    lastPublishChangedBy: {
+      type: String,
+      enum: ['admin', 'institute_admin'],
+      default: undefined
+    },
+    lastPublishedAt: { type: Date },
+    lastUnpublishedAt: { type: Date },
     logo: String,
     coverImage: String,
     website: String,

@@ -711,29 +711,49 @@
 //     );
 //   }
 // }
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyPaymentSignature, getPaymentDetails } from '@/lib/payment/razorpay';
-import { connectToDatabase } from '@/lib/db/mongodb';
-import { getAuthenticatedUser } from '@/lib/auth/unified-auth';
-import { z } from 'zod';
-import RegistrationIntent, { LeanRegistrationIntent } from '@/src/models/RegistrationIntent';
-import User from '@/src/models/User';
-import Subscription from '@/src/models/Subscription';
-import AdminInstitute from '@/src/models/AdminInstitute';
-import Business from '@/src/models/Business';
-import NotificationService from '@/lib/services/notificationService';
-import { ObjectId } from 'mongodb';
-import Profile from '@/src/models/Profile';
+import { NextRequest, NextResponse } from 'next/server'
+import {
+  verifyPaymentSignature,
+  getPaymentDetails
+} from '@/lib/payment/razorpay'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { connectToDatabase as connectMongoose } from '@/lib/db/mongoose'
+import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
+import { z } from 'zod'
+import RegistrationIntent, {
+  LeanRegistrationIntent
+} from '@/src/models/RegistrationIntent'
+import User from '@/src/models/User'
+import Subscription from '@/src/models/Subscription'
+import AdminInstitute from '@/src/models/AdminInstitute'
+import Business from '@/src/models/Business'
+import BillingInfo from '@/src/models/BillingInfo'
+import Invoice from '@/src/models/Invoice'
+import Payment from '@/src/models/Payment'
+import NotificationService from '@/lib/services/notificationService'
+import { ObjectId } from 'mongodb'
+import { Types } from 'mongoose'
+import Profile from '@/src/models/Profile'
+import {
+  calculateSubtotal,
+  calculateTaxBreakup,
+  generateInvoiceId,
+  getDueDate,
+  SELLER_DETAILS
+} from '@/lib/billing/invoice'
 
 const verifyPaymentSchema = z.object({
-  razorpay_order_id: z.string(),
-  razorpay_payment_id: z.string(),
-  razorpay_signature: z.string(),
-  registrationIntentId: z.string()
-});
+  razorpay_order_id: z.string().optional(),
+  razorpay_payment_id: z.string().optional(),
+  razorpay_signature: z.string().optional(),
+  registrationIntentId: z.string().optional(),
+  razorpayOrderId: z.string().optional(),
+  razorpayPaymentId: z.string().optional(),
+  razorpaySignature: z.string().optional()
+})
 
 // Organization type enum
-type OrganizationType = 'institute' | 'business';
+type OrganizationType = 'institute' | 'business'
 
 // All-inclusive subscription features for single plan
 const SUBSCRIPTION_FEATURES = {
@@ -756,23 +776,27 @@ const SUBSCRIPTION_FEATURES = {
     apiAccess: true,
     bulkOperations: true
   }
-};
+}
 
 /**
  * Generate unique publicProfileId with collision checking
  */
-async function generateUniquePublicProfileId(baseName: string, type: OrganizationType): Promise<string> {
-  const cleanBase = baseName
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 15) || type;
+async function generateUniquePublicProfileId (
+  baseName: string,
+  type: OrganizationType
+): Promise<string> {
+  const cleanBase =
+    baseName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 15) || type
 
-  let profileId = cleanBase;
-  let counter = 0;
+  let profileId = cleanBase
+  let counter = 0
 
   while (counter < 50) {
     // Check all collections in parallel
@@ -780,24 +804,25 @@ async function generateUniquePublicProfileId(baseName: string, type: Organizatio
       Profile.exists({ 'personalDetails.publicProfileId': profileId }),
       AdminInstitute.exists({ id: profileId }),
       Business.exists({ publicProfileId: profileId })
-    ]);
+    ])
 
     if (!profileExists && !instituteExists && !businessExists) {
-      return profileId;
+      return profileId
     }
 
-    counter++;
-    profileId = counter === 1 ? `${cleanBase}-${type}` : `${cleanBase}-${type}-${counter}`;
+    counter++
+    profileId =
+      counter === 1 ? `${cleanBase}-${type}` : `${cleanBase}-${type}-${counter}`
   }
 
   // Fallback with timestamp
-  return `${cleanBase}-${type}-${Date.now().toString(36)}`;
+  return `${cleanBase}-${type}-${Date.now().toString(36)}`
 }
 
 /**
  * Create organization entity (AdminInstitute or Business)
  */
-async function createOrganization(
+async function createOrganization (
   intent: any,
   userId: string,
   subscriptionId: ObjectId,
@@ -825,22 +850,26 @@ async function createOrganization(
     status: 'active',
     socialMedia: {},
     isVerified: false
-  };
+  }
 
   if (intent.type === 'institute') {
     // Check if intent links to existing AdminInstitute
     if (intent.instituteId) {
-      const existingInstitute = await AdminInstitute.findById(intent.instituteId);
+      const existingInstitute = await AdminInstitute.findById(
+        intent.instituteId
+      )
       if (existingInstitute) {
         // Initialize userIds if it doesn't exist (for old documents)
         if (!existingInstitute.userIds) {
-          existingInstitute.userIds = [];
+          existingInstitute.userIds = []
         }
-        if (!existingInstitute.userIds.some((id: any) => id.toString() === userId)) {
-          existingInstitute.userIds.push(new ObjectId(userId));
-          await existingInstitute.save();
+        if (
+          !existingInstitute.userIds.some((id: any) => id.toString() === userId)
+        ) {
+          existingInstitute.userIds.push(new ObjectId(userId))
+          await existingInstitute.save()
         }
-        return existingInstitute;
+        return existingInstitute
       }
     }
 
@@ -864,11 +893,16 @@ async function createOrganization(
         pincode: intent.zipCode,
         country: intent.country
       },
-      overview: [{ key: 'Description', value: intent.description || 'No description provided' }],
+      overview: [
+        {
+          key: 'Description',
+          value: intent.description || 'No description provided'
+        }
+      ],
       establishedYear: intent.establishmentYear,
       createdAt: new Date(),
       updatedAt: new Date()
-    });
+    })
   } else {
     return new Business({
       ...baseData,
@@ -877,15 +911,19 @@ async function createOrganization(
       size: intent.organizationSize || 'Small',
       employeeCount: 0,
       jobPostings: 0
-    });
+    })
   }
 }
 
 /**
  * Update user with new role and organization
  */
-async function updateUserAfterPayment(userId: string, organizationType: OrganizationType, organizationId: ObjectId) {
-  const role = organizationType === 'institute' ? 'institute' : 'business';
+async function updateUserAfterPayment (
+  userId: string,
+  organizationType: OrganizationType,
+  organizationId: ObjectId
+) {
+  const role = organizationType === 'institute' ? 'institute' : 'business'
 
   await User.findByIdAndUpdate(userId, {
     $set: {
@@ -898,15 +936,22 @@ async function updateUserAfterPayment(userId: string, organizationType: Organiza
       roles: role,
       ownedOrganizations: organizationId
     }
-  });
+  })
 }
 
 /**
  * Send notifications in parallel
  */
-async function sendNotifications(intent: any, userId: string, organizationId: ObjectId, orderAmount: number, orderCurrency: string, paymentIds: { orderId: string, paymentId: string }) {
-  const dashboardUrl = intent.type === 'institute' ? '/institute' : '/business';
-  const amount = orderAmount / 100; // Convert paise to rupees
+async function sendNotifications (
+  intent: any,
+  userId: string,
+  organizationId: ObjectId,
+  orderAmount: number,
+  orderCurrency: string,
+  paymentIds: { orderId: string; paymentId: string }
+) {
+  const dashboardUrl = intent.type === 'institute' ? '/institute' : '/business'
+  const amount = orderAmount / 100 // Convert paise to rupees
 
   const userNotificationPromise = NotificationService.createNotification({
     userId,
@@ -934,7 +979,7 @@ async function sendNotifications(intent: any, userId: string, organizationId: Ob
       amount,
       currency: orderCurrency
     }
-  });
+  })
 
   const adminNotificationPromise = NotificationService.sendAdminNotification({
     type: 'subscription_purchased',
@@ -977,97 +1022,499 @@ async function sendNotifications(intent: any, userId: string, organizationId: Ob
         hour: '2-digit',
         minute: '2-digit'
       }),
-      dashboardUrl: `${process.env.FRONTEND_ORIGIN || 'http://localhost:3000'}/admin/organizations/${organizationId}`
+      dashboardUrl: `${
+        process.env.FRONTEND_ORIGIN || 'http://localhost:3000'
+      }/admin/organizations/${organizationId}`
     }
-  });
+  })
 
-  await Promise.all([userNotificationPromise, adminNotificationPromise]);
+  await Promise.all([userNotificationPromise, adminNotificationPromise])
 }
 
-export async function POST(request: NextRequest) {
+const getPlanDurationMonths = (cycle: string) => {
+  const normalized = cycle.toLowerCase()
+  if (normalized === 'monthly') return 1
+  if (normalized === 'quarterly') return 3
+  return 12
+}
+
+async function sendSubscriptionNotifications ({
+  userId,
+  organizationName,
+  organizationType,
+  amount,
+  currency,
+  contactName,
+  contactEmail,
+  contactPhone,
+  orderId,
+  paymentId
+}: {
+  userId: string
+  organizationName: string
+  organizationType: OrganizationType
+  amount: number
+  currency: string
+  contactName?: string
+  contactEmail?: string
+  contactPhone?: string
+  orderId: string
+  paymentId: string
+}) {
+  const amountInRupees = amount / 100
+  const userNotificationPromise = NotificationService.createNotification({
+    userId,
+    type: 'payment_received',
+    title: 'Payment Successful! 🎉',
+    message: `Your payment for ${organizationName} has been processed successfully.`,
+    data: {
+      actionUrl: organizationType === 'institute' ? '/institute' : '/business',
+      metadata: {
+        organizationName,
+        organizationType,
+        amount
+      }
+    },
+    priority: 'high',
+    sendEmail: true,
+    sendSocket: true,
+    emailTemplate: 'payment_received',
+    emailVariables: {
+      contactName: contactName || 'Customer',
+      organizationName,
+      type: organizationType,
+      amount: amountInRupees,
+      currency
+    }
+  })
+
+  const adminNotificationPromise = NotificationService.sendAdminNotification({
+    type: 'subscription_purchased',
+    title: '💰 New Subscription Purchased',
+    message: `${organizationName} (${organizationType}) has purchased a subscription for ₹${amountInRupees}.`,
+    data: {
+      actionUrl: '/admin/payments',
+      metadata: {
+        organizationName,
+        organizationType,
+        amount,
+        currency,
+        contactName: contactName || 'Customer',
+        contactEmail: contactEmail || '—',
+        contactPhone: contactPhone || '—',
+        paymentId,
+        orderId,
+        purchaseDate: new Date().toISOString()
+      }
+    },
+    priority: 'high',
+    sendEmail: true,
+    sendSocket: true,
+    emailTemplate: 'admin_subscription_purchased',
+    emailVariables: {
+      organizationName,
+      organizationType,
+      amount: amountInRupees,
+      currency,
+      contactName: contactName || 'Customer',
+      contactEmail: contactEmail || '—',
+      contactPhone: contactPhone || '—',
+      purchaseDate: new Date().toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      dashboardUrl: `${
+        process.env.FRONTEND_ORIGIN || 'http://localhost:3000'
+      }/admin/payments`
+    }
+  })
+
+  await Promise.all([userNotificationPromise, adminNotificationPromise])
+}
+
+export async function POST (request: NextRequest) {
   try {
     // Parallel authentication and database connection
     const [authResult] = await Promise.all([
       getAuthenticatedUser(request),
-      connectToDatabase()
-    ]);
+      connectToDatabase(),
+      connectMongoose()
+    ])
 
     if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { userId } = authResult;
-    const body = await request.json();
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      registrationIntentId
-    } = verifyPaymentSchema.parse(body);
+    const { userId, user } = authResult
+    const body = await request.json()
+    const parsed = verifyPaymentSchema.parse(body)
+    const registrationIntentId = parsed.registrationIntentId || undefined
+    const razorpay_order_id =
+      parsed.razorpay_order_id || parsed.razorpayOrderId || ''
+    const razorpay_payment_id =
+      parsed.razorpay_payment_id || parsed.razorpayPaymentId || ''
+    const razorpay_signature =
+      parsed.razorpay_signature || parsed.razorpaySignature || ''
 
     // Verify payment signature
-    if (!verifyPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature)) {
-      return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
+    if (
+      !verifyPaymentSignature(
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid payment signature' },
+        { status: 400 }
+      )
     }
 
-    // Parallel operations for validation
+    const { db } = await connectToDatabase()
     const [paymentResult, registrationIntent, order] = await Promise.all([
       getPaymentDetails(razorpay_payment_id),
-      RegistrationIntent.findById(registrationIntentId).lean().exec(),
-      (async () => {
-        const { db } = await connectToDatabase();
-        return db.collection('payment_orders').findOne({
-          orderId: razorpay_order_id,
-          userId
-        });
-      })()
-    ]);
-
-    const registrationIntentTyped = registrationIntent as unknown as LeanRegistrationIntent;
-    if (!registrationIntentTyped || registrationIntentTyped.userId.toString() !== userId) {
-      return NextResponse.json({ error: 'Registration intent not found or access denied' }, { status: 404 });
-    }
+      registrationIntentId
+        ? RegistrationIntent.findById(registrationIntentId).lean().exec()
+        : Promise.resolve(null),
+      db
+        .collection('payment_orders')
+        .findOne({ orderId: razorpay_order_id, userId })
+    ])
 
     if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
     if (order.status === 'completed') {
-      return NextResponse.json({ error: 'Payment already processed' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Payment already processed' },
+        { status: 400 }
+      )
     }
 
-    // Validate organization type
-    if (!['institute', 'business'].includes(registrationIntentTyped.type)) {
-      return NextResponse.json({ error: 'Invalid organization type' }, { status: 400 });
+    if (!registrationIntentId) {
+      await connectMongoose()
+      const cycle = String(order.billingCycle || 'YEARLY').toLowerCase()
+      const planType = String(order.planType || 'INSTITUTE')
+      const now = new Date()
+      const monthsToAdd =
+        cycle === 'monthly' ? 1 : cycle === 'quarterly' ? 3 : 12
+      const cycleLabel = cycle === 'yearly' ? 'yearly' : 'monthly'
+
+      const organizationType =
+        planType === 'BUSINESS' ? 'business' : 'institute'
+      let organizationId: any = null
+      if (organizationType === 'institute') {
+        const inst = await AdminInstitute.findOne({
+          userIds: { $in: [new ObjectId(userId)] }
+        })
+          .select('_id name location')
+          .lean<{ _id: Types.ObjectId; name?: string; location?: any } | null>()
+          .exec()
+        organizationId = inst?._id || new ObjectId(userId)
+      } else {
+        const biz = await Business.findOne({ userId: new ObjectId(userId) })
+          .select('_id name')
+          .lean<{ _id: Types.ObjectId; name?: string } | null>()
+          .exec()
+        organizationId = biz?._id || new ObjectId(userId)
+      }
+
+      const existingSub = await Subscription.findOne({
+        userId: new ObjectId(userId),
+        status: 'active'
+      })
+        .sort({ createdAt: -1 })
+        .lean<{
+          _id: Types.ObjectId
+          endDate?: Date
+          startDate?: Date
+          createdAt?: Date
+        } | null>()
+
+      const baseDate =
+        existingSub?.endDate && existingSub.endDate > now
+          ? new Date(existingSub.endDate)
+          : now
+      const endDate = new Date(baseDate)
+      endDate.setMonth(endDate.getMonth() + monthsToAdd)
+
+      const planName =
+        planType === 'BUSINESS'
+          ? 'Business Premium'
+          : planType === 'INSTITUTE'
+          ? 'Institute Premium'
+          : 'Premium Plan'
+
+      const subscriptionData = {
+        userId: new ObjectId(userId),
+        organizationId: organizationId,
+        organizationType,
+        instituteId:
+          organizationType === 'institute' ? organizationId : undefined,
+        planId: planType,
+        planName,
+        planType: 'premium',
+        billingCycle: cycleLabel as any,
+        status: 'active',
+        autoInvoiceEnabled: true,
+        amount: order.amount,
+        currency: order.currency,
+        startDate: existingSub?.startDate || now,
+        endDate,
+        features:
+          organizationType === 'institute'
+            ? SUBSCRIPTION_FEATURES.institute
+            : SUBSCRIPTION_FEATURES.business,
+        lastPaymentDate: now,
+        lastPaymentAmount: order.amount,
+        paymentId: razorpay_payment_id,
+        orderId: razorpay_order_id,
+        createdAt: existingSub?.createdAt || now,
+        updatedAt: now
+      }
+
+      let subscription = null
+      if (existingSub?._id) {
+        subscription = await Subscription.findByIdAndUpdate(
+          existingSub._id,
+          { $set: subscriptionData },
+          { new: true }
+        )
+      } else {
+        subscription = await Subscription.create(subscriptionData)
+      }
+
+      await User.findByIdAndUpdate(new ObjectId(userId), {
+        $set: {
+          subscriptionActive: true,
+          activeRole: organizationType
+        }
+      })
+
+      await db.collection('payment_orders').updateOne(
+        { orderId: razorpay_order_id },
+        {
+          $set: {
+            status: 'completed',
+            paymentId: razorpay_payment_id,
+            completedAt: now,
+            updatedAt: now
+          }
+        }
+      )
+
+      const billingInfo = await BillingInfo.findOne({
+        $or: [
+          { userId: new ObjectId(userId) },
+          ...(organizationType === 'institute'
+            ? [{ instituteId: organizationId }]
+            : [])
+        ]
+      })
+        .lean<{
+          organizationName?: string
+          gstin?: string
+          addressLine1?: string
+          addressLine2?: string
+          city?: string
+          state?: string
+          postalCode?: string
+          country?: string
+          email?: string
+        } | null>()
+        .exec()
+
+      const institute =
+        organizationType === 'institute'
+          ? await AdminInstitute.findById(organizationId)
+              .select('name location')
+              .lean<{ name?: string; location?: any } | null>()
+          : null
+      const business =
+        organizationType === 'business'
+          ? await Business.findById(organizationId)
+              .select('name')
+              .lean<{ name?: string } | null>()
+          : null
+
+      const location = (institute as any)?.location || {}
+      const billingSnapshot = {
+        organizationName:
+          billingInfo?.organizationName ||
+          (institute as any)?.name ||
+          (business as any)?.name ||
+          'Institute',
+        gstin: billingInfo?.gstin,
+        addressLine1: billingInfo?.addressLine1 || location.address || 'NA',
+        addressLine2: billingInfo?.addressLine2 || '',
+        city: billingInfo?.city || location.city || 'NA',
+        state: billingInfo?.state || location.state || 'NA',
+        postalCode: billingInfo?.postalCode || location.pincode || '000000',
+        country: billingInfo?.country || location.country || 'India',
+        email: billingInfo?.email || user?.email || undefined
+      }
+
+      const lineItems = [
+        {
+          description: `${planName} (${cycleLabel})`,
+          qty: 1,
+          unitPrice: order.amount,
+          sac: '9983'
+        }
+      ]
+      const subtotal = calculateSubtotal(lineItems)
+      const taxBreakup = calculateTaxBreakup(
+        subtotal,
+        SELLER_DETAILS.state,
+        billingSnapshot.state
+      )
+      const totalAmount =
+        subtotal + taxBreakup.cgst + taxBreakup.sgst + taxBreakup.igst
+      const invoiceDate = now
+      const dueDate = getDueDate(invoiceDate, 7)
+
+      const payment = (paymentResult as any)?.payment || {}
+      const paymentMethod =
+        payment?.method === 'upi' ? 'UPI' : payment?.method ? 'Card' : undefined
+
+      await Invoice.create({
+        invoiceId: generateInvoiceId(invoiceDate),
+        orderId: razorpay_order_id,
+        transactionId: razorpay_payment_id,
+        userId: new ObjectId(userId),
+        instituteId:
+          organizationType === 'institute' ? organizationId : undefined,
+        subscriptionId: subscription?._id,
+        planSnapshot: {
+          name: planName,
+          price: order.amount,
+          duration: cycleLabel
+        },
+        billingSnapshot,
+        lineItems,
+        subtotal,
+        taxBreakup,
+        totalAmount,
+        currency: order.currency || 'INR',
+        paymentMethod,
+        upiHandle: payment?.vpa,
+        cardBrand: payment?.card?.network,
+        cardLast4: payment?.card?.last4,
+        paymentStatus: 'paid',
+        invoiceDate,
+        dueDate
+      })
+
+      const planDuration = getPlanDurationMonths(cycle)
+      const organizationName =
+        billingSnapshot.organizationName ||
+        (institute as any)?.name ||
+        (business as any)?.name ||
+        'Organization'
+      const paymentMethodLabel =
+        payment?.method === 'upi' ? 'UPI' : payment?.method ? 'Card' : undefined
+
+      const existingPayment = await Payment.findOne({
+        orderId: razorpay_order_id
+      })
+        .select('_id')
+        .lean()
+        .exec()
+
+      if (!existingPayment) {
+        await Payment.create({
+          userId: new ObjectId(userId),
+          orderId: razorpay_order_id,
+          paymentId: razorpay_payment_id,
+          amount: order.amount,
+          currency: order.currency || 'INR',
+          status: 'paid',
+          method: 'razorpay',
+          paymentMethod: paymentMethodLabel,
+          organizationName,
+          organizationType,
+          planType: 'premium',
+          planDuration,
+          subscriptionId: subscription?._id?.toString(),
+          gatewayResponse: payment,
+          paidAt: now
+        })
+      }
+
+      sendSubscriptionNotifications({
+        userId,
+        organizationName,
+        organizationType,
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        contactName: user?.name || user?.email,
+        contactEmail: user?.email,
+        contactPhone: (user as any)?.phone,
+        orderId: razorpay_order_id,
+        paymentId: razorpay_payment_id
+      }).catch(error => console.error('Notification error:', error))
+
+      return NextResponse.json({
+        success: true,
+        message: 'Subscription activated',
+        data: {
+          planType: 'premium',
+          billingCycle: cycleLabel,
+          status: 'active'
+        }
+      })
     }
 
-    const orgType = registrationIntentTyped.type as OrganizationType;
+    const registrationIntentTyped =
+      registrationIntent as unknown as LeanRegistrationIntent
+    if (
+      !registrationIntentTyped ||
+      registrationIntentTyped.userId.toString() !== userId
+    ) {
+      return NextResponse.json(
+        { error: 'Registration intent not found or access denied' },
+        { status: 404 }
+      )
+    }
+
+    const orgType = registrationIntentTyped.type as OrganizationType
 
     // Generate unique profile ID and create subscription in parallel
     const [publicProfileId] = await Promise.all([
-      generateUniquePublicProfileId(registrationIntentTyped.organizationName || orgType, orgType)
-    ]);
+      generateUniquePublicProfileId(
+        registrationIntentTyped.organizationName || orgType,
+        orgType
+      )
+    ])
 
     // Create subscription
     const subscription = new Subscription({
       userId,
       organizationId: registrationIntentId,
       organizationType: orgType,
+      planId: order.planType || 'INSTITUTE',
       planName: 'Professional Plan',
       planType: 'enterprise',
       billingCycle: 'yearly',
       status: 'active',
+      autoInvoiceEnabled: true,
       amount: order.amount,
       currency: order.currency,
       startDate: new Date(),
       endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       features: SUBSCRIPTION_FEATURES[orgType],
+      lastPaymentDate: new Date(),
+      lastPaymentAmount: order.amount,
       paymentId: razorpay_payment_id,
       orderId: razorpay_order_id,
       createdAt: new Date()
-    });
+    })
 
-    await subscription.save();
+    await subscription.save()
 
     // Create organization
     const organization = await createOrganization(
@@ -1075,12 +1522,133 @@ export async function POST(request: NextRequest) {
       userId,
       subscription._id,
       publicProfileId
-    );
+    )
 
-    await organization.save();
+    await organization.save()
+
+    await Subscription.findByIdAndUpdate(subscription._id, {
+      $set: {
+        organizationId: organization._id,
+        instituteId: orgType === 'institute' ? organization._id : undefined
+      }
+    })
+
+    const billingInfo = await BillingInfo.findOne({
+      $or: [
+        { userId: new ObjectId(userId) },
+        ...(orgType === 'institute' ? [{ instituteId: organization._id }] : [])
+      ]
+    })
+      .lean<{
+        organizationName?: string
+        gstin?: string
+        addressLine1?: string
+        addressLine2?: string
+        city?: string
+        state?: string
+        postalCode?: string
+        country?: string
+        email?: string
+      } | null>()
+      .exec()
+
+    const billingSnapshot = {
+      organizationName:
+        billingInfo?.organizationName ||
+        registrationIntentTyped.organizationName,
+      gstin: billingInfo?.gstin,
+      addressLine1:
+        billingInfo?.addressLine1 || registrationIntentTyped.address || 'NA',
+      addressLine2: billingInfo?.addressLine2 || '',
+      city: billingInfo?.city || registrationIntentTyped.city || 'NA',
+      state: billingInfo?.state || registrationIntentTyped.state || 'NA',
+      postalCode:
+        billingInfo?.postalCode || registrationIntentTyped.zipCode || '000000',
+      country:
+        billingInfo?.country || registrationIntentTyped.country || 'India',
+      email: billingInfo?.email || registrationIntentTyped.email
+    }
+
+    const lineItems = [
+      {
+        description: `${subscription.planName} (${subscription.billingCycle})`,
+        qty: 1,
+        unitPrice: order.amount,
+        sac: '9983'
+      }
+    ]
+    const subtotal = calculateSubtotal(lineItems)
+    const taxBreakup = calculateTaxBreakup(
+      subtotal,
+      SELLER_DETAILS.state,
+      billingSnapshot.state
+    )
+    const totalAmount =
+      subtotal + taxBreakup.cgst + taxBreakup.sgst + taxBreakup.igst
+    const invoiceDate = new Date()
+    const dueDate = getDueDate(invoiceDate, 7)
+    const payment = (paymentResult as any)?.payment || {}
+    const paymentMethod =
+      payment?.method === 'upi' ? 'UPI' : payment?.method ? 'Card' : undefined
+
+    await Invoice.create({
+      invoiceId: generateInvoiceId(invoiceDate),
+      orderId: razorpay_order_id,
+      transactionId: razorpay_payment_id,
+      userId: new ObjectId(userId),
+      instituteId: orgType === 'institute' ? organization._id : undefined,
+      subscriptionId: subscription._id,
+      planSnapshot: {
+        name: subscription.planName,
+        price: order.amount,
+        duration: subscription.billingCycle
+      },
+      billingSnapshot,
+      lineItems,
+      subtotal,
+      taxBreakup,
+      totalAmount,
+      currency: order.currency || 'INR',
+      paymentMethod,
+      upiHandle: payment?.vpa,
+      cardBrand: payment?.card?.network,
+      cardLast4: payment?.card?.last4,
+      paymentStatus: 'paid',
+      invoiceDate,
+      dueDate
+    })
+
+    const planDuration = getPlanDurationMonths(subscription.billingCycle)
+    const paymentMethodLabel =
+      payment?.method === 'upi' ? 'UPI' : payment?.method ? 'Card' : undefined
+    const existingPayment = await Payment.findOne({
+      orderId: razorpay_order_id
+    })
+      .select('_id')
+      .lean()
+      .exec()
+
+    if (!existingPayment) {
+      await Payment.create({
+        userId: new ObjectId(userId),
+        orderId: razorpay_order_id,
+        paymentId: razorpay_payment_id,
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        status: 'paid',
+        method: 'razorpay',
+        paymentMethod: paymentMethodLabel,
+        organizationName: billingSnapshot.organizationName,
+        organizationType: orgType,
+        planType: subscription.planType,
+        planDuration,
+        subscriptionId: subscription._id.toString(),
+        gatewayResponse: payment,
+        paidAt: new Date()
+      })
+    }
 
     // Parallel updates
-    const { db } = await connectToDatabase();
     await Promise.all([
       // Update user
       updateUserAfterPayment(userId, orgType, organization._id),
@@ -1105,7 +1673,7 @@ export async function POST(request: NextRequest) {
           }
         }
       )
-    ]);
+    ])
 
     // Send notifications (fire and forget)
     sendNotifications(
@@ -1115,7 +1683,7 @@ export async function POST(request: NextRequest) {
       order.amount,
       order.currency,
       { orderId: razorpay_order_id, paymentId: razorpay_payment_id }
-    ).catch(error => console.error('Notification error:', error));
+    ).catch(error => console.error('Notification error:', error))
 
     return NextResponse.json({
       success: true,
@@ -1126,24 +1694,32 @@ export async function POST(request: NextRequest) {
         organizationId: organization._id.toString(),
         publicProfileId,
         planType: 'premium',
-        dashboardUrl: orgType === 'institute' ? '/dashboard/institute' : '/dashboard/business'
+        dashboardUrl:
+          orgType === 'institute'
+            ? '/dashboard/institute'
+            : '/dashboard/business'
       }
-    });
-
+    })
   } catch (error) {
-    console.error('Payment verification error:', error);
+    console.error('Payment verification error:', error)
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
         { status: 400 }
-      );
+      )
     }
 
-    if (error instanceof Error && error.message === 'User already has an institute registered') {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (
+      error instanceof Error &&
+      error.message === 'User already has an institute registered'
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

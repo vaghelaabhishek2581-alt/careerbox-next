@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectToDatabase } from '@/lib/db/mongoose'
 import AdminInstitute from '@/src/models/AdminInstitute'
-import { populateSuggestionsFromInstitute, upsertSuggestions } from '@/lib/utils/populate-suggestions'
 
 // GET /api/admin/institutes - list with pagination and search
-export async function GET(req: NextRequest) {
+export async function GET (req: NextRequest) {
   try {
     await connectToDatabase()
 
@@ -20,7 +19,7 @@ export async function GET(req: NextRequest) {
         { name: { $regex: q, $options: 'i' } },
         { slug: { $regex: q, $options: 'i' } },
         { 'location.city': { $regex: q, $options: 'i' } },
-        { 'location.state': { $regex: q, $options: 'i' } },
+        { 'location.state': { $regex: q, $options: 'i' } }
       ]
     }
 
@@ -29,30 +28,39 @@ export async function GET(req: NextRequest) {
         .sort({ updatedAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit),
-      AdminInstitute.countDocuments(filter),
+      AdminInstitute.countDocuments(filter)
     ])
 
     return NextResponse.json({ items, total, page, limit })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to list institutes' }, { status: 500 })
+    return NextResponse.json(
+      { error: err.message || 'Failed to list institutes' },
+      { status: 500 }
+    )
   }
 }
 
 // POST /api/admin/institutes - create single admin institute
-export async function POST(req: NextRequest) {
+export async function POST (req: NextRequest) {
   try {
     await connectToDatabase()
     const body = await req.json()
 
     if (!body?.name || !body?.slug) {
-      return NextResponse.json({ error: 'name and slug are required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'name and slug are required' },
+        { status: 400 }
+      )
     }
 
     // enforce slug normalization similar to schema
     body.slug = String(body.slug).trim().toLowerCase()
 
     // Normalize course ids for legacy and programmes
-    const normalizeId = (val: any) => (val && mongoose.isValidObjectId(val) ? new mongoose.Types.ObjectId(String(val)) : new mongoose.Types.ObjectId())
+    const normalizeId = (val: any) =>
+      val && mongoose.isValidObjectId(val)
+        ? new mongoose.Types.ObjectId(String(val))
+        : new mongoose.Types.ObjectId()
     if (Array.isArray(body?.courses)) {
       body.courses = body.courses.map((c: any) => {
         const explicitId = c?._id || c?.id
@@ -66,7 +74,7 @@ export async function POST(req: NextRequest) {
         // Normalize programme _id
         const pId = p?._id || p?.id
         const programmeId = normalizeId(pId)
-        
+
         // Handle both old 'course' and new 'courses' structure
         let normalizedCourses = p?.course || p?.courses || []
         if (Array.isArray(normalizedCourses)) {
@@ -77,27 +85,25 @@ export async function POST(req: NextRequest) {
             return { _id, ...rest }
           })
         }
-        
+
         const { id, _id: oldId, course, courses, ...restP } = p || {}
         return { _id: programmeId, ...restP, course: normalizedCourses }
       })
     }
 
     const created = await AdminInstitute.create(body)
-    
-    // Create search suggestions
-    try {
-      const suggestions = await populateSuggestionsFromInstitute(created.toObject())
-      await upsertSuggestions(suggestions)
-    } catch (suggestionError: any) {
-      console.error('Failed to create suggestions:', suggestionError)
-    }
-    
+
     return NextResponse.json(created, { status: 201 })
   } catch (err: any) {
     if (err?.code === 11000) {
-      return NextResponse.json({ error: 'Duplicate key', details: err.keyValue }, { status: 409 })
+      return NextResponse.json(
+        { error: 'Duplicate key', details: err.keyValue },
+        { status: 409 }
+      )
     }
-    return NextResponse.json({ error: err.message || 'Failed to create institute' }, { status: 500 })
+    return NextResponse.json(
+      { error: err.message || 'Failed to create institute' },
+      { status: 500 }
+    )
   }
 }

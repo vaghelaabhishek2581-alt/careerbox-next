@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { ImageCropperDialog } from '@/components/ui/ImageCropperDialog'
 import { useToast } from '@/components/ui/use-toast'
 import { 
   MapPin, 
@@ -166,28 +167,84 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
     ? (profile as BusinessProfile).isVerified
     : (profile as InstituteProfile).isVerified
 
-  // Share modal state and URL
-  const [shareOpen, setShareOpen] = useState(false)
   const publicId = isUser
-    ? (profile as UserProfile).personalDetails?.publicProfileId || (profile as any).publicProfileId
+    ? (profile as UserProfile).personalDetails?.publicProfileId
     : isBusiness
     ? (profile as BusinessProfile).publicProfileId || (profile as any).publicProfileId
     : (profile as InstituteProfile).publicProfileId
   const baseUrl = 'https://careerbox.in'
   const shareUrl = publicId ? new URL(`/profile/${publicId}`, baseUrl).toString() : ''
 
+  // Cropper integration (only used for institute editing)
+  const [coverUrl, setCoverUrl] = useState<string | undefined>(coverImage)
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(avatar)
+  const [cropOpen, setCropOpen] = useState(false)
+  const [cropType, setCropType] = useState<'profile' | 'cover'>('cover')
+  const [initialUrl, setInitialUrl] = useState<string | undefined>(undefined)
+  const [isUploading, setIsUploading] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+
+  useEffect(() => {
+    setCoverUrl(coverImage)
+    setAvatarUrl(avatar)
+  }, [coverImage, avatar])
+
+  async function handleCropped(file: File) {
+    try {
+      setIsUploading(true)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', cropType === 'cover' ? 'cover' : 'logo')
+
+      const res = await fetch('/api/institute/profile/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) {
+        const msg = await res.text()
+        throw new Error(msg)
+      }
+      const data = await res.json()
+      if (data?.success && data?.imageUrl) {
+        if (cropType === 'cover') {
+          setCoverUrl(data.imageUrl)
+        } else {
+          setAvatarUrl(data.imageUrl)
+        }
+      }
+    } catch (e) {
+      console.error('Upload failed', e)
+    } finally {
+      setIsUploading(false)
+      setCropOpen(false)
+    }
+  }
+
   return (
     <Card className="overflow-hidden">
       {/* Cover Image */}
       <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
-        {coverImage && (
+        {coverUrl && (
           <img 
-            src={coverImage} 
+            src={coverUrl} 
             alt="Cover" 
             className="w-full h-full object-cover"
           />
         )}
         <div className="absolute inset-0 bg-black/20" />
+        {isInstitute && (
+          <div className="absolute top-2 right-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="bg-white/80 hover:bg-white"
+              onClick={() => { setCropType('cover'); setInitialUrl(coverUrl); setCropOpen(true) }}
+              disabled={isUploading}
+            >
+              {isUploading && cropType === 'cover' ? 'Uploading...' : 'Edit Cover'}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Profile Info */}
@@ -196,21 +253,29 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
           {/* Avatar */}
           <div className="relative">
             <Avatar className="w-32 h-32 border-4 border-background">
-              <AvatarImage src={avatar} alt={name} />
+              <AvatarImage src={avatarUrl} alt={name} />
               <AvatarFallback className="text-2xl">
-                {isUser ? getInitials(profile as UserProfile) : name.charAt(0)}
+                {name?.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            {verified && (
-              <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-1">
-                <CheckCircle className="h-6 w-6 text-white" />
+            {isInstitute && (
+              <div className="absolute -bottom-2 right-0 translate-y-1/2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white/90 hover:bg-white"
+                  onClick={() => { setCropType('profile'); setInitialUrl(avatarUrl); setCropOpen(true) }}
+                  disabled={isUploading}
+                >
+                  {isUploading && cropType === 'profile' ? 'Uploading...' : 'Edit Logo'}
+                </Button>
               </div>
             )}
           </div>
 
-          {/* Profile Details */}
+          {/* Title and Bio */}
           <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold">{name}</h1>
               {verified && (
                 <Badge variant="default" className="flex items-center gap-1">
@@ -219,7 +284,6 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
                 </Badge>
               )}
             </div>
-            
             {bio && (
               <p className="text-muted-foreground text-lg">{bio}</p>
             )}
@@ -269,6 +333,20 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
             </Button>
           </div>
         </div>
+
+        {/* Cropper Dialog (only for institute editing) */}
+        {/* {isInstitute && (
+          // <ImageCropperDialog
+          //   key={cropType}
+          //   open={cropOpen}
+          //   onOpenChange={setCropOpen}
+          //   type={cropType}
+          //   targetWidth={cropType === 'cover' ? 1600 : 512}
+          //   targetHeight={cropType === 'cover' ? 400 : 512}
+          //   initialImageUrl={initialUrl}
+          //   onCropped={handleCropped}
+          // />
+        )} */}
 
         {/* Share Modal */}
         <AlertDialog open={shareOpen} onOpenChange={setShareOpen}>

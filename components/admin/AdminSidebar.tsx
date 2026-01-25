@@ -37,6 +37,11 @@ const navigationSections = [
         icon: Home,
       },
       {
+        title: "Revenue",
+        href: "/admin/payments",
+        icon: Home,
+      },
+      {
         title: "Explore Programs",
         href: "/recommendation-collections",
         icon: Compass,
@@ -150,13 +155,13 @@ export default function AdminSidebar({
                 className={cn(
                   "w-full justify-start gap-3 h-9 px-3 text-sm",
                   active &&
-                    "bg-red-50 text-red-700 font-medium border-r-2 border-red-600"
+                    "bg-red-50 text-red-700 font-medium border-r-2 border-red-600",
                 )}
               >
                 <Icon
                   className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    active && "text-red-600"
+                    active && "text-red-600",
                   )}
                 />
                 <span className="flex-1 text-left">{item.title}</span>

@@ -1,3 +1,6 @@
+import { readFile } from 'fs/promises'
+import path from 'path'
+
 // Utility for loading Indian states and cities from local JSON data
 // This replaces the react-country-state-city package for better performance
 
@@ -16,12 +19,9 @@ async function loadStatesData(): Promise<StatesData> {
   }
   
   try {
-    const response = await fetch('/states.json');
-    if (!response.ok) {
-      throw new Error(`Failed to fetch states.json: ${response.status}`);
-    }
-    
-    const data: StatesData = await response.json();
+    const filePath = path.join(process.cwd(), 'public', 'states.json')
+    const fileContents = await readFile(filePath, 'utf-8')
+    const data: StatesData = JSON.parse(fileContents)
     statesDataCache = data;
     return data;
   } catch (error) {

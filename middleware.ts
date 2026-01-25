@@ -26,24 +26,39 @@ export const config = {
 }
 
 export default withAuth(
-  function middleware(req) {
+  function middleware (req) {
     const token = req.nextauth.token
     const isAuth = !!token
     const isAuthPage = req.nextUrl.pathname.startsWith('/auth')
     const isOnboarding = req.nextUrl.pathname.startsWith('/onboarding')
     const isDashboard = req.nextUrl.pathname.startsWith('/dashboard')
     const isMainDashboard = req.nextUrl.pathname === '/dashboard'
-    
+
     // Check for new protected routes (without /dashboard prefix)
-    const isUserRoute = req.nextUrl.pathname.startsWith('/user') || req.nextUrl.pathname.startsWith('/dashboard/user')
-    const isAdminRoute = req.nextUrl.pathname.startsWith('/admin') || req.nextUrl.pathname.startsWith('/admin')
-    const isBusinessRoute = req.nextUrl.pathname.startsWith('/business') || req.nextUrl.pathname.startsWith('/dashboard/business')
-    const isInstituteRoute = req.nextUrl.pathname.startsWith('/institute') || req.nextUrl.pathname.startsWith('/dashboard/institute')
-    const isNotificationsRoute = req.nextUrl.pathname.startsWith('/notifications')
+    const isUserRoute =
+      req.nextUrl.pathname.startsWith('/user') ||
+      req.nextUrl.pathname.startsWith('/dashboard/user')
+    const isAdminRoute =
+      req.nextUrl.pathname.startsWith('/admin') ||
+      req.nextUrl.pathname.startsWith('/admin')
+    const isBusinessRoute =
+      req.nextUrl.pathname.startsWith('/business') ||
+      req.nextUrl.pathname.startsWith('/dashboard/business')
+    const isInstituteRoute =
+      req.nextUrl.pathname.startsWith('/institute') ||
+      req.nextUrl.pathname.startsWith('/dashboard/institute')
+    const isNotificationsRoute =
+      req.nextUrl.pathname.startsWith('/notifications')
     const isSettingsRoute = req.nextUrl.pathname.startsWith('/settings')
-    
+
     // Check if it's any protected route
-    const isProtectedRoute = isUserRoute || isAdminRoute || isBusinessRoute || isInstituteRoute || isNotificationsRoute || isSettingsRoute
+    const isProtectedRoute =
+      isUserRoute ||
+      isAdminRoute ||
+      isBusinessRoute ||
+      isInstituteRoute ||
+      isNotificationsRoute ||
+      isSettingsRoute
 
     // Log for debugging
     if (process.env.NODE_ENV === 'development') {
@@ -62,7 +77,9 @@ export default withAuth(
 
     // Redirect unauthenticated users trying to access protected routes
     if (!isAuth && isProtectedRoute) {
-      console.log('Unauthenticated access to protected route - redirecting to signin')
+      console.log(
+        'Unauthenticated access to protected route - redirecting to signin'
+      )
       return NextResponse.redirect(new URL('/auth/signup?mode=signin', req.url))
     }
 
@@ -78,15 +95,36 @@ export default withAuth(
       }
 
       // Business routes - only users with business role and active subscription can access
-      if (isBusinessRoute && (!userRoles.includes('business') || !token?.subscriptionActive)) {
-        console.log('Access denied to business route - redirecting to dashboard')
+      if (
+        isBusinessRoute &&
+        (!userRoles.includes('business') || !token?.subscriptionActive)
+      ) {
+        console.log(
+          'Access denied to business route - redirecting to dashboard'
+        )
         return NextResponse.redirect(new URL('/dashboard', req.url))
       }
+      console.log(
+        'userRole:',
+        userRole,
+        userRoles,
+        isInstituteRoute,
+        !userRoles.includes('admin')
+      )
 
       // Institute routes - only users with institute/admin role and active subscription can access
-      if (isInstituteRoute && !userRoles.includes('admin') && (!userRoles.includes('institute') || !token?.subscriptionActive)) {
-        console.log('Access denied to institute route - redirecting to dashboard')
-        return NextResponse.redirect(new URL('/dashboard', req.url))
+      if (
+        isInstituteRoute &&
+        !userRoles.includes('admin') &&
+        (!userRoles.includes('institute') || !token?.subscriptionActive)
+      ) {
+        console.log(
+          'Access denied to institute route - redirecting to dashboard'
+        )
+
+        console.log(isInstituteRoute, userRoles)
+        console.log(new URL('/dashboard', req.url).toString())
+        // return NextResponse.redirect(new URL('/dashboard', req.url))
       }
 
       // Notifications and Settings routes - accessible to all authenticated users
@@ -129,7 +167,9 @@ export default withAuth(
         return NextResponse.redirect(new URL('/onboarding', req.url))
       }
       // Otherwise redirect to recommendation-collections (public explore page)
-      return NextResponse.redirect(new URL('/recommendation-collections', req.url))
+      return NextResponse.redirect(
+        new URL('/recommendation-collections', req.url)
+      )
     }
 
     // Allow public access to main dashboard page (unified explore page)
@@ -182,7 +222,6 @@ export default withAuth(
           return true
         }
 
-
         // Protected routes that require authentication
         const protectedRoutes = [
           '/admin',
@@ -196,8 +235,10 @@ export default withAuth(
         ]
 
         // Check if the pathname starts with any protected route
-        const isProtected = protectedRoutes.some(route => pathname.startsWith(route))
-        
+        const isProtected = protectedRoutes.some(route =>
+          pathname.startsWith(route)
+        )
+
         // For dashboard sub-routes (not main dashboard), require authentication
         if (pathname.startsWith('/dashboard/')) {
           return !!token

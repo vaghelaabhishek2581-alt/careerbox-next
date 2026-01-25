@@ -29,7 +29,7 @@ export default async function InstituteDashboard() {
     ownedOrganizations?: string[];
   };
   const instituteId = user.ownedOrganizations?.[0];
-  console.log(instituteId);
+
   if (instituteId) {
     redirect(`/institute/dashboard`);
   } else {

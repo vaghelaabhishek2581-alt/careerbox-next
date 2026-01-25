@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useState, useTransition, useRef, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  useTransition,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -19,91 +26,248 @@ import {
   MapPin,
   Loader2,
   X,
-  Award
+  Award,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { UnifiedFilters } from "@/components/publicCollections/UnifiedFilters";
 import { InstituteCard } from "@/components/publicCollections/InstituteCard";
 import { ProgramCard } from "@/components/publicCollections/ProgramCard";
 import { CourseCard } from "@/components/publicCollections/CourseCard";
-import { getUnifiedRecommendations } from "@/lib/actions/unified-recommendations";
 import SearchSuggestions from "@/components/SearchSuggestions";
 
 interface RecommendationCollectionsClientProps {
   initialData: any;
-  initialType: 'institutes' | 'programs' | 'courses';
+  initialType: "institutes" | "programs" | "courses";
   initialParams: {
-    location?: string;
-    category?: string;
+    city?: string;
+    state?: string;
+    level?: string;
+    programme?: string;
+    exam?: string;
+    course?: string;
     instituteType?: string;
-    degree?: string;
     query?: string;
     sortBy?: string;
+    sortOrder?: string;
     accreditation?: string;
+    page?: number;
+    limit?: number;
   };
 }
 
 export default function RecommendationCollectionsClient({
   initialData,
   initialType,
-  initialParams
+  initialParams,
 }: RecommendationCollectionsClientProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [showFilters, setShowFilters] = useState(false);
-  const [locationQuery, setLocationQuery] = useState(initialParams.location || '');
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Get the correct data array based on type
   const getDataArray = (data: any, type: string) => {
-    if (type === 'institutes') return data.institutes || [];
-    if (type === 'programs') return data.programs || [];
-    if (type === 'courses') return data.courses || [];
+    if (type === "institutes") return data.institutes || [];
+    if (type === "programs") return data.programmes || [];
+    if (type === "courses") return data.courses || [];
     return [];
   };
+  const getItemKey = (item: any, itemType: string, index?: number) => {
+    const base = item?.id || item?._id || item?.slug;
+    if (base) {
+      return index === undefined
+        ? `${itemType}-${base}`
+        : `${itemType}-${base}-${index}`;
+    }
+    const name = item?.name || item?.title || item?.degree;
+    const city = item?.city || item?.location?.city;
+    const state = item?.state || item?.location?.state;
+    if (name || city || state) {
+      const fallback = `${itemType}-${name || "item"}-${city || ""}-${state || ""}`;
+      return index === undefined ? fallback : `${fallback}-${index}`;
+    }
+    return `${itemType}-idx-${index ?? 0}`;
+  };
+  const mergeUniqueByKey = (prev: any[], next: any[], itemType: string) => {
+    const seen = new Set<string>();
+    const merged: any[] = [];
+    const add = (item: any, index?: number) => {
+      const key = getItemKey(item, itemType);
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    };
+    prev.forEach((item, index) => add(item, index));
+    next.forEach((item, index) => add(item, prev.length + index));
+    return merged;
+  };
 
-  const [allData, setAllData] = useState<any[]>(() => getDataArray(initialData, initialType));
+  const [allData, setAllData] = useState<any[]>(() =>
+    getDataArray(initialData, initialType),
+  );
   const [data, setData] = useState<any>(initialData);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(() => initialData.currentPage < initialData.totalPages);
+  const [currentPage, setCurrentPage] = useState(
+    () => initialData.pagination?.page || 1,
+  );
+  const [hasMore, setHasMore] = useState(() => {
+    const hm = initialData.pagination?.hasMore;
+    if (typeof hm === "boolean") return hm;
+    if (hm && typeof hm === "object") {
+      if (initialType === "institutes") return hm.institutes;
+      if (initialType === "programs") return hm.programmes;
+      return hm.courses;
+    }
+    return false;
+  });
 
-  // Extract search parameters
-  const type = (searchParams?.get('type') as 'institutes' | 'programs' | 'courses') || initialType;
-  const location = searchParams?.get('location') || initialParams.location;
-  const category = searchParams?.get('category') || initialParams.category;
-  const instituteType = searchParams?.get('instituteType') || initialParams.instituteType;
-  const degree = searchParams?.get('degree') || initialParams.degree;
-  const query = searchParams?.get('q') || initialParams.query;
-  const sortBy = searchParams?.get('sortBy') || initialParams.sortBy || 'popularity';
-  const accreditation = searchParams?.get('accreditation') || initialParams.accreditation;
+  const availableFilters = useMemo(() => {
+    const filterCounts = data?.filterCounts || {};
+    const toOptions = (counts: Record<string, number> | undefined) =>
+      Object.entries(counts || {}).map(([value, count]) => ({
+        value,
+        label: value,
+        count,
+      }));
+    return {
+      locations: toOptions(filterCounts.cities),
+      types: toOptions(filterCounts.types),
+      categories: toOptions(filterCounts.programmes),
+      accreditations: toOptions(filterCounts.accreditations),
+      degrees: toOptions(filterCounts.courses),
+    };
+  }, [data]);
+
+  const type =
+    (searchParams?.get("type") as "institutes" | "programs" | "courses") ||
+    initialType;
+  const city =
+    searchParams?.get("city") ||
+    searchParams?.get("location") ||
+    initialParams.city;
+  const state = searchParams?.get("state") || initialParams.state;
+  const level = searchParams?.get("level") || initialParams.level;
+  const programme =
+    searchParams?.get("programme") ||
+    searchParams?.get("category") ||
+    initialParams.programme;
+  const exam = searchParams?.get("exam") || initialParams.exam;
+  const course =
+    searchParams?.get("course") ||
+    searchParams?.get("degree") ||
+    initialParams.course;
+  const instituteType =
+    searchParams?.get("instituteType") || initialParams.instituteType;
+  const query = searchParams?.get("q") || initialParams.query;
+  const sortBy = searchParams?.get("sortBy") || initialParams.sortBy || "name";
+  const sortOrder =
+    searchParams?.get("sortOrder") || initialParams.sortOrder || "asc";
+  const accreditation =
+    searchParams?.get("accreditation") || initialParams.accreditation;
+
+  const totalForType = useMemo(() => {
+    if (data?.totals) {
+      if (type === "institutes") return data.totals.institutes;
+      if (type === "programs") return data.totals.programmes;
+      return data.totals.courses;
+    }
+    if (data?.pagination?.total !== undefined) return data.pagination.total;
+    return allData.length;
+  }, [data, type, allData.length]);
 
   // Reset when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setCurrentPage(initialData.pagination?.page || 1);
     setAllData(getDataArray(initialData, initialType));
     setData(initialData);
-    setHasMore(initialData.currentPage < initialData.totalPages);
-  }, [type, location, category, instituteType, degree, query, sortBy, accreditation, initialData, initialType]);
+    const hm = initialData.pagination?.hasMore;
+    if (typeof hm === "boolean") {
+      setHasMore(hm);
+    } else if (hm && typeof hm === "object") {
+      if (type === "institutes") setHasMore(hm.institutes);
+      else if (type === "programs") setHasMore(hm.programmes);
+      else setHasMore(hm.courses);
+    } else {
+      setHasMore(false);
+    }
+  }, [
+    type,
+    city,
+    state,
+    level,
+    programme,
+    exam,
+    course,
+    instituteType,
+    query,
+    sortBy,
+    sortOrder,
+    accreditation,
+    initialData,
+    initialType,
+  ]);
 
   const handleTabChange = (newType: string) => {
     startTransition(() => {
-      const params = new URLSearchParams(searchParams?.toString() || '');
-      params.set('type', newType);
+      const params = new URLSearchParams(searchParams?.toString() || "");
+      params.set("type", newType);
       router.push(`/recommendation-collections?${params.toString()}`);
     });
   };
 
+  const normalizeQuery = (value: string) => value.trim().replace(/\s+/g, " ");
+  const extractCities = (value: string) => {
+    const match = value.match(/\b(in|at|near)\s+(.+)$/i);
+    if (!match) return [];
+    const cityPart = match[2];
+    return cityPart
+      .split(/,|\band\b|&/i)
+      .map((city) => city.trim())
+      .filter(Boolean);
+  };
+  const parseQuery = (value: string) => {
+    const normalized = normalizeQuery(value);
+    const lower = normalized.toLowerCase();
+    let parsedType: "institutes" | "programs" | "courses" | undefined;
+    if (/(course|courses|degree)\b/.test(lower)) parsedType = "courses";
+    else if (/(program|programme|programs|programmes)\b/.test(lower))
+      parsedType = "programs";
+    else if (
+      /(institute|institutes|college|colleges|university|universities)\b/.test(
+        lower,
+      )
+    )
+      parsedType = "institutes";
+    const parsedCities = extractCities(normalized);
+    let cleanedQuery = normalized
+      .replace(/\b(in|at|near)\s+.+$/i, "")
+      .replace(/\b(best|top|good|top-rated)\b/gi, "")
+      .replace(
+        /\b(institute|institutes|college|colleges|university|universities|program|programme|programs|programmes|course|courses|degree)\b/gi,
+        "",
+      )
+      .trim();
+    return { parsedType, parsedCities, cleanedQuery };
+  };
+
   const handleSearch = (searchQuery?: string) => {
     startTransition(() => {
-      const params = new URLSearchParams(searchParams?.toString() || '');
-      if (searchQuery) params.set('q', searchQuery);
-      else params.delete('q');
-      if (locationQuery) params.set('location', locationQuery);
-      else params.delete('location');
+      const params = new URLSearchParams(searchParams?.toString() || "");
+      if (searchQuery) {
+        const { parsedType, parsedCities, cleanedQuery } =
+          parseQuery(searchQuery);
+        if (cleanedQuery) params.set("q", cleanedQuery);
+        else params.delete("q");
+        if (parsedType) params.set("type", parsedType);
+        if (parsedCities?.length) params.set("city", parsedCities.join(","));
+      } else {
+        params.delete("q");
+      }
+      params.delete("page");
       router.push(`/recommendation-collections?${params.toString()}`);
     });
   };
@@ -118,7 +282,7 @@ export default function RecommendationCollectionsClient({
           handleLoadMore();
         }
       },
-      { threshold: 0.1, rootMargin: '100px' }
+      { threshold: 0.1, rootMargin: "100px" },
     );
 
     const currentRef = loadMoreRef.current;
@@ -141,28 +305,73 @@ export default function RecommendationCollectionsClient({
     const nextPage = currentPage + 1;
 
     try {
-      const result = await getUnifiedRecommendations({
-        type,
-        location,
-        category,
-        instituteType,
-        degree,
-        query,
-        page: nextPage,
-        sortBy,
-        accreditation,
-      });
+      const typeMap: Record<string, string> = {
+        institutes: "institute",
+        programs: "programme",
+        courses: "course",
+      };
+
+      const apiParams = new URLSearchParams();
+      if (query) apiParams.set("q", query);
+      if (city) apiParams.set("city", city);
+      if (state) apiParams.set("state", state);
+      if (level) apiParams.set("level", level);
+      if (programme) apiParams.set("programme", programme);
+      if (exam) apiParams.set("exam", exam);
+      if (course) apiParams.set("course", course);
+      apiParams.set("page", nextPage.toString());
+      apiParams.set("limit", (initialParams.limit || 20).toString());
+
+      let endpoint = "/api/search";
+      if (type === "institutes" && !query) {
+        endpoint = "/api/explore";
+        if (instituteType) apiParams.set("type", instituteType);
+        if (accreditation) apiParams.set("accreditation", accreditation);
+        if (sortBy) apiParams.set("sortBy", sortBy);
+        if (sortOrder) apiParams.set("sortOrder", sortOrder);
+      } else {
+        apiParams.set("type", typeMap[type] || "institute");
+      }
+
+      const response = await fetch(`${endpoint}?${apiParams.toString()}`);
+      if (!response.ok) throw new Error("Network response was not ok");
+      const result = await response.json();
+
       setData(result);
       const newData = getDataArray(result, type);
-      setAllData(prev => [...prev, ...newData]);
+      setAllData((prev) => mergeUniqueByKey(prev, newData, type));
       setCurrentPage(nextPage);
-      setHasMore(nextPage < result.totalPages);
+      const hm = result.pagination?.hasMore;
+      if (typeof hm === "boolean") setHasMore(hm);
+      else if (hm && typeof hm === "object") {
+        if (type === "institutes") setHasMore(hm.institutes);
+        else if (type === "programs") setHasMore(hm.programmes);
+        else setHasMore(hm.courses);
+      } else {
+        setHasMore(false);
+      }
     } catch (error) {
-      console.error('Error loading more:', error);
+      console.error("Error loading more:", error);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMore, currentPage, type, location, category, instituteType, degree, query, sortBy, accreditation]);
+  }, [
+    isLoadingMore,
+    hasMore,
+    currentPage,
+    type,
+    city,
+    state,
+    level,
+    programme,
+    exam,
+    instituteType,
+    course,
+    query,
+    sortBy,
+    sortOrder,
+    accreditation,
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
@@ -191,22 +400,37 @@ export default function RecommendationCollectionsClient({
                 currentType={type}
                 onSearch={handleSearch}
               />
-              <Button onClick={() => handleSearch()} disabled={isPending} className="whitespace-nowrap h-14 px-10 text-lg font-semibold">
-                {isPending ? <Loader2 className="h-6 w-6 animate-spin mr-2" /> : <Search className="h-6 w-6 mr-2" />}
+              <Button
+                onClick={() => handleSearch()}
+                disabled={isPending}
+                className="whitespace-nowrap h-14 px-10 text-lg font-semibold"
+              >
+                {isPending ? (
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                ) : (
+                  <Search className="h-6 w-6 mr-2" />
+                )}
                 Search
               </Button>
             </div>
 
             {/* Active Filters */}
-            {(query || location || instituteType || category || accreditation || degree) && (
+            {(query ||
+              city ||
+              instituteType ||
+              programme ||
+              accreditation ||
+              course) && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-gray-700">Active Filters</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Active Filters
+                  </h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      router.push('/recommendation-collections');
+                      router.push("/recommendation-collections");
                     }}
                     className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 h-7"
                   >
@@ -216,14 +440,21 @@ export default function RecommendationCollectionsClient({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {query && (
-                    <Badge variant="secondary" className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 border-blue-200">
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 border-blue-200"
+                    >
                       <Search className="h-3 w-3" />
                       Search: {query}
                       <button
                         onClick={() => {
-                          const params = new URLSearchParams(searchParams?.toString() || '');
-                          params.delete('q');
-                          router.push(`/recommendation-collections?${params.toString()}`);
+                          const params = new URLSearchParams(
+                            searchParams?.toString() || "",
+                          );
+                          params.delete("q");
+                          router.push(
+                            `/recommendation-collections?${params.toString()}`,
+                          );
                         }}
                         className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
                       >
@@ -231,17 +462,26 @@ export default function RecommendationCollectionsClient({
                       </button>
                     </Badge>
                   )}
-                  {location?.split(',').map((loc) => (
-                    <Badge key={loc} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                  {city?.split(",").map((loc) => (
+                    <Badge
+                      key={loc}
+                      variant="secondary"
+                      className="flex items-center gap-1 px-3 py-1"
+                    >
                       <MapPin className="h-3 w-3" />
                       {loc}
                       <button
                         onClick={() => {
-                          const params = new URLSearchParams(searchParams?.toString() || '');
-                          const locs = location.split(',').filter(l => l !== loc);
-                          if (locs.length > 0) params.set('location', locs.join(','));
-                          else params.delete('location');
-                          router.push(`/recommendation-collections?${params.toString()}`);
+                          const params = new URLSearchParams(
+                            searchParams?.toString() || "",
+                          );
+                          const locs = city.split(",").filter((l) => l !== loc);
+                          if (locs.length > 0)
+                            params.set("city", locs.join(","));
+                          else params.delete("city");
+                          router.push(
+                            `/recommendation-collections?${params.toString()}`,
+                          );
                         }}
                         className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                       >
@@ -249,17 +489,28 @@ export default function RecommendationCollectionsClient({
                       </button>
                     </Badge>
                   ))}
-                  {instituteType?.split(',').map((typ) => (
-                    <Badge key={typ} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                  {instituteType?.split(",").map((typ) => (
+                    <Badge
+                      key={typ}
+                      variant="secondary"
+                      className="flex items-center gap-1 px-3 py-1"
+                    >
                       <Building2 className="h-3 w-3" />
                       {typ}
                       <button
                         onClick={() => {
-                          const params = new URLSearchParams(searchParams?.toString() || '');
-                          const types = instituteType.split(',').filter(t => t !== typ);
-                          if (types.length > 0) params.set('instituteType', types.join(','));
-                          else params.delete('instituteType');
-                          router.push(`/recommendation-collections?${params.toString()}`);
+                          const params = new URLSearchParams(
+                            searchParams?.toString() || "",
+                          );
+                          const types = instituteType
+                            .split(",")
+                            .filter((t) => t !== typ);
+                          if (types.length > 0)
+                            params.set("instituteType", types.join(","));
+                          else params.delete("instituteType");
+                          router.push(
+                            `/recommendation-collections?${params.toString()}`,
+                          );
                         }}
                         className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                       >
@@ -267,17 +518,28 @@ export default function RecommendationCollectionsClient({
                       </button>
                     </Badge>
                   ))}
-                  {category?.split(',').map((cat) => (
-                    <Badge key={cat} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                  {programme?.split(",").map((cat) => (
+                    <Badge
+                      key={cat}
+                      variant="secondary"
+                      className="flex items-center gap-1 px-3 py-1"
+                    >
                       <BookOpen className="h-3 w-3" />
                       {cat}
                       <button
                         onClick={() => {
-                          const params = new URLSearchParams(searchParams?.toString() || '');
-                          const cats = category.split(',').filter(c => c !== cat);
-                          if (cats.length > 0) params.set('category', cats.join(','));
-                          else params.delete('category');
-                          router.push(`/recommendation-collections?${params.toString()}`);
+                          const params = new URLSearchParams(
+                            searchParams?.toString() || "",
+                          );
+                          const cats = programme
+                            .split(",")
+                            .filter((c) => c !== cat);
+                          if (cats.length > 0)
+                            params.set("programme", cats.join(","));
+                          else params.delete("programme");
+                          router.push(
+                            `/recommendation-collections?${params.toString()}`,
+                          );
                         }}
                         className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                       >
@@ -285,17 +547,28 @@ export default function RecommendationCollectionsClient({
                       </button>
                     </Badge>
                   ))}
-                  {degree?.split(',').map((deg) => (
-                    <Badge key={deg} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                  {course?.split(",").map((deg) => (
+                    <Badge
+                      key={deg}
+                      variant="secondary"
+                      className="flex items-center gap-1 px-3 py-1"
+                    >
                       <GraduationCap className="h-3 w-3" />
                       {deg}
                       <button
                         onClick={() => {
-                          const params = new URLSearchParams(searchParams?.toString() || '');
-                          const degs = degree.split(',').filter(d => d !== deg);
-                          if (degs.length > 0) params.set('degree', degs.join(','));
-                          else params.delete('degree');
-                          router.push(`/recommendation-collections?${params.toString()}`);
+                          const params = new URLSearchParams(
+                            searchParams?.toString() || "",
+                          );
+                          const degs = course
+                            .split(",")
+                            .filter((d) => d !== deg);
+                          if (degs.length > 0)
+                            params.set("course", degs.join(","));
+                          else params.delete("course");
+                          router.push(
+                            `/recommendation-collections?${params.toString()}`,
+                          );
                         }}
                         className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                       >
@@ -303,17 +576,28 @@ export default function RecommendationCollectionsClient({
                       </button>
                     </Badge>
                   ))}
-                  {accreditation?.split(',').map((acc) => (
-                    <Badge key={acc} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                  {accreditation?.split(",").map((acc) => (
+                    <Badge
+                      key={acc}
+                      variant="secondary"
+                      className="flex items-center gap-1 px-3 py-1"
+                    >
                       <Award className="h-3 w-3" />
                       {acc}
                       <button
                         onClick={() => {
-                          const params = new URLSearchParams(searchParams?.toString() || '');
-                          const accs = accreditation.split(',').filter(a => a !== acc);
-                          if (accs.length > 0) params.set('accreditation', accs.join(','));
-                          else params.delete('accreditation');
-                          router.push(`/recommendation-collections?${params.toString()}`);
+                          const params = new URLSearchParams(
+                            searchParams?.toString() || "",
+                          );
+                          const accs = accreditation
+                            .split(",")
+                            .filter((a) => a !== acc);
+                          if (accs.length > 0)
+                            params.set("accreditation", accs.join(","));
+                          else params.delete("accreditation");
+                          router.push(
+                            `/recommendation-collections?${params.toString()}`,
+                          );
                         }}
                         className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
                       >
@@ -329,24 +613,20 @@ export default function RecommendationCollectionsClient({
           {/* Main Content Layout */}
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Filters Sidebar - Desktop with Scrollbar */}
-            <aside className={`lg:w-80 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <aside
+              className={`lg:w-80 flex-shrink-0 ${showFilters ? "block" : "hidden lg:block"}`}
+            >
               <div className="sticky top-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
                 {data && (
                   <UnifiedFilters
                     currentType={type}
-                    currentLocation={location}
+                    currentLocation={city}
                     currentInstituteType={instituteType}
-                    currentCategory={category}
-                    currentDegree={degree}
+                    currentCategory={programme}
+                    currentDegree={course}
                     currentAccreditation={accreditation}
                     sortBy={sortBy}
-                    availableFilters={data.filters || {
-                      locations: [],
-                      types: [],
-                      categories: [],
-                      accreditations: [],
-                      degrees: []
-                    }}
+                    availableFilters={availableFilters}
                   />
                 )}
               </div>
@@ -359,17 +639,30 @@ export default function RecommendationCollectionsClient({
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     {/* Tabs */}
-                    <Tabs value={type} onValueChange={handleTabChange} className="w-full sm:w-auto">
+                    <Tabs
+                      value={type}
+                      onValueChange={handleTabChange}
+                      className="w-full sm:w-auto"
+                    >
                       <TabsList className="grid w-full sm:w-auto grid-cols-3 gap-2">
-                        <TabsTrigger value="institutes" className="flex items-center gap-2">
+                        <TabsTrigger
+                          value="institutes"
+                          className="flex items-center gap-2"
+                        >
                           <Building2 className="h-4 w-4" />
                           <span>Institutes</span>
                         </TabsTrigger>
-                        <TabsTrigger value="programs" className="flex items-center gap-2">
+                        <TabsTrigger
+                          value="programs"
+                          className="flex items-center gap-2"
+                        >
                           <GraduationCap className="h-4 w-4" />
                           <span>Programs</span>
                         </TabsTrigger>
-                        <TabsTrigger value="courses" className="flex items-center gap-2">
+                        <TabsTrigger
+                          value="courses"
+                          className="flex items-center gap-2"
+                        >
                           <BookOpen className="h-4 w-4" />
                           <span>Courses</span>
                         </TabsTrigger>
@@ -422,9 +715,18 @@ export default function RecommendationCollectionsClient({
 
                 {/* Loading Skeleton */}
                 {isPending && (
-                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+                  <div
+                    className={
+                      viewMode === "grid"
+                        ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        : "space-y-4"
+                    }
+                  >
                     {[...Array(6)].map((_, i) => (
-                      <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                      <div
+                        key={i}
+                        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                      >
                         <div className="flex items-start gap-4 mb-4">
                           <Skeleton className="h-16 w-16 rounded-lg" />
                           <div className="flex-1 space-y-2">
@@ -446,13 +748,24 @@ export default function RecommendationCollectionsClient({
                 {/* Content Grid/List */}
                 {!isPending && allData.length > 0 && (
                   <>
-                    {type === 'institutes' && (
-                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr' : 'space-y-4'}>
-                        {allData.map((institute: any) => (
-                          <div key={institute.id} className="h-full">
+                    {type === "institutes" && (
+                      <div
+                        className={
+                          viewMode === "grid"
+                            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr"
+                            : "space-y-4"
+                        }
+                      >
+                        {allData.map((institute: any, index: number) => (
+                          <div
+                            key={getItemKey(institute, "institutes", index)}
+                            className="h-full"
+                          >
                             <InstituteCard
                               institute={institute}
-                              variant={viewMode === 'list' ? 'detailed' : 'default'}
+                              variant={
+                                viewMode === "list" ? "detailed" : "default"
+                              }
                               showCourses={true}
                             />
                           </div>
@@ -460,26 +773,48 @@ export default function RecommendationCollectionsClient({
                       </div>
                     )}
 
-                    {type === 'programs' && (
-                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr' : 'space-y-4'}>
-                        {allData.map((program: any) => (
-                          <div key={program.id} className="h-full">
+                    {type === "programs" && (
+                      <div
+                        className={
+                          viewMode === "grid"
+                            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr"
+                            : "space-y-4"
+                        }
+                      >
+                        {allData.map((program: any, index: number) => (
+                          <div
+                            key={getItemKey(program, "programs", index)}
+                            className="h-full"
+                          >
                             <ProgramCard
                               program={program}
-                              variant={viewMode === 'list' ? 'compact' : 'default'}
+                              variant={
+                                viewMode === "list" ? "compact" : "default"
+                              }
                             />
                           </div>
                         ))}
                       </div>
                     )}
 
-                    {type === 'courses' && (
-                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr' : 'space-y-4'}>
-                        {allData.map((course: any) => (
-                          <div key={course.id} className="h-full">
+                    {type === "courses" && (
+                      <div
+                        className={
+                          viewMode === "grid"
+                            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr"
+                            : "space-y-4"
+                        }
+                      >
+                        {allData.map((course: any, index: number) => (
+                          <div
+                            key={getItemKey(course, "courses", index)}
+                            className="h-full"
+                          >
                             <CourseCard
                               course={course}
-                              variant={viewMode === 'list' ? 'compact' : 'default'}
+                              variant={
+                                viewMode === "list" ? "compact" : "default"
+                              }
                             />
                           </div>
                         ))}
@@ -487,7 +822,10 @@ export default function RecommendationCollectionsClient({
                     )}
 
                     {/* Infinite Scroll Trigger */}
-                    <div ref={loadMoreRef} className="h-20 flex items-center justify-center">
+                    <div
+                      ref={loadMoreRef}
+                      className="h-20 flex items-center justify-center"
+                    >
                       {isLoadingMore && (
                         <div className="flex items-center gap-2 text-gray-500">
                           <Loader2 className="h-5 w-5 animate-spin" />
@@ -499,7 +837,7 @@ export default function RecommendationCollectionsClient({
                     {/* Results Summary */}
                     {data && (
                       <div className="text-center text-sm text-gray-600 mt-6">
-                        Showing {allData.length} of {data.total} {type}
+                        Showing {allData.length} of {totalForType} {type}
                       </div>
                     )}
                   </>
@@ -510,18 +848,29 @@ export default function RecommendationCollectionsClient({
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                     <div className="max-w-md mx-auto">
                       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        {type === 'institutes' && <Building2 className="h-8 w-8 text-gray-400" />}
-                        {type === 'programs' && <BookOpen className="h-8 w-8 text-gray-400" />}
-                        {type === 'courses' && <GraduationCap className="h-8 w-8 text-gray-400" />}
+                        {type === "institutes" && (
+                          <Building2 className="h-8 w-8 text-gray-400" />
+                        )}
+                        {type === "programs" && (
+                          <BookOpen className="h-8 w-8 text-gray-400" />
+                        )}
+                        {type === "courses" && (
+                          <GraduationCap className="h-8 w-8 text-gray-400" />
+                        )}
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         No {type} found
                       </h3>
                       <p className="text-gray-600 mb-6">
-                        Try adjusting your filters or search criteria to find what you're looking for.
+                        Try adjusting your filters or search criteria to find
+                        what you're looking for.
                       </p>
                       <Button
-                        onClick={() => router.push(`/recommendation-collections?type=${type}`)}
+                        onClick={() =>
+                          router.push(
+                            `/recommendation-collections?type=${type}`,
+                          )
+                        }
                         variant="outline"
                       >
                         Clear All Filters
@@ -535,5 +884,5 @@ export default function RecommendationCollectionsClient({
         </div>
       </div>
     </div>
-  )
+  );
 }

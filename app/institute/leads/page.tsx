@@ -30,6 +30,7 @@ import {
   Calendar,
   Lock,
   Crown,
+  Eye,
 } from "lucide-react";
 import { IStudentLead } from "@/src/models/StudentLead";
 import { formatDistanceToNow } from "date-fns";
@@ -406,19 +407,23 @@ export default function InstituteLeadsPage() {
 
                 {/* Row 3: Name & Action Menu */}
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold text-gray-900 text-lg">
-                    {lead.fullName}
-                  </span>
-                  {lead.publicProfileId && (
-                    <a
-                      href={`/profile/${lead.publicProfileId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      View Profile
-                    </a>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-900 text-lg">
+                      {lead.fullName}
+                    </span>
+                    {lead.publicProfileId && (
+                      <a
+                        href={`/profile/${lead.publicProfileId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50/60 hover:bg-blue-100 px-3 py-1.5 rounded-full border border-blue-200 transition-colors"
+                        title="Open public profile in a new tab"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        View Profile
+                      </a>
+                    )}
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

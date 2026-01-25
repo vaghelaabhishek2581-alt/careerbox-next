@@ -14,9 +14,8 @@ import Business from '@/src/models/Business'
 const reviewSchema = z.object({
   action: z.enum(['approve', 'reject', 'require_payment', 'pending']),
   adminNotes: z.string().optional(),
-  subscriptionPlan: z
-    .enum(['free', 'basic', 'premium', 'enterprise'])
-    .optional()
+  subscriptionPlan: z.enum(['free', 'basic', 'premium', 'enterprise']).optional(),
+  durationMonths: z.number().min(1).max(60).optional()
 })
 
 async function generateUniqueInstituteId (baseName: string): Promise<string> {
@@ -98,7 +97,7 @@ export async function POST (
     }
 
     const validatedData = reviewSchema.parse(body)
-    const { action, adminNotes, subscriptionPlan } = validatedData
+    const { action, adminNotes, subscriptionPlan, durationMonths } = validatedData
     console.log(
       `[Review] Validated data: action=${action}, subscriptionPlan=${subscriptionPlan}`
     )
@@ -276,45 +275,32 @@ export async function POST (
         )
       }
 
-      // Check for existing active subscription to avoid duplicates
-      const existingSubscription = await Subscription.findOne({
+      await Subscription.deleteMany({
         userId: new mongoose.Types.ObjectId(intent.userId),
-        organizationId: organizationId,
-        status: 'active'
+        organizationId: organizationId
       })
 
-      if (!existingSubscription) {
-        // Create subscription
-        console.log(
-          `[Review] Creating subscription for user ${intent.userId} with plan: ${subscriptionPlan}`
-        )
-        const subscription = new Subscription({
-          userId: new mongoose.Types.ObjectId(intent.userId),
-          organizationId: organizationId,
-          organizationType: intent.type,
-          planName: `${
-            subscriptionPlan.charAt(0).toUpperCase() + subscriptionPlan.slice(1)
-          } Plan`,
-          planType: subscriptionPlan,
-          billingCycle: 'yearly',
-          status: 'active',
-          amount: 0,
-          currency: 'INR',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
-          grantedBy: new mongoose.Types.ObjectId(authResult.userId),
-          grantReason: `Approved registration with ${subscriptionPlan} plan`,
-          createdAt: new Date()
-        })
-        await subscription.save()
-        console.log(
-          `[Review] Subscription created with ID: ${subscription._id}`
-        )
-      } else {
-        console.log(
-          `[Review] Subscription already exists for user ${intent.userId}, skipping creation`
-        )
-      }
+      const startDate = new Date()
+      const endDate = new Date()
+      endDate.setMonth(endDate.getMonth() + (durationMonths || 12))
+
+      const subscription = new Subscription({
+        userId: new mongoose.Types.ObjectId(intent.userId),
+        organizationId: organizationId,
+        organizationType: intent.type,
+        planName: `${subscriptionPlan.charAt(0).toUpperCase() + subscriptionPlan.slice(1)} Plan`,
+        planType: subscriptionPlan,
+        billingCycle: (durationMonths || 12) >= 12 ? 'yearly' : 'monthly',
+        status: 'active',
+        amount: 0,
+        currency: 'INR',
+        startDate,
+        endDate,
+        grantedBy: new mongoose.Types.ObjectId(authResult.userId),
+        grantReason: `Approved registration with ${subscriptionPlan} plan`,
+        createdAt: new Date()
+      })
+      await subscription.save()
 
       // Update user: add role, ownedOrganizations, and subscription status
       const roleToAdd = intent.type === 'institute' ? 'institute' : 'business'
@@ -395,6 +381,10 @@ export async function POST (
           )
         }
       }
+      await Subscription.deleteMany({
+        userId: new mongoose.Types.ObjectId(intent.userId),
+        organizationId: intent.organizationId
+      })
     }
 
     // Send notifications based on action

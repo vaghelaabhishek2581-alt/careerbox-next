@@ -246,12 +246,14 @@ export const reviewRegistrationIntent = createAsyncThunk(
       intentId,
       action,
       adminNotes,
-      subscriptionPlan
+      subscriptionPlan,
+      durationMonths
     }: {
       intentId: string
       action: 'approve' | 'reject' | 'require_payment' | 'pending'
       adminNotes?: string
       subscriptionPlan?: string
+      durationMonths?: number
     },
     { rejectWithValue }
   ) => {
@@ -266,7 +268,8 @@ export const reviewRegistrationIntent = createAsyncThunk(
           body: JSON.stringify({
             action,
             adminNotes,
-            subscriptionPlan
+            subscriptionPlan,
+            durationMonths
           })
         }
       )

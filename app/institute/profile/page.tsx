@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog";
 
 function StringList({
   label,
@@ -83,6 +84,9 @@ export default function InstituteProfilePage() {
   const [profile, setProfile] = useState<any>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropType, setCropType] = useState<'profile' | 'cover'>('cover');
+  const [cropInitialUrl, setCropInitialUrl] = useState<string | null>(null);
 
   function setPath(path: string[], value: any) {
     setProfile((prev: any) => {
@@ -135,6 +139,30 @@ export default function InstituteProfilePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
+
+  async function handleCropped(file: File) {
+    try {
+      if (!profile?.id) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', cropType === 'cover' ? 'cover' : 'logo');
+
+      const res = await fetch(`/api/institute/profile/upload-image`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      if (data?.success && data?.imageUrl) {
+        if (cropType === 'cover') setPath(['coverImage'], data.imageUrl);
+        else setPath(['logo'], data.imageUrl);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCropOpen(false);
+    }
+  }
 
   async function onSave() {
     try {
@@ -203,6 +231,17 @@ export default function InstituteProfilePage() {
       </div>
 
       <div className="space-y-6">
+        {/* Cropper Dialog */}
+        {/* <ImageCropperDialog
+          key={cropType}
+          open={cropOpen}
+          onOpenChange={setCropOpen}
+          type={cropType}
+          targetWidth={cropType === 'cover' ? 1600 : 512}
+          targetHeight={cropType === 'cover' ? 400 : 512}
+          initialImageUrl={cropInitialUrl || undefined}
+          onCropped={handleCropped}
+        /> */}
         {/* Core Details */}
         {activeTab === "core" && (
           <Card className="rounded-2xl border shadow-sm">
@@ -287,24 +326,37 @@ export default function InstituteProfilePage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Logo URL
-                </Label>
-                <Input
-                  className="mt-1.5 h-10 rounded-lg border-slate-200 focus:ring-1 focus:ring-blue-600"
-                  value={profile?.logo || ""}
-                  onChange={(e) => setPath(["logo"], e.target.value)}
-                />
+                <Label className="text-sm font-medium text-gray-700">Logo</Label>
+                <div className="mt-1.5 flex items-center gap-4">
+                  <div className="h-20 w-20 rounded border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
+                    {profile?.logo ? (
+                      <img src={profile.logo} alt="Logo preview" className="h-full w-full object-contain" />
+                    ) : (
+                      <span className="text-[11px] text-gray-500">No logo</span>
+                    )}
+                  </div>
+                  <Button type="button" variant="secondary" size="sm" onClick={() => { setCropType('profile'); setCropInitialUrl(profile?.logo || null); setCropOpen(true); }}>
+                    Crop & Upload
+                  </Button>
+                </div>
               </div>
               <div className="md:col-span-3">
-                <Label className="text-sm font-medium text-gray-700">
-                  Cover Image URL
-                </Label>
-                <Input
-                  className="mt-1.5 h-10 rounded-lg border-slate-200 focus:ring-1 focus:ring-blue-600"
-                  value={profile?.coverImage || ""}
-                  onChange={(e) => setPath(["coverImage"], e.target.value)}
-                />
+                <Label className="text-sm font-medium text-gray-700">Cover Image</Label>
+                <div className="mt-1.5 flex items-center gap-4">
+                  <div className="h-28 w-[480px] rounded border border-slate-200 bg-white overflow-hidden">
+                    {profile?.coverImage ? (
+                      <img src={profile.coverImage} alt="Cover preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-[13px] text-gray-500">No cover image</div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Button type="button" variant="secondary" size="sm" onClick={() => { setCropType('cover'); setCropInitialUrl(profile?.coverImage || null); setCropOpen(true); }}>
+                      Crop & Upload
+                    </Button>
+                    <span className="text-xs text-gray-500">Recommended: 1600×400</span>
+                  </div>
+                </div>
               </div>
               <div className="md:col-span-3">
                 <Label className="text-sm font-medium text-gray-700">
@@ -2596,7 +2648,16 @@ export default function InstituteProfilePage() {
             </CardContent>
           </Card>
         )}
-
+        {/* <ImageCropperDialog
+          key={cropType}
+          open={cropOpen}
+          onOpenChange={setCropOpen}
+          type={cropType}
+          targetWidth={cropType === 'cover' ? 1600 : 512}
+          targetHeight={cropType === 'cover' ? 400 : 512}
+          initialImageUrl={cropInitialUrl || undefined}
+          onCropped={handleCropped}
+        /> */}
         {/* Programmes */}
         {activeTab === "programmes" && (
           <Card className="rounded-2xl border shadow-sm">

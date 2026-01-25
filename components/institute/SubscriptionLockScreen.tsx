@@ -19,7 +19,7 @@ export function SubscriptionLockScreen({
   planName,
 }: SubscriptionLockScreenProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100  pt-28">
       <Card className="max-w-2xl w-full p-8 md:p-12 shadow-xl border-slate-200">
         <div className="text-center space-y-6">
           {/* Lock Icon */}
@@ -37,9 +37,7 @@ export function SubscriptionLockScreen({
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
               Account Deactivated
             </h1>
-            <p className="text-lg text-gray-600">
-              {instituteName}
-            </p>
+            <p className="text-lg text-gray-600">{instituteName}</p>
           </div>
 
           {/* Alert Message */}
@@ -51,11 +49,13 @@ export function SubscriptionLockScreen({
                   Your subscription has been deactivated
                 </p>
                 <p className="text-sm text-red-700">
-                  {grantReason || "Your account access has been suspended by the administrator."}
+                  {grantReason ||
+                    "Your account access has been suspended by the administrator."}
                 </p>
                 {planName && (
                   <p className="text-sm text-red-600 mt-2">
-                    Previous Plan: <span className="font-medium">{planName}</span>
+                    Previous Plan:{" "}
+                    <span className="font-medium">{planName}</span>
                   </p>
                 )}
               </div>
@@ -65,10 +65,15 @@ export function SubscriptionLockScreen({
           {/* Information */}
           <div className="text-gray-600 space-y-2">
             <p className="text-base">
-              Your account is currently <span className="font-semibold text-red-600">{subscriptionStatus}</span>.
+              Your account is currently{" "}
+              <span className="font-semibold text-red-600">
+                {subscriptionStatus}
+              </span>
+              .
             </p>
             <p className="text-sm">
-              Please contact our support team to resolve this issue and reactivate your account.
+              Please contact our support team to resolve this issue and
+              reactivate your account.
             </p>
           </div>
 
@@ -85,7 +90,9 @@ export function SubscriptionLockScreen({
                   </div>
                   <div className="text-left">
                     <p className="font-semibold text-gray-900">Email Support</p>
-                    <p className="text-xs text-gray-600">support@careerbox.com</p>
+                    <p className="text-xs text-gray-600">
+                      support@careerbox.com
+                    </p>
                   </div>
                 </div>
               </Button>
@@ -113,19 +120,13 @@ export function SubscriptionLockScreen({
           <div className="pt-6 border-t border-slate-200">
             <p className="text-sm text-gray-500">
               Need immediate assistance?{" "}
-              <Link href="/contact" className="text-blue-600 hover:text-blue-700 font-medium underline">
+              <Link
+                href="/contact"
+                className="text-blue-600 hover:text-blue-700 font-medium underline"
+              >
                 Visit our contact page
               </Link>
             </p>
-          </div>
-
-          {/* Back to Home */}
-          <div className="pt-2">
-            <Link href="/dashboard">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
-                ← Back to Dashboard
-              </Button>
-            </Link>
           </div>
         </div>
       </Card>

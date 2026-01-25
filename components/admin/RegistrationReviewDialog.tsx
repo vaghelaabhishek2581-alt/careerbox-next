@@ -41,6 +41,7 @@ export function RegistrationReviewDialog({
   const [reviewAction, setReviewAction] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [subscriptionPlan, setSubscriptionPlan] = useState("");
+  const [grantDurationMonths, setGrantDurationMonths] = useState<number>(12);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   console.log(intent);
@@ -92,6 +93,7 @@ export function RegistrationReviewDialog({
           action: reviewAction as any,
           adminNotes,
           subscriptionPlan: subscriptionPlan || undefined,
+          durationMonths: grantDurationMonths,
         })
       ).unwrap();
 
@@ -421,6 +423,35 @@ export function RegistrationReviewDialog({
                     </div>
                   </div>
                 </RadioGroup>
+                <div className="mt-4">
+                  <Label className="mb-2 block">Grant Duration</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={grantDurationMonths === 3 ? "default" : "outline"}
+                      size="sm"
+                      className="rounded-full"
+                      onClick={() => setGrantDurationMonths(3)}
+                    >
+                      3 months
+                    </Button>
+                    <Button
+                      variant={grantDurationMonths === 6 ? "default" : "outline"}
+                      size="sm"
+                      className="rounded-full"
+                      onClick={() => setGrantDurationMonths(6)}
+                    >
+                      6 months
+                    </Button>
+                    <Button
+                      variant={grantDurationMonths === 12 ? "default" : "outline"}
+                      size="sm"
+                      className="rounded-full"
+                      onClick={() => setGrantDurationMonths(12)}
+                    >
+                      12 months
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -1,31 +1,41 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getAuthenticatedUser } from "@/lib/auth/unified-auth";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import {
-  SearchFilters,
-  SearchResponse,
-  SearchResult,
-} from "@/lib/types/search.types";
-import { parseSearchQuery } from "@/lib/types/search.types";
+import { NextRequest, NextResponse } from 'next/server'
+import engine, { initSearchEngine } from '@/lib/search/engine'
 
-// GET /api/search - Universal search endpoint
-export async function GET(req: NextRequest) {
-  const authResult = await getAuthenticatedUser(req);
-  if (!authResult) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET (request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
 
-  const { searchParams } = new URL(req.url);
-  const filters = parseSearchQuery(searchParams);
+  const q = searchParams.get('q') || undefined
+  const typeParam = searchParams.get('type') || undefined
+  const type =
+    typeParam === 'institute' ||
+    typeParam === 'programme' ||
+    typeParam === 'course'
+      ? typeParam
+      : undefined
+  const city = searchParams.get('city') || undefined
+  const state = searchParams.get('state') || undefined
+  const level = searchParams.get('level') || undefined
+  const programme = searchParams.get('programme') || undefined
+  const exam = searchParams.get('exam') || undefined
+  const course = searchParams.get('course') || undefined
+  const page = parseInt(searchParams.get('page') || '1', 10)
+  const limit = parseInt(searchParams.get('limit') || '20', 10)
 
-  await connectToDatabase();
+  console.log('\n[API] GET /api/search', Object.fromEntries(searchParams))
+  await initSearchEngine()
 
-  // TODO: This needs to be refactored to use Mongoose models instead of raw MongoDB collections
-  return NextResponse.json(
-    {
-      error:
-        "Search endpoint is currently under maintenance. Please use specific search endpoints.",
-    },
-    { status: 503 }
-  );
+  const results = engine.search({
+    q,
+    type,
+    city,
+    state,
+    level,
+    programme,
+    exam,
+    course,
+    page,
+    limit
+  })
+
+  return NextResponse.json(results)
 }

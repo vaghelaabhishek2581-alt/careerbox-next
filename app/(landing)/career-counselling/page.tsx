@@ -55,6 +55,7 @@ export default function CareerCounsellingPage() {
 
   const [states, setStates] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   // Load states on mount
   useEffect(() => {
@@ -71,6 +72,15 @@ export default function CareerCounsellingPage() {
   }, [formData.state]);
 
   const handleInputChange = (field: keyof CounsellingFormData, value: string | boolean) => {
+    // Special handling for phone: allow only digits and max 10
+    if (field === 'phone') {
+      const raw = (value as string) || '';
+      const digits = raw.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({ ...prev, phone: digits }));
+      setPhoneError(digits.length === 0 ? null : digits.length !== 10 ? 'Phone number must be 10 digits' : null);
+      return;
+    }
+
     setFormData(prev => {
       // If state changes, reset city
       if (field === 'state') {
@@ -85,6 +95,11 @@ export default function CareerCounsellingPage() {
     
     if (!formData.agreeToTerms) {
       alert('Please agree to the Privacy Policy and Terms & Conditions');
+      return;
+    }
+
+    if ((formData.phone || '').length !== 10) {
+      setPhoneError('Phone number must be 10 digits');
       return;
     }
 
@@ -267,10 +282,17 @@ export default function CareerCounsellingPage() {
                                 value={formData.phone}
                                 onChange={(e) => handleInputChange('phone', e.target.value)}
                                 required
+                                inputMode="numeric"
+                                pattern="[0-9]{10}"
+                                maxLength={10}
+                                aria-invalid={!!phoneError}
                                 className="pl-4 h-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-l-none rounded-r-xl border-l-0"
                               />
                             </div>
                           </div>
+                          {phoneError && (
+                            <p className="mt-2 text-sm text-red-600">{phoneError}</p>
+                          )}
                         </div>
                       </div>
 
@@ -381,7 +403,7 @@ export default function CareerCounsellingPage() {
                       {/* Submit Button */}
                       <Button
                         type="submit"
-                        disabled={isSubmitting || !formData.agreeToTerms}
+                        disabled={isSubmitting || !formData.agreeToTerms || (formData.phone.length !== 10)}
                         className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 rounded-xl mt-4"
                       >
                         {isSubmitting ? (

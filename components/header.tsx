@@ -38,7 +38,7 @@ import { SidebarManager } from "@/components/institute/SidebarManager";
 import { Sidebar as UserSidebar } from "@/components/user/Sidebar";
 
 const publicNavigation = [
-  { name: "Get Free Counselling", href: "/career-counselling" }
+  { name: "Get Free Counselling", href: "/career-counselling" },
 ];
 
 const getPrivateNavigation = (role: string) => {
@@ -84,8 +84,9 @@ export default function Header() {
 
   // Determine navigation items
   const isLoggedIn = status === "authenticated" && !!session?.user;
-  const userRole = session?.user?.activeRole || session?.user?.roles?.[0] || "user";
-  const navigation = isLoggedIn ? [] : publicNavigation;
+  const userRole =
+    session?.user?.activeRole || session?.user?.roles?.[0] || "user";
+  const navigation = publicNavigation;
 
   // Rotating search placeholder terms
   const searchTerms = [
@@ -138,9 +139,7 @@ export default function Header() {
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-[990] transition-all duration-300 bg-white/90 backdrop-blur-md border-b",
-          isScrolled
-            ? "shadow-sm border-gray-100"
-            : "border-gray-200"
+          isScrolled ? "shadow-sm border-gray-100" : "border-gray-200",
         )}
       >
         {/* Top Contact Bar */}
@@ -166,10 +165,16 @@ export default function Header() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20 gap-4">
             {/* Logo */}
-            <Link href="/" className="flex md:hidden items-center space-x-2 group flex-shrink-0">
+            <Link
+              href="/"
+              className="flex md:hidden items-center space-x-2 group flex-shrink-0"
+            >
               <Logo showText={false} />
             </Link>
-            <Link href="/" className="hidden md:flex items-center space-x-2 group flex-shrink-0">
+            <Link
+              href="/"
+              className="hidden md:flex items-center space-x-2 group flex-shrink-0"
+            >
               <Logo />
             </Link>
 
@@ -181,7 +186,7 @@ export default function Header() {
                 className="w-full"
                 inputClassName={cn(
                   "h-10 w-full rounded-full border border-gray-300 pl-4 bg-white shadow-sm",
-                  "focus:border-blue-600"
+                  "focus:border-blue-600",
                 )}
               />
               <Button className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-8 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs pointer-events-none">
@@ -197,7 +202,9 @@ export default function Header() {
                 className="w-full"
                 inputClassName={cn(
                   "h-10 md:h-12 w-full rounded-full border border-gray-300 pl-5 shadow-sm transition-all",
-                  isScrolled ? "bg-white focus:border-blue-600" : "bg-white/90 backdrop-blur-sm focus:bg-white focus:border-blue-600"
+                  isScrolled
+                    ? "bg-white focus:border-blue-600"
+                    : "bg-white/90 backdrop-blur-sm focus:bg-white focus:border-blue-600",
                 )}
               />
               <Button className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-9 md:h-10 px-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm shadow-sm pointer-events-none">
@@ -205,30 +212,36 @@ export default function Header() {
               </Button>
             </div>
 
-            {/* Desktop Navigation (Public Only) */}
-            {!isLoggedIn && (
-              <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
-                {navigation.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        "text-sm font-medium transition-colors",
-                        isActive
-                          ? "text-blue-600"
-                          : isScrolled
-                            ? "text-gray-700 hover:text-blue-600"
-                            : "text-gray-800 hover:text-blue-600"
-                      )}
-                    >
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </nav>
-            )}
+            {/* Desktop Navigation (Public Only) - Always in DOM to prevent layout shift */}
+            <nav
+              className={cn(
+                "hidden lg:flex items-center gap-6 flex-shrink-0 transition-all duration-200",
+                isLoggedIn &&
+                  "invisible pointer-events-none !w-0 !gap-0 overflow-hidden",
+              )}
+              aria-hidden={isLoggedIn}
+            >
+              {navigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    tabIndex={isLoggedIn ? -1 : undefined}
+                    className={cn(
+                      "text-sm font-medium transition-colors whitespace-nowrap",
+                      isActive
+                        ? "text-blue-600"
+                        : isScrolled
+                          ? "text-gray-700 hover:text-blue-600"
+                          : "text-gray-800 hover:text-blue-600",
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
 
             {/* Desktop CTA Buttons or User Profile */}
             <div className="hidden lg:flex items-center space-x-4">
@@ -252,10 +265,15 @@ export default function Header() {
                             "p-2.5 rounded-xl transition-all duration-200 group relative",
                             isActive
                               ? "bg-blue-50 text-blue-600"
-                              : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                              : "text-gray-500 hover:bg-gray-100 hover:text-gray-900",
                           )}
                         >
-                          <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "fill-current")} />
+                          <Icon
+                            className={cn(
+                              "h-5 w-5 transition-transform group-hover:scale-110",
+                              isActive && "fill-current",
+                            )}
+                          />
                           {isActive && (
                             <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />
                           )}
@@ -275,7 +293,7 @@ export default function Header() {
                         "font-medium transition-all duration-200 border",
                         isScrolled
                           ? "text-gray-700 hover:text-blue-600 hover:bg-blue-50 border-gray-200"
-                          : "text-gray-800 bg-white/90 hover:bg-white border-gray-300/50 backdrop-blur-sm"
+                          : "text-gray-800 bg-white/90 hover:bg-white border-gray-300/50 backdrop-blur-sm",
                       )}
                     >
                       Login
@@ -311,7 +329,10 @@ export default function Header() {
                     <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[320px] sm:w-[360px] bg-white">
+                <SheetContent
+                  side="right"
+                  className="w-[320px] sm:w-[360px] bg-white"
+                >
                   <VisuallyHidden>
                     <SheetTitle>Mobile Menu</SheetTitle>
                   </VisuallyHidden>
@@ -323,7 +344,11 @@ export default function Header() {
                     {/* Mobile Navigation */}
                     <nav className="flex flex-col space-y-1">
                       {navigation.map((item) => {
-                        const IconComponent = (item as { icon?: React.ComponentType<{ className?: string }> }).icon;
+                        const IconComponent = (
+                          item as {
+                            icon?: React.ComponentType<{ className?: string }>;
+                          }
+                        ).icon;
                         const isActive = pathname === item.href;
                         return (
                           <Link
@@ -334,10 +359,17 @@ export default function Header() {
                               "flex items-center gap-4 px-2 py-4 text-[16px] font-medium transition-all duration-200",
                               isActive
                                 ? "text-blue-600"
-                                : "text-slate-600 hover:text-slate-900"
+                                : "text-slate-600 hover:text-slate-900",
                             )}
                           >
-                            {IconComponent && <IconComponent className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-slate-500")} />}
+                            {IconComponent && (
+                              <IconComponent
+                                className={cn(
+                                  "h-5 w-5",
+                                  isActive ? "text-blue-600" : "text-slate-500",
+                                )}
+                              />
+                            )}
                             {item.name}
                           </Link>
                         );
@@ -391,27 +423,36 @@ export default function Header() {
         <>
           <div className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-gray-200 lg:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe">
             <div className="flex items-center justify-around">
-              {getPrivateNavigation(userRole).filter(item => item.name !== "Notifications").map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px]",
-                      isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-900"
-                    )}
-                  >
-                    <Icon className={cn("h-6 w-6 mb-1", isActive && "fill-current")} />
-                    <span className="text-[10px] font-medium truncate w-full text-center">
-                      {item.name}
-                    </span>
-                  </Link>
-                );
-              })}
+              {getPrivateNavigation(userRole)
+                .filter((item) => item.name !== "Notifications")
+                .map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={cn(
+                        "flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px]",
+                        isActive
+                          ? "text-blue-600"
+                          : "text-gray-500 hover:text-gray-900",
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-6 w-6 mb-1",
+                          isActive && "fill-current",
+                        )}
+                      />
+                      <span className="text-[10px] font-medium truncate w-full text-center">
+                        {item.name}
+                      </span>
+                    </Link>
+                  );
+                })}
               {/* Menu Item (Hamburger) in Bottom Nav */}
-              <div 
+              <div
                 className="flex flex-col items-center justify-center py-2 px-1 flex-1 min-w-[60px] cursor-pointer text-gray-500 hover:text-gray-900"
                 onClick={() => setIsMobileMenuOpen(true)}
               >
@@ -425,30 +466,46 @@ export default function Header() {
 
           {/* Authenticated Mobile Menu Sheet */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetContent side="left" className="w-full sm:w-[360px] bg-white p-0 h-full">
+            <SheetContent
+              side="left"
+              className="w-full sm:w-[360px] bg-white p-0 h-full"
+            >
               <VisuallyHidden>
                 <SheetTitle>Menu</SheetTitle>
               </VisuallyHidden>
               <div className="flex flex-col h-full">
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white z-10">
                   <Logo showText={true} />
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 rounded-full"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500">
-                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5 text-gray-500"
+                    >
+                      <path
+                        d="M18 6L6 18M6 6L18 18"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </Button>
                 </div>
-                
+
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                   <div onClick={() => setIsMobileMenuOpen(false)}>
-                    {pathname?.startsWith('/institute') ? (
+                    {pathname?.startsWith("/institute") ? (
                       <SidebarManager />
-                    ) : pathname?.startsWith('/user') ? (
+                    ) : pathname?.startsWith("/user") ? (
                       <UserSidebar />
                     ) : (
                       /* Default Mobile Menu for other pages */
@@ -463,12 +520,17 @@ export default function Header() {
                               onClick={() => setIsMobileMenuOpen(false)}
                               className={cn(
                                 "flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-lg transition-colors",
-                                isActive 
-                                  ? "bg-blue-50 text-blue-600" 
-                                  : "text-gray-700 hover:bg-gray-100"
+                                isActive
+                                  ? "bg-blue-50 text-blue-600"
+                                  : "text-gray-700 hover:bg-gray-100",
                               )}
                             >
-                              <Icon className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-gray-500")} />
+                              <Icon
+                                className={cn(
+                                  "h-5 w-5",
+                                  isActive ? "text-blue-600" : "text-gray-500",
+                                )}
+                              />
                               {item.name}
                             </Link>
                           );
