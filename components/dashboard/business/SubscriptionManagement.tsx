@@ -396,7 +396,9 @@ export default function SubscriptionManagement() {
                         ${bill.amount} {bill.currency}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(bill.invoiceDate).toLocaleDateString()}
+                        {bill.invoiceDate
+                          ? new Date(bill.invoiceDate).toLocaleDateString()
+                          : "N/A"}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

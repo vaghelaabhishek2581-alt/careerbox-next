@@ -5,7 +5,13 @@ export async function GET (request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
 
   const q = searchParams.get('q') || undefined
-  const type = searchParams.get('type') || undefined
+  const typeParam = searchParams.get('type') || undefined
+  const type =
+    typeParam === 'institute' ||
+    typeParam === 'programme' ||
+    typeParam === 'course'
+      ? typeParam
+      : undefined
   const city = searchParams.get('city') || undefined
   const state = searchParams.get('state') || undefined
   const level = searchParams.get('level') || undefined
@@ -14,8 +20,6 @@ export async function GET (request: NextRequest) {
   const course = searchParams.get('course') || undefined
   const page = parseInt(searchParams.get('page') || '1', 10)
   const limit = parseInt(searchParams.get('limit') || '20', 10)
-  const sortBy = searchParams.get('sortBy') || undefined
-  const sortOrder = searchParams.get('sortOrder') || undefined
 
   console.log('\n[API] GET /api/search', Object.fromEntries(searchParams))
   await initSearchEngine()
@@ -30,9 +34,7 @@ export async function GET (request: NextRequest) {
     exam,
     course,
     page,
-    limit,
-    sortBy,
-    sortOrder
+    limit
   })
 
   return NextResponse.json(results)

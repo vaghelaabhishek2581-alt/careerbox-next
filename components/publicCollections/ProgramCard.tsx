@@ -129,7 +129,7 @@ export function ProgramCard({
                     <div className="flex flex-wrap gap-1">
                       {program.eligibilityExams
                         .slice(0, 5)
-                        .map((exam, index) => (
+                        .map((exam: any, index: any) => (
                           <Badge
                             key={index}
                             variant="outline"
@@ -279,7 +279,7 @@ export function ProgramCard({
               Eligibility Exams
             </h4>
             <div className="flex flex-wrap gap-2">
-              {program.eligibilityExams.map((exam, index) => (
+              {program.eligibilityExams.map((exam: any, index: number) => (
                 <Badge
                   key={index}
                   variant="outline"
@@ -299,7 +299,7 @@ export function ProgramCard({
               Sample Courses
             </h4>
             <div className="space-y-2">
-              {program.courses.slice(0, 3).map((course) => (
+              {program.courses.slice(0, 3).map((course: any) => (
                 <div
                   key={course.id}
                   className="flex items-center justify-between text-sm bg-gray-50 rounded p-2"

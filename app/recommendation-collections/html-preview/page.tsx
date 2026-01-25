@@ -16,17 +16,28 @@ export default async function HTMLPreviewPage({
   const course = (params.course as string) || (params.degree as string);
   const instituteType = params.instituteType as string | undefined;
   const query = params.q as string | undefined;
-  const sortBy = (params.sortBy as string) || "name";
-  const sortOrder = (params.sortOrder as string) || "asc";
+  const sortByParam = params.sortBy as string | undefined;
+  const sortBy =
+    sortByParam === "courses" ||
+    sortByParam === "established" ||
+    sortByParam === "name"
+      ? sortByParam
+      : "name";
+  const sortOrderParam = params.sortOrder as string | undefined;
+  const sortOrder =
+    sortOrderParam === "asc" || sortOrderParam === "desc"
+      ? sortOrderParam
+      : "asc";
   const accreditation = params.accreditation as string | undefined;
   const page = parseInt((params.page as string) || "1", 10);
   const limit = parseInt((params.limit as string) || "20", 10);
 
-  const typeMap: Record<string, string> = {
+  const typeMap: Record<string, "institute" | "programme" | "course"> = {
     institutes: "institute",
     programs: "programme",
     courses: "course",
   };
+  const searchType = typeMap[type];
 
   await initSearchEngine();
 
@@ -50,7 +61,7 @@ export default async function HTMLPreviewPage({
   } else {
     data = engine.search({
       q: query,
-      type: typeMap[type] || "institute",
+      type: searchType,
       city,
       state,
       level,

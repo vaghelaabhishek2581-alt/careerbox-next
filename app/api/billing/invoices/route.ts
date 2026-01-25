@@ -17,12 +17,14 @@ const querySchema = z.object({
 })
 
 async function resolveInstituteId (userId: string) {
-  const user = await User.findById(userId).select('ownedOrganizations').lean()
+  const user: any = await User.findById(userId)
+    .select('ownedOrganizations')
+    .lean()
   const owned = (user?.ownedOrganizations || []) as Types.ObjectId[]
   if (owned.length > 0) {
     return owned[0]
   }
-  const institute = await AdminInstitute.findOne({
+  const institute: any = await AdminInstitute.findOne({
     userIds: { $in: [new Types.ObjectId(userId)] }
   })
     .select('_id')

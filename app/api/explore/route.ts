@@ -14,8 +14,18 @@ export async function GET (request: NextRequest) {
   const accreditation = searchParams.get('accreditation') || undefined
   const page = parseInt(searchParams.get('page') || '1', 10)
   const limit = parseInt(searchParams.get('limit') || '20', 10)
-  const sortBy = searchParams.get('sortBy') || 'name'
-  const sortOrder = searchParams.get('sortOrder') || 'asc'
+  const sortByParam = searchParams.get('sortBy')
+  const sortBy =
+    sortByParam === 'courses' ||
+    sortByParam === 'established' ||
+    sortByParam === 'name'
+      ? sortByParam
+      : 'name'
+  const sortOrderParam = searchParams.get('sortOrder')
+  const sortOrder =
+    sortOrderParam === 'asc' || sortOrderParam === 'desc'
+      ? sortOrderParam
+      : 'asc'
 
   console.log('\n[API] GET /api/explore', Object.fromEntries(searchParams))
   await initSearchEngine()

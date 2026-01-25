@@ -67,11 +67,13 @@ export interface UpdateSubscriptionRequest {
 
 export interface BillingHistory {
   id: string
+  invoiceId?: string
   subscriptionId: string
   amount: number
   currency: string
   status: 'paid' | 'pending' | 'failed'
   paymentDate: Date
+  invoiceDate?: Date
   invoiceUrl?: string
 }
 
