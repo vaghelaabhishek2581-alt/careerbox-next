@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase as dbConnect } from '@/lib/db/mongodb'
+import { connectToDatabase } from '@/lib/db/mongoose'
 import { getAuthenticatedUser } from '@/lib/auth/unified-auth'
 import AdminInstitute from '@/src/models/AdminInstitute'
 import User from '@/src/models/User'
 import { Types } from 'mongoose'
 import { generatePresignedUrl, validateImageFile } from '@/lib/s3'
 
-// POST /api/institute/profile/upload-image
-// Accepts multipart/form-data with: file (image) and type ('logo' | 'cover')
-// Uploads to S3 and stores the public URL in AdminInstitute (logo or coverImage)
 export async function POST(req: NextRequest) {
   try {
+    await connectToDatabase()
+
     const session = await getAuthenticatedUser(req)
     if (!session?.user) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
@@ -20,8 +19,6 @@ export async function POST(req: NextRequest) {
     if (!roles?.includes('institute') && !roles?.includes('admin')) {
       return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
     }
-
-    await dbConnect()
 
     const user = await User.findById(userId)
     if (!user?.ownedOrganizations?.length) {
@@ -49,13 +46,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid type. Must be "logo" or "cover"' }, { status: 400 })
     }
 
-    // Validate image via existing helper (type + size constraints inside)
     const validation = validateImageFile(file)
     if (!validation.isValid) {
       return NextResponse.json({ success: false, message: validation.error || 'Invalid image' }, { status: 400 })
     }
 
-    // Construct S3 key: institutes/<instituteId>/<type>/<timestamp>-<filename>
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
     const s3Key = `institutes/${instituteId}/${type}/${Date.now()}-${safeName}`
 
@@ -75,7 +70,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Update AdminInstitute document
     const updateField = type === 'logo' ? 'logo' : 'coverImage'
     const updatedInstitute = await AdminInstitute.findByIdAndUpdate(
       new Types.ObjectId(instituteId),

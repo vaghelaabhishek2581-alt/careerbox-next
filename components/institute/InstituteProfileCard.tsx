@@ -5,7 +5,7 @@ import { RootState } from "@/lib/redux/store";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus } from "lucide-react";
+import { Plus, Camera } from "lucide-react";
 import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog";
 import { useEffect, useState } from "react";
 
@@ -101,21 +101,39 @@ export function InstituteProfileCard() {
       </div>
       <div className="px-6 pb-6 relative">
         <div className="flex items-end -mt-10 mb-4">
-          <div className="h-20 w-20 rounded-xl bg-white border-2 border-white shadow-lg overflow-hidden relative">
+          <div
+            className="group h-20 w-20 rounded-xl bg-white border-2 border-white shadow-lg overflow-hidden relative cursor-pointer"
+            onClick={() => {
+              setCropType("profile");
+              setInitialUrl(logoUrl || undefined);
+              setCropOpen(true);
+            }}
+            role="button"
+            aria-label="Edit profile photo"
+            title="Edit profile photo"
+          >
             {logoUrl ? (
-              <img src={logoUrl} alt="" className="h-full w-full object-cover" />
+              <img src={logoUrl} alt="Profile logo" className="h-full w-full object-cover" />
             ) : (
               <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-600 text-white text-xl font-semibold">
                 {getInitials(name)}
               </div>
             )}
-            {/* Logo edit button */}
+            {/* Hover overlay */}
+            <div className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/30 text-white">
+              <div className="flex items-center gap-1 text-xs font-medium">
+                <Camera className="h-3.5 w-3.5" />
+                Edit
+              </div>
+            </div>
+            {/* Logo edit button (kept for explicit action) */}
             <div className="absolute -bottom-2 right-0 translate-y-1/2">
               <Button
                 variant="secondary"
                 size="sm"
                 className="bg-white/90 hover:bg-white"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setCropType("profile");
                   setInitialUrl(logoUrl || undefined);
                   setCropOpen(true);
@@ -157,7 +175,7 @@ export function InstituteProfileCard() {
         </div>
 
         {/* Cropper Dialog */}
-        {/* <ImageCropperDialog
+        <ImageCropperDialog
           key={cropType}
           open={cropOpen}
           onOpenChange={setCropOpen}
@@ -166,7 +184,7 @@ export function InstituteProfileCard() {
           targetHeight={cropType === "cover" ? 400 : 512}
           initialImageUrl={initialUrl}
           onCropped={handleCropped}
-        /> */}
+        />
       </div>
     </Card>
   );

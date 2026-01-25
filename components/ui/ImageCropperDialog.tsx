@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Upload, ZoomIn, ZoomOut, RotateCcw, RotateCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createPortal } from "react-dom";
 
 interface ImageCropperDialogProps {
   open: boolean;
@@ -81,6 +82,17 @@ export function ImageCropperDialog({
       cleanupImage();
     }
   }, [open, cleanupImage]);
+
+  // Lock body scroll when dialog is open to avoid background sticky elements interfering
+  useEffect(() => {
+    if (open) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open && initialImageUrl && !imageEl) {
@@ -350,17 +362,17 @@ export function ImageCropperDialog({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-[9999]",
+        "fixed inset-0 z-[100000] isolate",
         open ? "pointer-events-auto" : "pointer-events-none",
         className
       )}
       aria-hidden={!open}
     >
-      <div className={cn("absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity", open ? "opacity-100" : "opacity-0")} />
-      <div className={cn("absolute inset-0 flex items-start sm:items-center justify-center p-4 overflow-y-auto", open ? "opacity-100" : "opacity-0")}>
+      <div className={cn("absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity z-[100000]", open ? "opacity-100" : "opacity-0")} />
+      <div className={cn("absolute inset-0 flex items-start sm:items-center justify-center p-4 overflow-y-auto z-[100001]", open ? "opacity-100" : "opacity-0")}> 
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-5xl max-h-[calc(100vh-2rem)] overflow-y-auto">
           <div className="flex items-center justify-between px-4 py-3 border-b sticky top-0 bg-white z-10">
             <div className="font-semibold text-gray-900">
@@ -369,9 +381,9 @@ export function ImageCropperDialog({
                 {TW}×{TH}px
               </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => { onOpenChange(false); cleanupImage(); }} className="h-8 w-8 p-0">
+            <button type="button" onClick={() => { onOpenChange(false); cleanupImage(); }} className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-gray-100">
               <X className="h-4 w-4" />
-            </Button> 
+            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
@@ -385,8 +397,6 @@ export function ImageCropperDialog({
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
               >
-                {/* top toolbar removed to avoid duplicates; controls are on the right panel */}
-
                 <canvas
                   ref={canvasRef}
                   width={1000}
@@ -412,9 +422,8 @@ export function ImageCropperDialog({
                   <button className={cn("text-sm", tab === "filter" ? "text-blue-600 font-medium" : "text-gray-600")} onClick={() => setTab("filter")}>Filter</button>
                   <button className={cn("text-sm", tab === "adjust" ? "text-blue-600 font-medium" : "text-gray-600")} onClick={() => setTab("adjust")}>Adjust</button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border"
                   onClick={() => {
                     setScale(1);
                     setOffset({ x: 0, y: 0 });
@@ -427,7 +436,7 @@ export function ImageCropperDialog({
                   }}
                 >
                   Reset
-                </Button>
+                </button>
               </div>
               {tab === "crop" && (
                 <div className="space-y-4">
@@ -515,14 +524,8 @@ export function ImageCropperDialog({
                 </div>
               )}
               <div className="pt-2 mt-2 border-t flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {/* {typeof onDelete === "function" && imageSrc && (
-                    <Button variant="outline" size="sm" onClick={onDelete}>
-                      <Trash2 className="h-4 w-4 mr-2" /> Delete photo
-                    </Button>
-                  )} */}
-                </div>
-                <div className="flex items-center gap-2 sticky bottom-0 lg:static bg-white"
+                <div className="flex items-center gap-2"></div>
+                <div className="flex items-center gap-2 bg-white"
                   style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
                 >
                   <label className="inline-flex items-center px-3 py-2 text-sm bg-white border rounded-md cursor-pointer">
@@ -539,6 +542,7 @@ export function ImageCropperDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
