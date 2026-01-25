@@ -47,58 +47,38 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       }
     }
 
-    // Build SEO using only first+last name and About (bio) for user profiles
-    const isUser = !!profile?.personalDetails
-    const isBusiness = !!profile?.companyName && !profile?.personalDetails
-    const isInstitute = !!profile?.instituteName && !profile?.personalDetails
+    // Extract name based on profile type
+    const name = profile?.personalDetails?.firstName && profile?.personalDetails?.lastName
+      ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
+      : profile?.companyName || profile?.instituteName || 'Unknown'
 
-    const name = isUser
-      ? (profile?.personalDetails?.firstName && profile?.personalDetails?.lastName
-          ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
-          : (profile?.personalDetails?.firstName || profile?.name || 'Unknown'))
-      : (profile?.companyName || profile?.instituteName || profile?.name || 'Unknown')
-
-    const aboutDesc = isUser
-      ? (profile?.personalDetails?.bio || profile?.bio || '')
-      : isBusiness
-      ? (profile?.description || '')
-      : isInstitute
-      ? (profile?.description || '')
-      : ''
-
-    // For users: description strictly from About (bio). No headline or location.
-    // For business/institute: keep previous composed description from about only.
-    const description = isUser
-      ? (aboutDesc ? (aboutDesc.length > 160 ? `${aboutDesc.substring(0, 157)}...` : aboutDesc) : `View ${name}'s profile on CareerBox`)
-      : (aboutDesc ? (aboutDesc.length > 160 ? `${aboutDesc.substring(0, 157)}...` : aboutDesc) : `View ${name}'s profile on CareerBox`)
-
-    // Image selection: prefer user avatar for users; otherwise prefer cover, then logo
-    const coverImage = profile?.coverImage
-    const profileImage = profile?.profileImage
-    const logo = profile?.logo
-    const ogImage = isUser ? (profileImage || coverImage) : (coverImage || logo)
-
-    // Keywords: minimal, only name and profileId for user; minimal for others
-    const keywordsArr = isUser
-      ? [name, profileId]
-      : [name, profileId].filter(Boolean) as string[]
+    const bio = profile?.personalDetails?.bio || profile?.bio || profile?.description || `View ${name}'s profile on CareerBox`
+    const profession = profile?.personalDetails?.profession || profile?.personalDetails?.professionalHeadline || ''
 
     return {
       title: `${name} (@${profileId}) | CareerBox`,
-      description,
-      keywords: keywordsArr.join(', '),
+      description: bio.length > 160 ? `${bio.substring(0, 157)}...` : bio,
+      keywords: [
+        name,
+        profileId,
+        'CareerBox',
+        'professional profile',
+        profession,
+        'career',
+        'portfolio'
+      ].filter(Boolean).join(', '),
       authors: [{ name }],
       openGraph: {
         title: `${name} (@${profileId})`,
-        description,
-        type: isUser ? 'profile' : 'website',
+        description: `${profession ? profession + ' - ' : ''}${bio}`,
+        type: 'profile',
         url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${profileId}`,
-        images: ogImage ? [
+        images: profile?.profileImage || profile?.logo ? [
           {
-            url: ogImage,
-            width: isUser ? 400 : (coverImage ? 1200 : 400),
-            height: isUser ? 400 : (coverImage ? 630 : 400),
-            alt: `${name}'s ${isUser ? 'profile' : (coverImage ? 'cover' : 'profile')} image`,
+            url: profile.profileImage || profile.logo,
+            width: 400,
+            height: 400,
+            alt: `${name}'s profile picture`,
           }
         ] : [
           {
@@ -113,8 +93,8 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       twitter: {
         card: 'summary_large_image',
         title: `${name} (@${profileId})`,
-        description,
-        images: ogImage ? [ogImage] : [],
+        description: `${profession ? profession + ' - ' : ''}${bio}`,
+        images: profile?.profileImage || profile?.logo ? [profile.profileImage || profile.logo] : [],
       },
       alternates: {
         canonical: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${profileId}`,
@@ -178,7 +158,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     }
 
     return (
-      <div className="w-full max-w-7xl mx-auto">
+      <div className="bg-gray-50">
         <Header />
         <div className="min-h-screen mt-28">
           <PublicProfileClient profile={profileData} />
