@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       }
     }
 
-    // Build SEO from "About" section across profile types
+    // Build SEO using only first+last name and About (bio) for user profiles
     const isUser = !!profile?.personalDetails
     const isBusiness = !!profile?.companyName && !profile?.personalDetails
     const isInstitute = !!profile?.instituteName && !profile?.personalDetails
@@ -58,15 +58,6 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
           : (profile?.personalDetails?.firstName || profile?.name || 'Unknown'))
       : (profile?.companyName || profile?.instituteName || profile?.name || 'Unknown')
 
-    // About-derived description and headline
-    const headline = isUser
-      ? (profile?.personalDetails?.professionalHeadline || profile?.personalDetails?.profession || '')
-      : isBusiness
-      ? (profile?.industry ? `${profile.industry}` : '')
-      : isInstitute
-      ? (profile?.type ? `${profile.type}` : '')
-      : ''
-
     const aboutDesc = isUser
       ? (profile?.personalDetails?.bio || profile?.bio || '')
       : isBusiness
@@ -75,34 +66,22 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       ? (profile?.description || '')
       : ''
 
-    const locationText = isUser
-      ? (profile?.location || profile?.personalDetails?.location || '')
-      : isBusiness
-      ? (profile?.headquarters ? `${profile.headquarters.city}, ${profile.headquarters.country}` : '')
-      : isInstitute
-      ? (profile?.address ? `${profile.address.city}, ${profile.address.country}` : '')
-      : ''
+    // For users: description strictly from About (bio). No headline or location.
+    // For business/institute: keep previous composed description from about only.
+    const description = isUser
+      ? (aboutDesc ? (aboutDesc.length > 160 ? `${aboutDesc.substring(0, 157)}...` : aboutDesc) : `View ${name}'s profile on CareerBox`)
+      : (aboutDesc ? (aboutDesc.length > 160 ? `${aboutDesc.substring(0, 157)}...` : aboutDesc) : `View ${name}'s profile on CareerBox`)
 
-    const descriptionFull = [headline, aboutDesc, locationText].filter(Boolean).join(' · ')
-    const description = descriptionFull
-      ? (descriptionFull.length > 160 ? `${descriptionFull.substring(0, 157)}...` : descriptionFull)
-      : `View ${name}'s profile on CareerBox`
-
-    // Image selection: prefer cover, then avatar/logo
+    // Image selection: prefer user avatar for users; otherwise prefer cover, then logo
     const coverImage = profile?.coverImage
-    const avatarOrLogo = profile?.profileImage || profile?.logo
-    const ogImage = coverImage || avatarOrLogo
+    const profileImage = profile?.profileImage
+    const logo = profile?.logo
+    const ogImage = isUser ? (profileImage || coverImage) : (coverImage || logo)
 
-    const keywordsArr = [
-      name,
-      profileId,
-      'CareerBox',
-      'professional profile',
-      headline,
-      isBusiness ? profile?.industry : undefined,
-      isInstitute ? profile?.type : undefined,
-      locationText,
-    ].filter(Boolean) as string[]
+    // Keywords: minimal, only name and profileId for user; minimal for others
+    const keywordsArr = isUser
+      ? [name, profileId]
+      : [name, profileId].filter(Boolean) as string[]
 
     return {
       title: `${name} (@${profileId}) | CareerBox`,
@@ -117,9 +96,9 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
         images: ogImage ? [
           {
             url: ogImage,
-            width: coverImage ? 1200 : 400,
-            height: coverImage ? 630 : 400,
-            alt: `${name}'s ${coverImage ? 'cover' : 'profile'} image`,
+            width: isUser ? 400 : (coverImage ? 1200 : 400),
+            height: isUser ? 400 : (coverImage ? 630 : 400),
+            alt: `${name}'s ${isUser ? 'profile' : (coverImage ? 'cover' : 'profile')} image`,
           }
         ] : [
           {
