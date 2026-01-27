@@ -95,9 +95,14 @@ export const PersonalDetailsPreview: React.FC<PersonalDetailsPreviewProps> = ({
               {data.publicProfileId && (
                 <div className="flex items-center gap-2 text-sm">
                   <Globe className="h-4 w-4 text-gray-500" />
-                  <span className="text-blue-600">
-                    careerbox.in/{data.publicProfileId}
-                  </span>
+                  <a
+                    href={`https://careerbox.in/profile/${data.publicProfileId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    careerbox.in/profile/{data.publicProfileId}
+                  </a>
                 </div>
               )}
             </div>
