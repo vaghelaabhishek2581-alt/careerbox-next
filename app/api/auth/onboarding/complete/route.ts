@@ -4,6 +4,10 @@ import { ObjectId } from 'mongodb'
 import { User, Profile } from '@/src/models'
 import { connectToDatabase } from '@/lib/db/mongoose'
 
+// Ensure this API route is treated as dynamic during build/export
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 /**
  * POST /api/auth/onboarding/complete
  * Completes onboarding for an existing user, updating their profile and onboarding status.
@@ -249,11 +253,11 @@ function getDefaultPosition(role: OnboardingRole): string {
     case 'student':
       return 'Student'
     case 'professional':
-      return 'Professional'
+      return 'Software Engineer'
     case 'institute_admin':
       return 'Administrator'
     case 'business_owner':
-      return 'Owner'
+      return 'Founder'
     default:
       return 'Member'
   }
