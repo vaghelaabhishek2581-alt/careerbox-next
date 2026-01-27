@@ -461,9 +461,8 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
                             {...field}
                             onBlur={() => {
                               const val = form.getValues("publicProfileId");
-                              const hasChanged = val !== initialPublicProfileIdRef.current;
-                              if (isEditing && val && val.length >= 3 && hasChanged) {
-                                // Immediate validation on blur
+                              if (isEditing && val && val.length >= 3) {
+                                // Always validate on blur so own-id case shows the proper message
                                 validateNow(val);
                               }
                             }}

@@ -253,11 +253,11 @@ function getDefaultPosition(role: OnboardingRole): string {
     case 'student':
       return 'Student'
     case 'professional':
-      return 'Software Engineer'
+      return 'Professional'
     case 'institute_admin':
       return 'Administrator'
     case 'business_owner':
-      return 'Founder'
+      return 'Owner'
     default:
       return 'Member'
   }
