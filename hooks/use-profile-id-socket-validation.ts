@@ -102,22 +102,30 @@ export function useProfileIdSocketValidation() {
       // Check if response has content before parsing JSON
       const contentType = response.headers.get('content-type')
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Invalid response format - expected JSON')
+        return {
+          profileId,
+          isValid: false,
+          message: 'Unexpected response from server',
+          suggestions: [],
+          isOwnProfile: false
+        }
       }
 
-      const text = await response.text()
-      if (!text.trim()) {
-        throw new Error('Empty response from server')
+      const data = await response.json()
+
+      // Handle own public ID case
+      const isOwn = !!data.isOwnId
+      if (isOwn) {
+        return {
+          profileId,
+          isValid: false,
+          message: data.message || 'This is your current publicId',
+          suggestions: [],
+          isOwnProfile: true
+        }
       }
 
-      const data = JSON.parse(text)
-      console.log('🔍 API validation response:', data)
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Validation failed')
-      }
-
-      // The API returns { available: boolean, suggestions: string[] }
+      // Normal availability mapping
       return {
         profileId,
         isValid: data.available,
@@ -226,6 +234,10 @@ export function useProfileIdSocketValidation() {
 
   const debouncedValidate = useDebouncedCallback(validateProfileId, 500)
 
+  // Public API: choose between immediate or debounced validation
+  const validateNow = validateProfileId
+  const validateDebounced = debouncedValidate
+
   // Subscription management (placeholder for future enhancement)
   const subscribeToProfileId = useCallback((profileId: string) => {
     if (socket && isConnected) {
@@ -242,7 +254,8 @@ export function useProfileIdSocketValidation() {
   }, [socket, isConnected])
 
   return {
-    validateProfileId: debouncedValidate,
+    validateProfileId: validateDebounced,
+    validateNow,
     isValidating,
     validationResult,
     isSocketConnected,
@@ -250,3 +263,5 @@ export function useProfileIdSocketValidation() {
     unsubscribeFromProfileId
   }
 }
+
+// (Removed out-of-scope subscription function definitions; now defined inside the hook)

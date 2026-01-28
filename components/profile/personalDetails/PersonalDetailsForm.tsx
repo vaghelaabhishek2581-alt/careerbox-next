@@ -82,6 +82,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
   // Profile ID validation hook - called at top level (with socket support)
   const {
     validateProfileId,
+    validateNow,
     isValidating,
     validationResult,
     isSocketConnected,
@@ -127,29 +128,27 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
   const watchedData = form.watch();
   const publicProfileId = form.watch("publicProfileId");
 
-  // Handle profile ID validation and subscription
-  React.useEffect(() => {
-    console.log('🔍 PersonalDetailsForm validation effect triggered:', {
-      publicProfileId,
-      length: publicProfileId?.length,
-      shouldValidate: publicProfileId && publicProfileId.length >= 3,
-      isValidating,
-      validationResult,
-      isSocketConnected
-    })
+  // Keep track of initial publicProfileId to avoid validating on initial load
+  const initialPublicProfileIdRef = React.useRef<string>(profile?.personalDetails?.publicProfileId || '');
 
-    if (publicProfileId && publicProfileId.length >= 3) {
-      console.log('🔄 Triggering validation for:', publicProfileId)
-      validateProfileId(publicProfileId);
-      subscribeToProfileId(publicProfileId);
-    }
+  // Validate only when editing, value changed, and field is dirty
+  React.useEffect(() => {
+    const val = publicProfileId;
+    const hasChanged = val !== initialPublicProfileIdRef.current;
+    const isDirty = !!(form.formState?.dirtyFields as any)?.publicProfileId;
+
+    if (!isEditing) return; // only validate in edit mode
+    if (!val || val.length < 3) return; // minimal length
+    if (!hasChanged) return; // don't validate initial value
+    if (!isDirty) return; // validate only after user changes
+
+    validateProfileId(val);
+    subscribeToProfileId(val);
 
     return () => {
-      if (publicProfileId) {
-        unsubscribeFromProfileId(publicProfileId);
-      }
+      unsubscribeFromProfileId(val);
     };
-  }, [publicProfileId, validateProfileId, subscribeToProfileId, unsubscribeFromProfileId]);
+  }, [isEditing, publicProfileId, validateProfileId, subscribeToProfileId, unsubscribeFromProfileId, form.formState?.dirtyFields]);
 
   // Cleanup form state on unmount
   React.useEffect(() => {
@@ -452,7 +451,7 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
                     </FormLabel>
                     <div className="flex">
                       <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                        careerbox.in/
+                        careerbox.in/profile/
                       </span>
                       <FormControl>
                         <div className="relative flex-1">
@@ -460,6 +459,13 @@ export const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({
                             className="rounded-l-none pr-8"
                             placeholder="your-profile-id"
                             {...field}
+                            onBlur={() => {
+                              const val = form.getValues("publicProfileId");
+                              if (isEditing && val && val.length >= 3) {
+                                // Always validate on blur so own-id case shows the proper message
+                                validateNow(val);
+                              }
+                            }}
                           />
                           {isValidating && (
                             <div className="absolute right-2 top-1/2 -translate-y-1/2">

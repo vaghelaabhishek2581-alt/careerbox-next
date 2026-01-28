@@ -221,7 +221,7 @@ export async function createUserWithProfile(userData: CreateUserData): Promise<{
       userId: savedUser._id,
       personalDetails: {
         firstName,
-        lastName,
+        lastName: lastName || firstName, // Fallback to firstName if lastName is empty
         publicProfileId,
         professionalHeadline: userData.role === 'professional' ? 'Professional' : 
                              userData.role === 'student' ? 'Student' :

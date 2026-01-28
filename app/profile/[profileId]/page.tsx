@@ -47,79 +47,38 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       }
     }
 
-    // Build SEO from "About" section across profile types
-    const isUser = !!profile?.personalDetails
-    const isBusiness = !!profile?.companyName && !profile?.personalDetails
-    const isInstitute = !!profile?.instituteName && !profile?.personalDetails
+    // Extract name based on profile type
+    const name = profile?.personalDetails?.firstName && profile?.personalDetails?.lastName
+      ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
+      : profile?.companyName || profile?.instituteName || 'Unknown'
 
-    const name = isUser
-      ? (profile?.personalDetails?.firstName && profile?.personalDetails?.lastName
-          ? `${profile.personalDetails.firstName} ${profile.personalDetails.lastName}`
-          : (profile?.personalDetails?.firstName || profile?.name || 'Unknown'))
-      : (profile?.companyName || profile?.instituteName || profile?.name || 'Unknown')
-
-    // About-derived description and headline
-    const headline = isUser
-      ? (profile?.personalDetails?.professionalHeadline || profile?.personalDetails?.profession || '')
-      : isBusiness
-      ? (profile?.industry ? `${profile.industry}` : '')
-      : isInstitute
-      ? (profile?.type ? `${profile.type}` : '')
-      : ''
-
-    const aboutDesc = isUser
-      ? (profile?.personalDetails?.bio || profile?.bio || '')
-      : isBusiness
-      ? (profile?.description || '')
-      : isInstitute
-      ? (profile?.description || '')
-      : ''
-
-    const locationText = isUser
-      ? (profile?.location || profile?.personalDetails?.location || '')
-      : isBusiness
-      ? (profile?.headquarters ? `${profile.headquarters.city}, ${profile.headquarters.country}` : '')
-      : isInstitute
-      ? (profile?.address ? `${profile.address.city}, ${profile.address.country}` : '')
-      : ''
-
-    const descriptionFull = [headline, aboutDesc, locationText].filter(Boolean).join(' · ')
-    const description = descriptionFull
-      ? (descriptionFull.length > 160 ? `${descriptionFull.substring(0, 157)}...` : descriptionFull)
-      : `View ${name}'s profile on CareerBox`
-
-    // Image selection: prefer cover, then avatar/logo
-    const coverImage = profile?.coverImage
-    const avatarOrLogo = profile?.profileImage || profile?.logo
-    const ogImage = coverImage || avatarOrLogo
-
-    const keywordsArr = [
-      name,
-      profileId,
-      'CareerBox',
-      'professional profile',
-      headline,
-      isBusiness ? profile?.industry : undefined,
-      isInstitute ? profile?.type : undefined,
-      locationText,
-    ].filter(Boolean) as string[]
+    const bio = profile?.personalDetails?.bio || profile?.bio || profile?.description || `View ${name}'s profile on CareerBox`
+    const profession = profile?.personalDetails?.profession || profile?.personalDetails?.professionalHeadline || ''
 
     return {
       title: `${name} (@${profileId}) | CareerBox`,
-      description,
-      keywords: keywordsArr.join(', '),
+      description: bio.length > 160 ? `${bio.substring(0, 157)}...` : bio,
+      keywords: [
+        name,
+        profileId,
+        'CareerBox',
+        'professional profile',
+        profession,
+        'career',
+        'portfolio'
+      ].filter(Boolean).join(', '),
       authors: [{ name }],
       openGraph: {
         title: `${name} (@${profileId})`,
-        description,
-        type: isUser ? 'profile' : 'website',
+        description: `${profession ? profession + ' - ' : ''}${bio}`,
+        type: 'profile',
         url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${profileId}`,
-        images: ogImage ? [
+        images: profile?.profileImage || profile?.logo ? [
           {
-            url: ogImage,
-            width: coverImage ? 1200 : 400,
-            height: coverImage ? 630 : 400,
-            alt: `${name}'s ${coverImage ? 'cover' : 'profile'} image`,
+            url: profile.profileImage || profile.logo,
+            width: 400,
+            height: 400,
+            alt: `${name}'s profile picture`,
           }
         ] : [
           {
@@ -134,8 +93,8 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       twitter: {
         card: 'summary_large_image',
         title: `${name} (@${profileId})`,
-        description,
-        images: ogImage ? [ogImage] : [],
+        description: `${profession ? profession + ' - ' : ''}${bio}`,
+        images: profile?.profileImage || profile?.logo ? [profile.profileImage || profile.logo] : [],
       },
       alternates: {
         canonical: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${profileId}`,
@@ -199,7 +158,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     }
 
     return (
-      <div className="w-full max-w-7xl mx-auto">
+      <div className="bg-gray-50">
         <Header />
         <div className="min-h-screen mt-28">
           <PublicProfileClient profile={profileData} />
