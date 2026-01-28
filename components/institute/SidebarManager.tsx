@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { ProfileSidebar } from "./SidebarOfProfile";
-import { Sidebar } from "./Sidebar";
+import { Sidebar } from "./sidebar";
 
 export function SidebarManager() {
   const pathname = usePathname();
