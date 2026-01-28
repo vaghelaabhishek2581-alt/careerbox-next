@@ -95,7 +95,7 @@ export const PersonalDetailsDisplay: React.FC<PersonalDetailsDisplayProps> = ({
                 {personalDetails.publicProfileId && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Globe className="h-4 w-4" />
-                    <span>careerbox.in/{personalDetails.publicProfileId}</span>
+                    <span>careerbox.in/profile{personalDetails.publicProfileId}</span>
                   </div>
                 )}
               </div>

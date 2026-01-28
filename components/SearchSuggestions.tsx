@@ -196,9 +196,32 @@ export default function SearchSuggestions({
           ];
         }
 
+        const normQ = searchQuery.trim().toLowerCase();
+        const score = (item: any) => {
+          const text = (
+            item.name ||
+            item.degree ||
+            item.title ||
+            item.label ||
+            ""
+          )
+            .toString()
+            .toLowerCase();
+          if (!text) return 0;
+          if (text === normQ) return 1000;
+          if (text.startsWith(normQ)) return 800;
+          if (text.includes(normQ)) return 600;
+          // token overlap
+          const qt = normQ.split(/\s+/).filter(Boolean);
+          const tt = text.split(/\s+/).filter(Boolean);
+          const overlap = qt.filter((t) => tt.includes(t)).length;
+          return overlap * 100;
+        };
+        const sorted = [...suggestions].sort((a, b) => score(b) - score(a));
+
         const fallbackSuggestions = buildFallbackSuggestions(searchQuery);
-        const combined = suggestions.length
-          ? [...fallbackSuggestions, ...suggestions]
+        const combined = sorted.length
+          ? [...fallbackSuggestions, ...sorted]
           : fallbackSuggestions;
         setSearchSuggestions(combined);
         if (combined.length > 0) {

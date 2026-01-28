@@ -68,6 +68,21 @@ export async function POST (request: NextRequest) {
     const normalizedId = publicId.trim()
     const collation = { locale: 'en', strength: 2 }
 
+    // Fetch current user's publicId to compare
+    const myProfile = await db.collection('profiles').findOne(
+      { userId: new ObjectId(userId) },
+      { projection: { 'personalDetails.publicProfileId': 1 }, collation }
+    )
+    const myPublicId = myProfile?.personalDetails?.publicProfileId
+
+    if (myPublicId && myPublicId.localeCompare(normalizedId, undefined, { sensitivity: 'accent' }) === 0) {
+      return NextResponse.json({
+        available: false,
+        message: 'This is your current publicId',
+        isOwnId: true
+      })
+    }
+
     // Check across profiles (users), businesses, and institutes
     const [existingProfile, existingBusiness, existingInstitute] = await Promise.all([
       db.collection('profiles').findOne({

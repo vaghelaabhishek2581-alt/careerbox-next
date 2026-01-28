@@ -335,18 +335,18 @@ function ProfileHeader({ profile, profileType }: { profile: ProfileData; profile
         </div>
 
         {/* Cropper Dialog (only for institute editing) */}
-        {/* {isInstitute && (
-          // <ImageCropperDialog
-          //   key={cropType}
-          //   open={cropOpen}
-          //   onOpenChange={setCropOpen}
-          //   type={cropType}
-          //   targetWidth={cropType === 'cover' ? 1600 : 512}
-          //   targetHeight={cropType === 'cover' ? 400 : 512}
-          //   initialImageUrl={initialUrl}
-          //   onCropped={handleCropped}
-          // />
-        )} */}
+        {isInstitute && (
+          <ImageCropperDialog
+            key={cropType}
+            open={cropOpen}
+            onOpenChange={setCropOpen}
+            type={cropType}
+            targetWidth={cropType === 'cover' ? 1600 : 512}
+            targetHeight={cropType === 'cover' ? 400 : 512}
+            initialImageUrl={initialUrl}
+            onCropped={handleCropped}
+          />
+        )}
 
         {/* Share Modal */}
         <AlertDialog open={shareOpen} onOpenChange={setShareOpen}>
