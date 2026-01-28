@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import React from 'react'
-import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import React from "react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   MapPin,
   Calendar,
@@ -21,212 +21,354 @@ import {
   Globe,
   Briefcase,
   School,
-  Wifi
-} from 'lucide-react'
-import { Institute } from '@/types/institute'
+  Wifi,
+  CheckCircle2,
+  Trophy,
+} from "lucide-react";
+
+// Interface for API response
+interface InstituteData {
+  _k?: string;
+  type?: string;
+  id?: string;
+  _id?: string;
+  slug?: string;
+  name?: string;
+  shortName?: string;
+  logo?: string;
+  city?: string;
+  state?: string;
+  location?: {
+    city?: string;
+    state?: string;
+    address?: string;
+  };
+  establishedYear?: number | string;
+  instituteType?: string;
+  status?: string;
+  naacGrade?: string;
+  nirfRank?: number;
+  accreditation?: {
+    naac?: { grade?: string; score?: number };
+    nirf?: { overallRank?: number; categoryRanks?: any };
+    aicte?: { approved?: boolean };
+    nba?: { approved?: boolean };
+  };
+  placements?: {
+    averageSalary?: number;
+    highestSalary?: number;
+    overallPlacementRate?: number;
+    companiesVisited?: number;
+    topRecruiters?: string[];
+    sectors?: string[];
+    [key: string]: any;
+  };
+  programmes?: Array<{
+    name?: string;
+    slug?: string;
+    courseCount?: number;
+    placementRating?: number;
+    eligibilityExams?: string[];
+    course?: Array<{
+      name?: string;
+      degree?: string;
+      duration?: string;
+      fee?: number;
+    }>;
+  }>;
+  courses?: Array<{
+    id?: string;
+    name?: string;
+    slug?: string;
+    degree?: string;
+  }>;
+  campusDetails?: {
+    facilities?: string[];
+    area?: string;
+  };
+  contact?: {
+    phone?: string[];
+    email?: string[];
+    website?: string;
+  };
+  rawOverview?: Array<{ key?: string; value?: string }>;
+  overview?: {
+    description?: string;
+    stats?: Array<{ description?: string }>;
+  };
+  description?: string;
+  faculty_student_ratio?: {
+    students?: Array<{ key?: string; value?: string }>;
+  };
+  totalCourses?: number | any;
+  avgPackage?: number | null;
+  avgPackageF?: string | null;
+  url?: string;
+}
 
 interface InstituteCardProps {
-  institute: Institute
-  variant?: 'default' | 'compact' | 'detailed'
-  showCourses?: boolean
+  institute: InstituteData;
+  variant?: "default" | "compact" | "detailed";
+  showCourses?: boolean;
 }
 
 export function InstituteCard({
   institute,
-  variant = 'default',
-  showCourses = false
+  variant = "default",
+  showCourses = false,
 }: InstituteCardProps) {
-  const nf = new Intl.NumberFormat('en-IN')
-  console.log(institute)
-  // Helper function to check if value is valid (not null, not 0, not empty string, not "N/A")
-  const isValidValue = (value: any): boolean => {
-    if (value === null || value === undefined) return false
-    if (value === 0) return false
-    if (value === '') return false
-    if (value === 'N/A') return false
-    if (typeof value === 'string' && value.trim() === '') return false
-    return true
-  }
+  const nf = new Intl.NumberFormat("en-IN");
 
+  // Helper to check if value is valid
+  const isValid = (value: any): boolean => {
+    if (value === null || value === undefined) return false;
+    if (value === 0) return false;
+    if (value === "") return false;
+    if (value === "N/A" || value === "null" || value === "None") return false;
+    if (typeof value === "string" && value.trim() === "") return false;
+    return true;
+  };
+
+  // Get location info
+  const getLocation = () => {
+    const city = institute.location?.city || institute.city;
+    const state = institute.location?.state || institute.state;
+    return { city, state };
+  };
+
+  const location = getLocation();
+
+  // Generate institute URL
+  const getInstituteUrl = () => {
+    if (institute.url) return institute.url;
+    if (institute.slug) return `/recommendation-collections/${institute.slug}`;
+    return "#";
+  };
+
+  // Get accreditation badges
   const getAccreditationBadges = () => {
-    const badges = []
+    const badges: React.ReactNode[] = [];
 
-    if (institute.accreditation?.naac?.grade && isValidValue(institute.accreditation.naac.grade) && institute.accreditation.naac.grade !== 'None') {
+    // NAAC Grade
+    const naacGrade =
+      institute.accreditation?.naac?.grade || institute.naacGrade;
+    if (isValid(naacGrade)) {
       badges.push(
-        <Badge key="naac" variant="secondary" className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200 shadow-sm">
-          NAAC {institute.accreditation.naac.grade}
-        </Badge>
-      )
+        <Badge
+          key="naac"
+          variant="secondary"
+          className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200 shadow-sm font-semibold"
+        >
+          <Award className="h-3 w-3 mr-1" />
+          NAAC {naacGrade}
+        </Badge>,
+      );
     }
 
-    if (institute.accreditation?.nirf?.overallRank && isValidValue(institute.accreditation.nirf.overallRank)) {
+    // NIRF Rank
+    const nirfRank =
+      institute.accreditation?.nirf?.overallRank || institute.nirfRank;
+    if (isValid(nirfRank)) {
       badges.push(
-        <Badge key="nirf" variant="secondary" className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-800 border border-blue-200 shadow-sm">
-          NIRF #{institute.accreditation.nirf.overallRank}
-        </Badge>
-      )
+        <Badge
+          key="nirf"
+          variant="secondary"
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-800 border border-blue-200 shadow-sm font-semibold"
+        >
+          <Trophy className="h-3 w-3 mr-1" />
+          NIRF #{nirfRank}
+        </Badge>,
+      );
     }
 
+    // AICTE Approved
     if (institute.accreditation?.aicte?.approved) {
       badges.push(
-        <Badge key="aicte" variant="secondary" className="bg-gradient-to-r from-purple-50 to-violet-50 text-purple-800 border border-purple-200 shadow-sm">
-          AICTE Approved
-        </Badge>
-      )
+        <Badge
+          key="aicte"
+          variant="secondary"
+          className="bg-gradient-to-r from-purple-50 to-violet-50 text-purple-800 border border-purple-200 shadow-sm font-semibold"
+        >
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          AICTE
+        </Badge>,
+      );
     }
 
-    return badges
-  }
+    // NBA Approved
+    if (institute.accreditation?.nba?.approved) {
+      badges.push(
+        <Badge
+          key="nba"
+          variant="secondary"
+          className="bg-gradient-to-r from-orange-50 to-amber-50 text-orange-800 border border-orange-200 shadow-sm font-semibold"
+        >
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          NBA
+        </Badge>,
+      );
+    }
 
+    return badges;
+  };
+
+  // Get placement data
   const getPlacementData = () => {
-    if (institute.placements) {
-      if ('averageSalary' in institute.placements) {
-        return institute.placements
-      }
-      const latestYear = Object.keys(institute.placements).find(key => key !== 'sectors' && key !== 'topRecruiters')
-      if (latestYear && institute.placements[latestYear]) {
-        const data = institute.placements[latestYear]
-        if (typeof data === 'object' && !Array.isArray(data) && 'averageSalary' in data) {
-          return data
-        }
-      }
-    }
-    return null
-  }
+    if (!institute.placements) return null;
 
-  const getOverviewStats = () => {
-    const stats: Array<{ key: string, value: string, icon?: any }> = []
-    if (institute.rawOverview && Array.isArray(institute.rawOverview)) {
-      const relevantKeys = ['Number of schools', 'International Collaborations', 'Alumni Network', 'Number of courses offered', 'Flagship Courses']
-      institute.rawOverview.forEach((item: any) => {
-        if (item && item.key && item.value && typeof item.key === 'string' && isValidValue(item.value)) {
-          if (relevantKeys.some(k => item.key.toLowerCase().includes(k.toLowerCase()))) {
-            stats.push({ key: item.key, value: item.value })
-          }
-        }
-      })
+    // Direct placement data
+    if ("averageSalary" in institute.placements) {
+      return institute.placements;
     }
-    return stats
-  }
 
-  const getTopRecruiters = () => {
-    if (institute.placements?.topRecruiters && Array.isArray(institute.placements.topRecruiters)) {
-      return institute.placements.topRecruiters.filter(r => isValidValue(r))
-    }
-    return []
-  }
-
-  const getFacilitiesCount = () => {
-    if (institute.campusDetails?.facilities && Array.isArray(institute.campusDetails.facilities)) {
-      return institute.campusDetails.facilities.length
-    }
-    return 0
-  }
-
-  const getInstituteDescription = () => {
-    // Try faculty_student_ratio.students array first (detailed payload)
-    const facultyStudentData = (institute as any).faculty_student_ratio
-    if (facultyStudentData?.students && Array.isArray(facultyStudentData.students)) {
-      const descItem = facultyStudentData.students.find((item: any) =>
-        item.key?.toLowerCase() === 'description'
-      )
-      if (descItem?.value && isValidValue(descItem.value)) {
-        return descItem.value
+    // Year-based placement data
+    const latestYear = Object.keys(institute.placements).find(
+      (key) =>
+        key !== "sectors" && key !== "topRecruiters" && !isNaN(Number(key)),
+    );
+    if (latestYear && institute.placements[latestYear]) {
+      const data = institute.placements[latestYear];
+      if (typeof data === "object" && !Array.isArray(data)) {
+        return data;
       }
     }
 
-    // Try overview.stats[0].description (detailed payload with stats array)
-    if ((institute as any).overview?.stats && Array.isArray((institute as any).overview.stats)) {
-      const firstStat = (institute as any).overview.stats[0]
-      if (firstStat?.description && isValidValue(firstStat.description)) {
-        return firstStat.description
-      }
-    }
+    return null;
+  };
 
-    // Try direct overview.description property
-    if ((institute as any).overview?.description && isValidValue((institute as any).overview.description)) {
-      return (institute as any).overview.description
-    }
-    if ((institute as any).description && isValidValue((institute as any).description)) {
-      return (institute as any).description
-    }
-
-    return ''
-  }
-
+  // Get total courses count
   const getTotalCourses = () => {
-    const coursesItem = getOverviewStats().find((item: any) =>
-      item.key?.toLowerCase().includes('courses offered')
-    )
-    if (coursesItem?.value) {
-      const match = coursesItem.value.match(/\d+/)
-      return match ? parseInt(match[0]) : 0
+    if (isValid(institute.totalCourses)) return institute.totalCourses;
+
+    if (institute.programmes && Array.isArray(institute.programmes)) {
+      return institute.programmes.reduce(
+        (acc, p) => acc + (p.courseCount || 0),
+        0,
+      );
     }
 
-    if (institute.programmes && Array.isArray(institute.programmes) && institute.programmes.length > 0) {
-      return institute.programmes.reduce((acc: number, p: any) => acc + (p.courseCount || 0), 0)
+    // Check rawOverview
+    if (institute.rawOverview) {
+      const coursesItem = institute.rawOverview.find((item) =>
+        item.key?.toLowerCase().includes("courses offered"),
+      );
+      if (coursesItem?.value) {
+        const match = coursesItem.value.match(/\d+/);
+        if (match) return parseInt(match[0]);
+      }
     }
-    return 0
-  }
 
-  const getNumberOfSchools = () => {
-    const schoolsItem = getOverviewStats().find((item: any) =>
-      item.key?.toLowerCase().includes('number of schools')
-    )
-    if (schoolsItem?.value) {
-      const match = schoolsItem.value.match(/\d+/)
-      return match ? parseInt(match[0]) : 0
+    return 0;
+  };
+
+  // Get description
+  const getDescription = () => {
+    // Try faculty_student_ratio.students
+    if (institute.faculty_student_ratio?.students) {
+      const descItem = institute.faculty_student_ratio.students.find(
+        (item) => item.key?.toLowerCase() === "description",
+      );
+      if (descItem?.value && isValid(descItem.value)) return descItem.value;
     }
-    return 0
-  }
 
-  if (variant === 'compact') {
-    const placementData = getPlacementData();
-    const accreditationBadges = getAccreditationBadges();
+    // Try overview.stats[0].description
+    if (institute.overview?.stats?.[0]?.description) {
+      return institute.overview.stats[0].description;
+    }
 
+    // Try overview.description
+    if (institute.overview?.description) return institute.overview.description;
+
+    // Try direct description
+    if (institute.description) return institute.description;
+
+    return "";
+  };
+
+  // Get top recruiters
+  const getTopRecruiters = () => {
+    if (
+      institute.placements?.topRecruiters &&
+      Array.isArray(institute.placements.topRecruiters)
+    ) {
+      return institute.placements.topRecruiters.filter((r) => isValid(r));
+    }
+    return [];
+  };
+
+  // Get facilities count
+  const getFacilitiesCount = () => {
+    if (
+      institute.campusDetails?.facilities &&
+      Array.isArray(institute.campusDetails.facilities)
+    ) {
+      return institute.campusDetails.facilities.length;
+    }
+    return 0;
+  };
+
+  const placementData = getPlacementData();
+  const accreditationBadges = getAccreditationBadges();
+  const description = getDescription();
+  const totalCourses: any = getTotalCourses();
+  const topRecruiters = getTopRecruiters();
+
+  // Compact variant
+  if (variant === "compact") {
     return (
-      <Card className="group hover:shadow-2xl transition-all duration-300 border border-gray-100 shadow-lg hover:scale-[1.02] h-full bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20 hover:border-blue-200">
-        <CardContent className="p-6">
+      <Card className="group hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-blue-200 shadow-sm hover:scale-[1.005] h-full bg-gradient-to-br from-white via-blue-50/10 to-indigo-50/20">
+        <CardContent className="p-5">
           <div className="flex items-start gap-4">
             {/* Logo */}
-            <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-gray-200 shadow-md group-hover:border-blue-300 group-hover:shadow-xl transition-all bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              {institute.logo ? (
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-100 shadow-md group-hover:border-blue-300 group-hover:shadow-lg transition-all bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              {isValid(institute.logo) ? (
                 <img
-                  src={institute.logo}
-                  alt={institute.name}
+                  src={institute.logo!}
+                  alt={institute.name || "Institute"}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    target.nextElementSibling?.classList.remove("hidden");
+                  }}
                 />
-              ) : (
-                <span className="text-2xl font-bold text-white">
-                  {institute.name.charAt(0).toUpperCase()}
-                </span>
-              )}
+              ) : null}
+              <span
+                className={`text-xl font-bold text-white ${isValid(institute.logo) ? "hidden" : ""}`}
+              >
+                {institute.name?.charAt(0)?.toUpperCase() || "I"}
+              </span>
             </div>
 
             <div className="flex-1 min-w-0">
               <Link
-                href={`/recommendation-collections/${institute.slug}`}
+                href={getInstituteUrl()}
                 className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2 group-hover:text-blue-600"
               >
                 {institute.name}
               </Link>
 
-              {institute.location && isValidValue(institute.location.city) && (
-                <div className="flex items-center gap-2 mt-1.5 text-sm text-gray-600">
+              {(isValid(location.city) || isValid(location.state)) && (
+                <div className="flex items-center gap-1.5 mt-1.5 text-sm text-gray-600">
                   <MapPin className="h-3.5 w-3.5 text-blue-500" />
-                  <span>{institute.location.city}{isValidValue(institute.location.state) && `, ${institute.location.state}`}</span>
+                  <span>
+                    {[location.city, location.state].filter(isValid).join(", ")}
+                  </span>
                 </div>
               )}
 
               {/* Type and Established */}
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                {isValidValue(institute.type) && (
-                  <Badge variant="outline" className="text-xs border-blue-200 text-blue-700 bg-blue-50">
-                    {institute.type}
+                {isValid(institute.instituteType) && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs border-blue-200 text-blue-700 bg-blue-50 font-medium"
+                  >
+                    {institute.instituteType}
                   </Badge>
                 )}
-                {isValidValue(institute.establishedYear) && (
-                  <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
+                {isValid(institute.establishedYear) && (
+                  <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
                     <Calendar className="h-3 w-3" />
                     Est. {institute.establishedYear}
                   </div>
@@ -235,223 +377,257 @@ export function InstituteCard({
 
               {/* Accreditation Badges */}
               {accreditationBadges.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
+                <div className="flex flex-wrap gap-1.5 mt-3">
                   {accreditationBadges.slice(0, 3)}
                 </div>
               )}
 
               {/* Stats */}
               <div className="flex flex-wrap items-center gap-3 mt-3">
-                {getTotalCourses() > 0 && (
-                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-pink-50 px-2.5 py-1.5 rounded-lg border border-purple-200 shadow-sm">
+                {totalCourses > 0 && (
+                  <div className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1.5 rounded-lg border border-purple-200">
                     <School className="h-3.5 w-3.5 text-purple-600" />
-                    <span className="font-semibold text-purple-700 text-xs">{getTotalCourses()} Courses</span>
+                    <span className="text-xs font-semibold text-purple-700">
+                      {totalCourses} Courses
+                    </span>
                   </div>
                 )}
                 {getFacilitiesCount() > 0 && (
-                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-blue-50 to-cyan-50 px-2.5 py-1.5 rounded-lg border border-blue-200 shadow-sm">
-                    <Wifi className="h-3.5 w-3.5 text-blue-600" />
-                    <span className="font-medium text-blue-700 text-xs">{getFacilitiesCount()} Facilities</span>
+                  <div className="flex items-center gap-1.5 bg-teal-50 px-2.5 py-1.5 rounded-lg border border-teal-200">
+                    <Wifi className="h-3.5 w-3.5 text-teal-600" />
+                    <span className="text-xs font-semibold text-teal-700">
+                      {getFacilitiesCount()} Facilities
+                    </span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Placement & CTA */}
-            <div className="flex flex-col items-end gap-2.5">
-              {placementData?.averageSalary && isValidValue(placementData.averageSalary) && (
-                <div className="text-right bg-gradient-to-br from-green-50 to-emerald-50 px-3 py-2.5 rounded-xl border border-green-200 shadow-md">
-                  <div className="text-xs text-green-600 font-semibold uppercase tracking-wide">Avg Package</div>
-                  <div className="text-sm font-bold text-green-700 mt-0.5">
-                    ₹{typeof placementData.averageSalary === 'number' ? nf.format(placementData.averageSalary) : placementData.averageSalary}
+            {/* Right Section */}
+            <div className="flex flex-col items-end gap-3 flex-shrink-0">
+              {/* Placement Stats */}
+              {placementData?.averageSalary &&
+                isValid(placementData.averageSalary) && (
+                  <div className="text-right bg-gradient-to-br from-green-50 to-emerald-50 px-4 py-3 rounded-xl border border-green-200 shadow-sm">
+                    <div className="text-xs text-green-600 font-semibold uppercase tracking-wide">
+                      Avg Package
+                    </div>
+                    <div className="text-lg font-bold text-green-700 mt-0.5">
+                      ₹
+                      {typeof placementData.averageSalary === "number"
+                        ? nf.format(placementData.averageSalary)
+                        : placementData.averageSalary}
+                    </div>
                   </div>
-                </div>
-              )}
-              {getOverviewStats().slice(0, 1).map((stat, idx) => (
-                <div key={idx} className="text-right bg-gradient-to-br from-orange-50 to-amber-50 px-3 py-2 rounded-xl border border-orange-200 shadow-md">
-                  <div className="text-[10px] text-orange-600 font-semibold uppercase tracking-wide">{stat.key}</div>
-                  <div className="text-xs font-bold text-orange-700 mt-0.5">{stat.value}</div>
-                </div>
-              ))}
-              <Button size="sm" asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 whitespace-nowrap h-8 text-xs px-4 shadow-lg hover:shadow-xl transition-all font-semibold">
-                <Link href={`/recommendation-collections/${institute.slug}`}>
-                  View Details
-                </Link>
+                )}
+
+              <Button
+                size="sm"
+                asChild
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 whitespace-nowrap h-9 text-sm px-6 shadow-lg hover:shadow-xl transition-all font-semibold"
+              >
+                <Link href={getInstituteUrl()}>View Details</Link>
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  if (variant === 'detailed') {
-    const placementData = getPlacementData()
-    const description = getInstituteDescription()
-
+  // Detailed variant
+  if (variant === "detailed") {
     return (
-      <Card className="group hover:shadow-xl transition-all duration-300 border border-gray-100 shadow-md hover:scale-[1.005] bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20">
-        <CardHeader className="pb-2 border-b border-gray-100">
-          <div className="flex items-start gap-3 mb-3">
-            {/* Institute Logo */}
-            <div className="flex-shrink-0">
-              {institute.logo ? (
+      <Card className="group hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-blue-200 shadow-md bg-gradient-to-br from-white via-blue-50/10 to-indigo-50/20">
+        <CardHeader className="pb-3 border-b border-gray-100">
+          <div className="flex items-start gap-4">
+            {/* Logo */}
+            <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-gray-100 shadow-lg group-hover:border-blue-300 transition-all bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              {isValid(institute.logo) ? (
                 <img
-                  src={institute.logo}
-                  alt={`${institute.name} logo`}
-                  className="w-12 h-12 rounded-lg object-cover border border-gray-200 shadow-sm"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
-                    target.nextElementSibling?.classList.remove('hidden')
-                  }}
+                  src={institute.logo!}
+                  alt={institute.name || "Institute"}
+                  className="w-full h-full object-cover"
                 />
-              ) : null}
-              <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-sm ${institute.logo ? 'hidden' : ''}`}>
-                {institute.name?.charAt(0)?.toUpperCase() || 'I'}
-              </div>
+              ) : (
+                <span className="text-2xl font-bold text-white">
+                  {institute.name?.charAt(0)?.toUpperCase() || "I"}
+                </span>
+              )}
             </div>
 
-            {/* Institute Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-gray-900 line-clamp-1 mb-0.5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Link
+                    href={getInstituteUrl()}
+                    className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2 group-hover:text-blue-600"
+                  >
                     {institute.name}
-                  </h3>
-                  {isValidValue(institute.shortName) && (
-                    <p className="text-xs text-gray-600 font-medium">
-                      {institute.shortName}
+                  </Link>
+                  {isValid(institute.shortName) && (
+                    <p className="text-sm text-gray-500 font-medium mt-0.5">
+                      ({institute.shortName})
                     </p>
                   )}
                 </div>
-                {/* View Details Button in Header */}
-                <Button asChild size="sm" className="h-7 text-xs px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all font-semibold flex-shrink-0">
-                  <Link href={`/recommendation-collections/${institute.slug}`}>
-                    View Details
-                  </Link>
+                <Button
+                  asChild
+                  size="sm"
+                  className="h-9 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md font-semibold flex-shrink-0"
+                >
+                  <Link href={getInstituteUrl()}>View Details</Link>
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {getAccreditationBadges()}
-                {isValidValue(institute.type) && (
-                  <Badge variant="outline" className="border-orange-300 text-orange-700 bg-gradient-to-r from-orange-50 to-amber-50">
-                    {institute.type} {isValidValue(institute.status) && institute.status}
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {accreditationBadges}
+                {isValid(institute.instituteType) && (
+                  <Badge
+                    variant="outline"
+                    className="border-orange-200 text-orange-700 bg-orange-50 font-medium"
+                  >
+                    <Building2 className="h-3 w-3 mr-1" />
+                    {institute.instituteType}
                   </Badge>
                 )}
               </div>
             </div>
           </div>
-          
-          {/* Description - Full Width */}
+
+          {/* Description */}
           {description && (
-            <div>
-              <p className="text-gray-700 text-sm leading-relaxed line-clamp-6">
-                {description}
-              </p>
-            </div>
+            <p className="text-gray-600 text-sm leading-relaxed mt-3 line-clamp-3">
+              {description}
+            </p>
           )}
         </CardHeader>
 
-        <CardContent className="pt-1">
-          {/* Location and Contact - Pill Style */}
-          {(institute.location || isValidValue(institute.establishedYear) || institute.contact?.phone?.[0]) && (
-            <div className="flex flex-wrap items-center gap-1.5 mb-2">
-              {institute.location && isValidValue(institute.location.city) && (
-                <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 border-blue-200 text-blue-700">
-                  <MapPin className="h-3 w-3" />
-                  <span className="text-xs">{institute.location.city}{isValidValue(institute.location.state) && `, ${institute.location.state}`}</span>
+        <CardContent className="pt-4">
+          {/* Location & Contact Pills */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {(isValid(location.city) || isValid(location.state)) && (
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1"
+              >
+                <MapPin className="h-3.5 w-3.5" />
+                {[location.city, location.state].filter(isValid).join(", ")}
+              </Badge>
+            )}
+            {isValid(institute.establishedYear) && (
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1.5 bg-purple-50 border-purple-200 text-purple-700 px-3 py-1"
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                Est. {institute.establishedYear}
+              </Badge>
+            )}
+            {institute.contact?.phone?.[0] &&
+              isValid(institute.contact.phone[0]) && (
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1.5 bg-green-50 border-green-200 text-green-700 px-3 py-1"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  {institute.contact.phone[0]}
                 </Badge>
               )}
-              {isValidValue(institute.establishedYear) && (
-                <Badge variant="outline" className="flex items-center gap-1 bg-purple-50 border-purple-200 text-purple-700">
-                  <Calendar className="h-3 w-3" />
-                  <span className="text-xs">Est. {institute.establishedYear}</span>
-                </Badge>
-              )}
-              {institute.contact?.phone?.[0] && isValidValue(institute.contact.phone[0]) && (
-                <Badge variant="outline" className="flex items-center gap-1 bg-green-50 border-green-200 text-green-700">
-                  <Phone className="h-3 w-3" />
-                  <span className="text-xs">{institute.contact.phone[0]}</span>
-                </Badge>
-              )}
-            </div>
-          )}
+          </div>
 
-          {/* Academic Stats - Pill Style */}
-          {(getTotalCourses() > 0 || getFacilitiesCount() > 0 || getOverviewStats().length > 0) && (
-            <div className="mb-2">
-              <div className="flex items-center gap-1 mb-1.5">
-                <GraduationCap className="h-3.5 w-3.5 text-blue-600" />
-                <h4 className="font-semibold text-gray-900 text-xs">Academic Overview</h4>
+          {/* Academic Stats */}
+          {(totalCourses > 0 || getFacilitiesCount() > 0) && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <GraduationCap className="h-4 w-4 text-blue-600" />
+                <h4 className="font-bold text-gray-900 text-sm">
+                  Academic Overview
+                </h4>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {getTotalCourses() > 0 && (
-                  <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0">
-                    <span className="text-sm font-bold">{getTotalCourses()}</span>
-                    <span className="ml-1 text-xs">Courses</span>
-                  </Badge>
-                )}
-                {getNumberOfSchools() > 0 && (
-                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
-                    <span className="text-sm font-bold">{getNumberOfSchools()}</span>
-                    <span className="ml-1 text-xs">Schools</span>
+              <div className="flex flex-wrap gap-2">
+                {totalCourses > 0 && (
+                  <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0 px-3 py-1">
+                    <span className="text-base font-bold">{totalCourses}</span>
+                    <span className="ml-1.5 text-xs">Courses</span>
                   </Badge>
                 )}
                 {getFacilitiesCount() > 0 && (
-                  <Badge className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-0">
-                    <span className="text-sm font-bold">{getFacilitiesCount()}</span>
-                    <span className="ml-1 text-xs">Facilities</span>
+                  <Badge className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-0 px-3 py-1">
+                    <span className="text-base font-bold">
+                      {getFacilitiesCount()}
+                    </span>
+                    <span className="ml-1.5 text-xs">Facilities</span>
                   </Badge>
                 )}
-                {getOverviewStats().find((s: any) => s.key?.toLowerCase().includes('collaboration')) && (
-                  <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0">
-                    <span className="text-sm font-bold">{getOverviewStats().find((s: any) => s.key?.toLowerCase().includes('collaboration'))?.value}</span>
-                    <span className="ml-1 text-xs">Collaborations</span>
+                {institute.programmes && institute.programmes.length > 0 && (
+                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 px-3 py-1">
+                    <span className="text-base font-bold">
+                      {institute.programmes.length}
+                    </span>
+                    <span className="ml-1.5 text-xs">Programs</span>
                   </Badge>
                 )}
               </div>
             </div>
           )}
-          {/* Placement Stats - Pill Style */}
-          {placementData && (
-            (isValidValue(placementData.averageSalary)) ||
-            (isValidValue(placementData.highestSalary)) ||
-            (isValidValue(placementData.overallPlacementRate)) ||
-            (isValidValue(placementData.companiesVisited))
-          ) && (
-              <div className="mb-2">
-                <div className="flex items-center gap-1 mb-1.5">
-                  <TrendingUp className="h-3.5 w-3.5 text-green-600" />
-                  <h4 className="font-semibold text-gray-900 text-xs">Placements</h4>
+
+          {/* Placement Stats */}
+          {placementData &&
+            (isValid(placementData.averageSalary) ||
+              isValid(placementData.highestSalary) ||
+              isValid(placementData.overallPlacementRate)) && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <h4 className="font-bold text-gray-900 text-sm">
+                    Placements
+                  </h4>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {isValidValue(placementData.averageSalary) && (
-                    <Badge variant="outline" className="bg-green-50 border-green-300 text-green-700">
-                      <span className="text-xs">Avg: ₹{typeof placementData.averageSalary === 'number'
+                <div className="flex flex-wrap gap-2">
+                  {isValid(placementData.averageSalary) && (
+                    <Badge
+                      variant="outline"
+                      className="bg-green-50 border-green-200 text-green-700 px-3 py-1"
+                    >
+                      Avg: ₹
+                      {typeof placementData.averageSalary === "number"
                         ? nf.format(placementData.averageSalary)
-                        : placementData.averageSalary}</span>
+                        : placementData.averageSalary}
                     </Badge>
                   )}
-                  {isValidValue(placementData.highestSalary) && (
-                    <Badge variant="outline" className="bg-blue-50 border-blue-300 text-blue-700">
-                      <span className="text-xs">High: ₹{typeof placementData.highestSalary === 'number'
+                  {isValid(placementData.highestSalary) && (
+                    <Badge
+                      variant="outline"
+                      className="bg-blue-50 border-blue-200 text-blue-700 px-3 py-1"
+                    >
+                      Highest: ₹
+                      {typeof placementData.highestSalary === "number"
                         ? nf.format(placementData.highestSalary)
-                        : placementData.highestSalary}</span>
+                        : placementData.highestSalary}
                     </Badge>
                   )}
-                  {isValidValue(placementData.overallPlacementRate) && (
-                    <Badge variant="outline" className="bg-purple-50 border-purple-300 text-purple-700">
-                      <span className="text-xs">{typeof placementData.overallPlacementRate === 'number'
-                        ? `${nf.format(placementData.overallPlacementRate)}%`
-                        : placementData.overallPlacementRate} Rate</span>
+                  {isValid(placementData.overallPlacementRate) && (
+                    <Badge
+                      variant="outline"
+                      className="bg-purple-50 border-purple-200 text-purple-700 px-3 py-1"
+                    >
+                      {typeof placementData.overallPlacementRate === "number"
+                        ? `${placementData.overallPlacementRate}%`
+                        : placementData.overallPlacementRate}{" "}
+                      Placed
                     </Badge>
                   )}
-                  {isValidValue(placementData.companiesVisited) && (
-                    <Badge variant="outline" className="bg-orange-50 border-orange-300 text-orange-700">
-                      <span className="text-xs">{typeof placementData.companiesVisited === 'number'
+                  {isValid(placementData.companiesVisited) && (
+                    <Badge
+                      variant="outline"
+                      className="bg-orange-50 border-orange-200 text-orange-700 px-3 py-1"
+                    >
+                      {typeof placementData.companiesVisited === "number"
                         ? nf.format(placementData.companiesVisited)
-                        : placementData.companiesVisited} Companies</span>
+                        : placementData.companiesVisited}{" "}
+                      Companies
                     </Badge>
                   )}
                 </div>
@@ -459,178 +635,164 @@ export function InstituteCard({
             )}
 
           {/* Top Recruiters */}
-          {getTopRecruiters().length > 0 && (
-            <div className="mb-2">
-              <div className="flex items-center gap-1 mb-1.5">
-                <Briefcase className="h-3.5 w-3.5 text-indigo-600" />
-                <h4 className="font-semibold text-gray-900 text-xs">Top Recruiters</h4>
+          {topRecruiters.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Briefcase className="h-4 w-4 text-indigo-600" />
+                <h4 className="font-bold text-gray-900 text-sm">
+                  Top Recruiters
+                </h4>
               </div>
-              <div className="flex flex-wrap gap-1">
-                {getTopRecruiters().slice(0, 6).map((recruiter: string, index: number) => (
-                  <Badge key={index} variant="outline" className="text-xs bg-indigo-50 border-indigo-200 text-indigo-700 px-2 py-0.5">
+              <div className="flex flex-wrap gap-1.5">
+                {topRecruiters.slice(0, 8).map((recruiter, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className="text-xs bg-indigo-50 border-indigo-200 text-indigo-700 px-2 py-1"
+                  >
                     {recruiter}
                   </Badge>
                 ))}
-                {getTopRecruiters().length > 6 && (
-                  <Badge variant="outline" className="text-xs bg-gray-100 border-gray-300 text-gray-600 px-2 py-0.5">
-                    +{getTopRecruiters().length - 6}
+                {topRecruiters.length > 8 && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-gray-100 text-gray-600 px-2 py-1"
+                  >
+                    +{topRecruiters.length - 8} more
                   </Badge>
                 )}
               </div>
             </div>
           )}
 
-
-          {/* Programs Available */}
-          {institute.programmes && Array.isArray(institute.programmes) && institute.programmes.length > 0 && (
-            <div className="mb-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1">
-                  <School className="h-3.5 w-3.5 text-purple-600" />
-                  <h4 className="font-semibold text-gray-900 text-xs">Programs</h4>
+          {/* Programmes */}
+          {institute.programmes && institute.programmes.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <School className="h-4 w-4 text-purple-600" />
+                  <h4 className="font-bold text-gray-900 text-sm">Programs</h4>
                 </div>
                 {institute.programmes.length > 3 && (
-                  <span className="text-xs text-gray-500">+{institute.programmes.length - 3} more</span>
+                  <span className="text-xs text-gray-500">
+                    +{institute.programmes.length - 3} more
+                  </span>
                 )}
               </div>
-              
-              <div className="space-y-1.5">
-                {institute.programmes.slice(0, 3).map((program: any, idx: number) => (
-                  <div key={idx} className="bg-gradient-to-r from-blue-50 to-indigo-50 p-2 rounded-lg border border-blue-200">
-                    {/* Program Header */}
-                    <div className="flex items-center justify-between mb-1">
+              <div className="space-y-2">
+                {institute.programmes.slice(0, 3).map((program, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-blue-900">{program.name}</h3>
-                        {isValidValue(program.courseCount) && program.courseCount > 0 && (
-                          <Badge variant="outline" className="h-4 px-1.5 py-0 text-xs bg-blue-100 border-blue-300 text-blue-700">
-                            {program.courseCount} courses
-                          </Badge>
-                        )}
-                      </div>
-                      {isValidValue(program.placementRating) && program.placementRating > 0 && (
-                        <Badge className="bg-green-500 text-white border-0 px-2 py-0 h-5 text-xs">
-                          ★ {program.placementRating}/5
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Program Details */}
-                    <div className="flex flex-wrap gap-1">
-                      {/* Eligibility Exams */}
-                      {program.eligibilityExams && Array.isArray(program.eligibilityExams) && program.eligibilityExams.length > 0 && (
-                        <>
-                          {program.eligibilityExams.slice(0, 3).map((exam: string, examIndex: number) => (
-                            <Badge key={examIndex} variant="outline" className="h-4 px-1.5 py-0 text-xs bg-white border-gray-300 text-gray-700">
-                              {exam}
-                            </Badge>
-                          ))}
-                          {program.eligibilityExams.length > 3 && (
-                            <Badge variant="outline" className="h-4 px-1.5 py-0 text-xs bg-gray-100 border-gray-300 text-gray-600">
-                              +{program.eligibilityExams.length - 3}
+                        <h5 className="text-sm font-bold text-blue-900">
+                          {program.name}
+                        </h5>
+                        {isValid(program.courseCount) &&
+                          program.courseCount! > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="h-5 px-2 text-xs bg-blue-100 border-blue-300 text-blue-700"
+                            >
+                              {program.courseCount} courses
                             </Badge>
                           )}
-                        </>
-                      )}
-                      
-                      {/* Sample Courses */}
-                      {program.course && Array.isArray(program.course) && program.course.length > 0 && (
-                        <>
-                          {program.course.slice(0, 2).map((course: any, courseIndex: number) => (
-                            <Badge key={courseIndex} variant="outline" className="h-4 px-1.5 py-0 text-xs bg-green-50 border-green-300 text-green-700">
-                              {course.name || course.degree}
-                              {course.duration && isValidValue(course.duration) && ` (${course.duration})`}
-                            </Badge>
-                          ))}
-                        </>
-                      )}
+                      </div>
+                      {isValid(program.placementRating) &&
+                        program.placementRating! > 0 && (
+                          <Badge className="bg-green-500 text-white border-0 px-2 py-0.5 text-xs">
+                            <Star className="h-3 w-3 mr-0.5 fill-white" />
+                            {program.placementRating}/5
+                          </Badge>
+                        )}
                     </div>
+                    {/* Eligibility Exams */}
+                    {program.eligibilityExams &&
+                      program.eligibilityExams.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {program.eligibilityExams
+                            .slice(0, 4)
+                            .map((exam, examIdx) => (
+                              <Badge
+                                key={examIdx}
+                                variant="outline"
+                                className="h-5 px-2 text-xs bg-white border-gray-200 text-gray-700"
+                              >
+                                {exam}
+                              </Badge>
+                            ))}
+                          {program.eligibilityExams.length > 4 && (
+                            <Badge
+                              variant="outline"
+                              className="h-5 px-2 text-xs bg-gray-100 border-gray-300 text-gray-500"
+                            >
+                              +{program.eligibilityExams.length - 4}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>
             </div>
           )}
-
-          {/* Courses Preview */}
-          {showCourses && institute.courses && Array.isArray(institute.courses) && institute.courses.length > 0 && (
-            <div className="mb-2">
-              <h4 className="font-semibold text-gray-900 mb-1.5 text-xs">Popular Courses</h4>
-              <div className="flex flex-wrap gap-1.5">
-                {institute.courses.slice(0, 3).map((course) => (
-                  <Link
-                    key={course.id}
-                    href={`/recommendation-collections/${institute.slug}/courses/${course.slug}`}
-                    className="text-[10px] bg-blue-50 text-blue-700 px-2 py-1.5 rounded-md hover:bg-blue-100 transition-colors border border-blue-200 font-medium"
-                  >
-                    {course.degree} {course.name}
-                  </Link>
-                ))}
-                {institute.courses.length > 3 && (
-                  <Link
-                    href={`/recommendation-collections/${institute.slug}/courses`}
-                    className="text-[10px] bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 transition-colors border border-gray-300 font-medium"
-                  >
-                    +{institute.courses.length - 3} more
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
-
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  // Default variant (Grid View)
-  const placementData = getPlacementData();
-  const accreditationBadges = getAccreditationBadges();
-  const description = getInstituteDescription()
-
+  // Default variant - Grid card
   return (
-    <Card className="group hover:shadow-2xl transition-all duration-300 border border-gray-100 shadow-lg hover:scale-[1.03] h-full flex flex-col bg-gradient-to-br from-white via-blue-50/20 to-purple-50/30 hover:border-blue-200">
-      <CardHeader className="pb-3 border-b border-gray-100">
-        <div className="flex items-start gap-3">
-          {/* Logo */}
-          <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-gray-200 shadow-md group-hover:border-blue-300 group-hover:shadow-xl transition-all bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            {institute.logo ? (
+    <Card className="group hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-blue-200 shadow-lg hover:scale-[1.02] h-full flex flex-col bg-gradient-to-br from-white via-blue-50/20 to-indigo-50/30">
+      <CardContent className="p-5 flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-100 shadow-md group-hover:border-blue-300 group-hover:shadow-lg transition-all bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+            {isValid(institute.logo) ? (
               <img
-                src={institute.logo}
-                alt={institute.name}
+                src={institute.logo!}
+                alt={institute.name || "Institute"}
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-2xl font-bold text-white">
-                {institute.name.charAt(0).toUpperCase()}
+              <span className="text-lg font-bold text-white">
+                {institute.name?.charAt(0)?.toUpperCase() || "I"}
               </span>
             )}
           </div>
           <div className="flex-1 min-w-0">
             <Link
-              href={`/recommendation-collections/${institute.slug}`}
-              className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors group-hover:text-blue-600 line-clamp-2"
+              href={getInstituteUrl()}
+              className="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2 group-hover:text-blue-600"
             >
               {institute.name}
             </Link>
-            {institute.location && isValidValue(institute.location.city) && (
-              <div className="flex items-center gap-1.5 mt-1.5 text-sm text-gray-600">
-                <MapPin className="h-3.5 w-3.5 text-blue-500" />
-                <span>{institute.location.city}{isValidValue(institute.location.state) && `, ${institute.location.state}`}</span>
-              </div>
-            )}
-            {isValidValue(institute.type) && (
-              <Badge variant="outline" className="mt-2 text-xs border-blue-200 text-blue-700 bg-blue-50">
-                {institute.type}
-              </Badge>
+            {(isValid(location.city) || isValid(location.state)) && (
+              <p className="text-sm text-gray-600 mt-1 flex items-center gap-1">
+                <MapPin className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                {[location.city, location.state].filter(isValid).join(", ")}
+              </p>
             )}
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="pt-4 flex-1 flex flex-col">
-        {/* Accreditation Badges */}
-        {getAccreditationBadges().length > 0 && (
+        {/* Type Badge */}
+        {isValid(institute.instituteType) && (
+          <Badge
+            variant="outline"
+            className="w-fit mb-3 text-xs border-blue-200 text-blue-700 bg-blue-50 font-medium"
+          >
+            <Building2 className="h-3 w-3 mr-1" />
+            {institute.instituteType}
+          </Badge>
+        )}
+
+        {/* Accreditation */}
+        {accreditationBadges.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {getAccreditationBadges().slice(0, 3)}
+            {accreditationBadges.slice(0, 3)}
           </div>
         )}
 
@@ -641,107 +803,104 @@ export function InstituteCard({
           </p>
         )}
 
-        {/* Stats */}
-        {(isValidValue(institute.establishedYear) || getTotalCourses() > 0 || getFacilitiesCount() > 0 || getOverviewStats().length > 0) && (
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            {isValidValue(institute.establishedYear) && (
-              <div className="flex items-center gap-1.5 text-gray-600 bg-gradient-to-r from-gray-50 to-slate-50 px-2.5 py-2 rounded-lg border border-gray-200 shadow-sm">
-                <Calendar className="h-3.5 w-3.5 text-gray-500" />
-                <span className="text-xs font-medium">Est. {institute.establishedYear}</span>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          {isValid(institute.establishedYear) && (
+            <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
+              <div className="flex items-center gap-1 text-gray-500 mb-0.5">
+                <Calendar className="h-3 w-3" />
+                <span className="text-xs">Established</span>
               </div>
-            )}
-            {getTotalCourses() > 0 && (
-              <div className="flex items-center gap-1.5 text-gray-600 bg-gradient-to-r from-purple-50 to-pink-50 px-2.5 py-2 rounded-lg border border-purple-200 shadow-sm">
-                <School className="h-3.5 w-3.5 text-purple-600" />
-                <span className="font-semibold text-xs text-purple-700">{getTotalCourses()} Courses</span>
+              <div className="text-sm font-bold text-gray-700">
+                {institute.establishedYear}
               </div>
-            )}
-            {getFacilitiesCount() > 0 && (
-              <div className="flex items-center gap-1.5 text-gray-600 bg-gradient-to-r from-blue-50 to-cyan-50 px-2.5 py-2 rounded-lg border border-blue-200 shadow-sm">
-                <Wifi className="h-3.5 w-3.5 text-blue-600" />
-                <span className="font-medium text-xs text-blue-700">{getFacilitiesCount()} Facilities</span>
+            </div>
+          )}
+          {totalCourses > 0 && (
+            <div className="bg-purple-50 rounded-lg p-2 border border-purple-100">
+              <div className="flex items-center gap-1 text-purple-600 mb-0.5">
+                <School className="h-3 w-3" />
+                <span className="text-xs">Courses</span>
               </div>
-            )}
-            {getOverviewStats().find((s: any) => s.key?.toLowerCase().includes('collaboration')) && (
-              <div className="flex items-center gap-1.5 text-gray-600 bg-gradient-to-r from-green-50 to-emerald-50 px-2.5 py-2 rounded-lg border border-green-200 shadow-sm">
-                <Globe className="h-3.5 w-3.5 text-green-600" />
-                <span className="font-medium text-xs text-green-700">{getOverviewStats().find((s: any) => s.key?.toLowerCase().includes('collaboration'))?.value}</span>
+              <div className="text-sm font-bold text-purple-700">
+                {totalCourses}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         {/* Placement Stats */}
-        {placementData && (isValidValue(placementData.averageSalary) || isValidValue(placementData.overallPlacementRate)) && (
-          <div className="bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 rounded-xl p-3 mb-3 border border-green-200 shadow-md">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {isValidValue(placementData.averageSalary) && (
-                <div>
-                  <div className="font-bold text-green-700 text-base">
-                    ₹{typeof placementData.averageSalary === 'number'
-                      ? nf.format(placementData.averageSalary)
-                      : placementData.averageSalary}
+        {placementData &&
+          (isValid(placementData.averageSalary) ||
+            isValid(placementData.overallPlacementRate)) && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-3 mb-3 border border-green-200">
+              <div className="grid grid-cols-2 gap-3">
+                {isValid(placementData.averageSalary) && (
+                  <div>
+                    <div className="text-xs text-green-600 font-medium">
+                      Avg Package
+                    </div>
+                    <div className="text-base font-bold text-green-700">
+                      ₹
+                      {typeof placementData.averageSalary === "number"
+                        ? nf.format(placementData.averageSalary)
+                        : placementData.averageSalary}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600 font-medium">Avg Package</div>
-                </div>
-              )}
-              {isValidValue(placementData.overallPlacementRate) && (
-                <div>
-                  <div className="font-bold text-blue-700 text-base">
-                    {typeof placementData.overallPlacementRate === 'number'
-                      ? `${nf.format(placementData.overallPlacementRate)}%`
-                      : placementData.overallPlacementRate}
+                )}
+                {isValid(placementData.overallPlacementRate) && (
+                  <div>
+                    <div className="text-xs text-blue-600 font-medium">
+                      Placement Rate
+                    </div>
+                    <div className="text-base font-bold text-blue-700">
+                      {typeof placementData.overallPlacementRate === "number"
+                        ? `${placementData.overallPlacementRate}%`
+                        : placementData.overallPlacementRate}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600 font-medium">Placement Rate</div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Top Recruiters */}
-        {getTopRecruiters().length > 0 && (
+        {topRecruiters.length > 0 && (
           <div className="mb-3">
-            <p className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1">
+            <p className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1">
               <Briefcase className="h-3.5 w-3.5 text-indigo-600" />
               Top Recruiters:
             </p>
-            <div className="flex flex-wrap gap-1.5">
-              {getTopRecruiters().slice(0, 4).map((recruiter: string, index: number) => (
-                <Badge key={index} variant="outline" className="text-[10px] bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 font-medium">
+            <div className="flex flex-wrap gap-1">
+              {topRecruiters.slice(0, 4).map((recruiter, idx) => (
+                <Badge
+                  key={idx}
+                  variant="outline"
+                  className="text-xs bg-indigo-50 border-indigo-200 text-indigo-700"
+                >
                   {recruiter}
                 </Badge>
               ))}
-              {getTopRecruiters().length > 4 && (
-                <span className="text-[10px] text-gray-600 px-2 py-1 bg-gray-50 rounded border border-gray-200 font-medium">+{getTopRecruiters().length - 4}</span>
+              {topRecruiters.length > 4 && (
+                <span className="text-xs text-gray-500 px-1">
+                  +{topRecruiters.length - 4}
+                </span>
               )}
             </div>
           </div>
         )}
 
-        {/* Key Stats Badge */}
-        {getOverviewStats().length > 0 && (
-          <div className="mb-3">
-            <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 border border-orange-200 rounded-xl p-2.5 shadow-md">
-              {getOverviewStats().slice(0, 2).map((stat, idx) => (
-                <div key={idx} className="flex justify-between items-center mb-1.5 last:mb-0">
-                  <span className="text-[10px] text-gray-600 font-medium">{stat.key}:</span>
-                  <span className="text-xs font-bold text-orange-700">{stat.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* CTA Button */}
-        <div className="mt-auto">
-          <Button asChild size="sm" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-9 text-sm shadow-lg hover:shadow-xl transition-all font-semibold">
-            <Link href={`/recommendation-collections/${institute.slug}`}>
-              View Details
-            </Link>
+        {/* CTA */}
+        <div className="mt-auto pt-2">
+          <Button
+            asChild
+            size="sm"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-9 text-sm shadow-md hover:shadow-lg transition-all font-semibold"
+          >
+            <Link href={getInstituteUrl()}>View Details</Link>
           </Button>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
